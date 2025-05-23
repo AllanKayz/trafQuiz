@@ -1,0 +1,104 @@
+<section class="exam-window">
+  <div class="container-fluid shadow-sm p-3">
+    <div class="row">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="timeslot display-4 fw-bold">
+          <span *ngIf="isLoaded">{{formattedTime}}</span>
+          <mat-progress-spinner *ngIf="!isLoaded" mode="indeterminate" diameter="50" color="accent"
+            class="button-spinner mx-auto my-auto"></mat-progress-spinner>
+        </div>
+        <div class="user d-flex flex-row align-items-center">
+          <div class="mx-2">Welcome: {{UserData?.username}}</div>
+          <button class="btn btn-outline-danger mx-2" (click)="closeApp()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div *ngIf="isPaused" class="placeho">
+      <img src="assets/logo.png" class="rounded mx-auto d-block" alt="...">
+    </div>
+    <div class="row question-section overflow-y-auto" [ngClass]="{'d-none': isPaused }">
+      <div class="ml-5" *ngIf="isLoaded">
+        <form [formGroup]="examForm" (submit)="submitExam()">
+          <div *ngFor="let question of questions | slice:0:25; let i = index;" class="pb-4 pt-5">
+            <h6 class="card-title fw-bold">{{i + 1}}. {{question.question}}</h6>
+            <div class="pb-2 mb-3">
+              <img [src]="question.photo" class="image_insert rounded" *ngIf="question.photo" alt="Image for question">
+            </div>
+            <div class="px-5">
+              <div class="form-check mb-3">
+                <input class="form-check-input text-lg" type="radio" id="question{{i}}" [formControlName]="'question'+i"
+                  [value]="question.option_a">
+                <label class="form-check-label text-lg" for="question{{i}}"
+                  [class]="getOptionClass(question, question.option_a)">
+                  {{question.option_a}}
+                </label>
+              </div>
+              <div class="form-check mb-3">
+                <input class="form-check-input text-lg" type="radio" id="question{{i}}" [formControlName]="'question'+i"
+                  [value]="question.option_b">
+                <label class="form-check-label text-lg" for="question{{i}}"
+                  [class]="getOptionClass(question, question.option_b)">
+                  {{question.option_b}}
+                </label>
+              </div>
+              <div class="form-check mb-3">
+                <input class="form-check-input" type="radio" id="question{{i}}" [formControlName]="'question'+i"
+                  [value]="question.option_c">
+                <label class="form-check-label text-lg" for="question{{i}}"
+                  [class]="getOptionClass(question, question.option_c)">
+                  {{question.option_c}}
+                </label>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <mat-progress-bar mode="indeterminate" [hidden]="isLoaded" class="mx-auto my-auto"></mat-progress-bar>
+    </div>
+    <div class="row border-top">
+      <div class="d-flex justify-content-between p-3">
+        <div *ngIf="!isSubmited && !timeUp" class="w-100">
+          <button class="btn btn-outline-primary text-uppercase float-end" type="submit" (click)="submitExam()"
+            data-bs-toggle="modal" data-bs-target="#scoreboard" [ngClass]="{'d-none': isPaused }">Submit Exam</button>
+          <button class="btn btn-outline-primary text-uppercase float-start"
+            (click)="pauseTimer()">{{pauseState}}</button>
+        </div>
+        <div *ngIf="timeUp && !isSubmited" class="w-100">
+          <p>Your time is up! Submitting Your Responses..</p>
+        </div>
+        <div *ngIf="isSubmited" class="w-100">
+
+          <button class="btn btn-outline-primary float-end mx-2 text-uppercase" (click)="resetQuiz()">Take Another
+            Exam</button>
+          <button class="btn btn-outline-primary float-end mx-2 text-uppercase" (click)="retakeQuiz()">Retake
+            Exam</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="modal" tabindex="-1" id="scoreboard" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center">
+      <div class="modal-header" *ngIf="score/questions.length*100 >= 88">
+        <h5 class="modal-title">Passed</h5>
+      </div>
+      <div class="modal-header" *ngIf="score/questions.length*100 < 88">
+        <h5 class="modal-title">Failed</h5>
+      </div>
+      <div class="modal-body">
+        <div *ngIf="isSubmited">
+          <h1 class="fw-bold">
+            <span *ngIf="score/questions.length*100 >= 88" class="score">{{score}}/{{questions.length}}</span>
+            <span *ngIf="score/questions.length*100 < 88" class="wrong">{{score}}/{{questions.length}}</span>
+          </h1>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-primary" type="button" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

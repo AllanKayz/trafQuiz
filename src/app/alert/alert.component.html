@@ -1,0 +1,9 @@
+<div mat-dialog-container [ngClass]="alertType.toLowerCase()+'_alert'">
+    <h2 mat-dialog-title class="alert_title text-uppercase border-bottom">{{data.title}}</h2>
+    <div mat-dialog-content class="alert_content pt-3">
+        <p>{{data.message}}</p>
+    </div>
+    <div mat-dialog-actions class="alert_actions">
+        <button mat-raised-button mat-dialog-close class="">{{data.buttonText}}</button>
+    </div>
+</div>

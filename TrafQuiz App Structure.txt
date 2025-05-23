@@ -1,0 +1,55 @@
+TrafQuiz
+	Reusable Components
+		upcoming lessons
+		header/notifications panel
+		exam component
+		calendar
+		profile/account settings
+		alert/notifications
+		messages
+	Widgets
+		number of students enrolled
+		active instructors
+		scheduled lessons
+		revenue statistics
+		number lessons left
+	Login Component
+	Guest Account Runs to Exam Window Straight
+	Student Atributes
+		lesson date widget(date, time, Instructor)
+		progress widget(65% complete)
+		payment status (paid/due)
+		categorized progress chart widget(bar graph)
+		profile management*
+		lesson notifications and calendar
+		progress reports
+		payments
+		exams
+	Instructor Attributes
+		lesson count widget for the day
+		number of students assigned widget
+		current vehicle information widget
+		current day schedule
+		manage student progress
+			student name
+			last lesson date
+			progress
+			notes or remarks
+			"Add progress note" button
+		account settings 
+		
+	Administation Atributes
+		Dashboard -> Key Metrics Overview
+		Instructor Management
+			profile management*
+			perfomance tracking
+			scheduling: Assign instructors to lessons based on availability and expertise.
+		Student Management
+			profile management*
+			progress reports
+			communication tools: send reminders, updates, and feedback via email or SMS/Whatsapp.
+		Lesson Scheduling
+		Vehicle Management
+		Financial Management
+		Reports & Analytics
+		User Access Control

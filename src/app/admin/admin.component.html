@@ -1,0 +1,164 @@
+<section class="co">
+  <div class="d-flex align-items-start">
+    <div class="nav flex-column nav-pills me-3 p-4 shadow-box-right vh-100" id="v-pills-tab" role="tablist"
+      aria-orientation="vertical">
+      <img src="assets/logo.png" class="mb-5 mx-auto" alt="TrafQuiz" width="150" height="130">
+      <button class="nav-link active mb-3 text-uppercase" id="v-pills-home-tab" data-bs-toggle="pill"
+        data-bs-target="#v-pills-home" type="button" role="tab" aria-controls="v-pills-home"
+        aria-selected="true">Dashboard</button>
+      <button class="nav-link mb-3 text-uppercase" id="v-pills-profile-tab" data-bs-toggle="pill"
+        data-bs-target="#v-pills-profile" type="button" role="tab" aria-controls="v-pills-profile"
+        aria-selected="false">Manage Students</button>
+      <button class="nav-link mb-3 text-uppercase" id="v-pills-disabled-tab" data-bs-toggle="pill"
+        data-bs-target="#v-pills-disabled" type="button" role="tab" aria-controls="v-pills-disabled"
+        aria-selected="false" disabled>Exam Analytics(Coming soon)</button>
+      <button class="nav-link mb-3 text-uppercase" id="v-pills-messages-tab" data-bs-toggle="pill" disabled
+        data-bs-target="#v-pills-messages" type="button" role="tab" aria-controls="v-pills-messages"
+        aria-selected="false" disabled>Reports(Coming soon)</button>
+      <button class="nav-link mb-3 text-uppercase" id="v-pills-settings-tab" data-bs-toggle="pill"
+        data-bs-target="#v-pills-settings" type="button" role="tab" aria-controls="v-pills-settings"
+        aria-selected="false" disabled>Settings(Coming Soon)</button>
+      <a class="btn btn-outline-danger sticky-bottom" [routerLink]="['/login']">Logout</a>
+    </div>
+    <div class="tab-content p-4 vh-100 overflow-y-auto" id="v-pills-tabContent">
+      <div class="tab-pane fade show active" id="v-pills-home" role="tabpanel" aria-labelledby="v-pills-home-tab"
+        tabindex="0">
+        <div class="card shadow-sm" style="width: 25rem;">
+          <mat-progress-spinner *ngIf="isLoading" mode="indeterminate" diameter="150" color="accent"
+            class="button-spinner mx-auto my-auto"></mat-progress-spinner>
+          <div class="card-body" *ngIf="!isLoading">
+            <h5 class="card-title text-uppercase">Alter Exam Duration</h5>
+            <h6 class="card-subtitle mb-2 text-body-secondary">Current Duration: {{formattedTime}} mins</h6>
+            <form [formGroup]="examTime" (submit)="updateExamDuration()">
+              <div class="input-group mb-3">
+                <input type="number" class="form-control" formControlName="newtime" placeholder="10"
+                  aria-label="Exam Duration" aria-describedby="button-addon2">
+                <button type="submit" class="btn btn-outline-secondary" id="button-addon2">Update</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="tab-pane fade w-100" id="v-pills-profile" role="tabpanel" aria-labelledby="v-pills-profile-tab"
+        tabindex="0">
+        <div class="row mb-4">
+          <div class="border p-4 shadow-sm">
+            <h3 class="h3 fw-bold mb-5">Add New Student</h3>
+            <form class="row g-3" [formGroup]="addStudentForm" (submit)="addStudent()">
+              <div class="col-md-6">
+                <label for="username" class="form-label">Username:</label>
+                <input type="text" class="form-control" formControlName="username" id="username">
+              </div>
+              <div class="col-md-6">
+                <label for="password" class="form-label">Password:</label>
+                <input type="password" class="form-control" formControlName="password" id="password">
+              </div>
+              <div class="col-md-4">
+                <label for="email" class="form-label">Email:</label>
+                <input type="email" class="form-control" formControlName="email" id="email"
+                  placeholder="trafQuiz@mail.com">
+              </div>
+              <div class="col-md-4">
+                <label for="firstname" class="form-label">Firstname:</label>
+                <input type="text" class="form-control" formControlName="firstname" id="firstname">
+              </div>
+              <div class="col-md-4">
+                <label for="lastname" class="form-label">Lastname:</label>
+                <input type="text" class="form-control" formControlName="lastname" id="lastname">
+              </div>
+              <div class="col-12">
+                <button type="submit" class="btn btn-outline-primary w-50 float-end">
+                  Add Student
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div class="d-flex flex-column justify-content-center border p-4 mx-auto shadow-sm">
+          <h3 class="h3 fw-bold mb-5">Manage Students</h3>
+          <table class="table full_width">
+            <thead>
+              <tr>
+                <th scope="col">#</th>
+                <th scope="col">Fullname</th>
+                <th scope="col">Username</th>
+                <th scope="col">Email</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody class="table-group-divider">
+              <tr *ngFor="let user of usersList; let i = index;">
+                <th scope="row">{{i + 1}}</th>
+                <td>{{user.firstname}} {{user.lastname}}</td>
+                <td>{{user.username}}</td>
+                <td>{{user.email}}</td>
+                <td>
+                  <div class="btn-group btn-group-sm" role="group" aria-label="Small button group">
+                    <button type="button" id="{{user.id}}" class="btn btn-outline-primary" data-bs-toggle="modal"
+                      data-bs-target="#editStudentDetails" (click)="btnEdit($event)">Edit</button>
+                    <button type="button" id="del.{{user.id}}" class="btn btn-outline-danger"
+                      (click)="deleteStudent($event)">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="v-pills-disabled" role="tabpanel" aria-labelledby="v-pills-disabled-tab"
+        tabindex="0">feature under development</div>
+      <div class="tab-pane fade" id="v-pills-messages" role="tabpanel" aria-labelledby="v-pills-messages-tab"
+        tabindex="0">feature under development</div>
+      <div class="tab-pane fade" id="v-pills-settings" role="tabpanel" aria-labelledby="v-pills-settings-tab"
+        tabindex="0">feature under development</div>
+    </div>
+  </div>
+</section>
+
+<div class="modal fade" id="editStudentDetails" tabindex="-1" aria-labelledby="editStudentDetailLabel"
+  aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 class="modal-title fs-5" id="editStudentDetailLabel">Update Student Details</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form [formGroup]="updateStudentForm">
+          <div class="mb-3 d-none">
+            <label for="updateUid" class="col-form-label">Uid:</label>
+            <input type="text" class="form-control form-control-sm" formControlName="updateUid" id="updateUid">
+          </div>
+          <div class="mb-3">
+            <label for="updateFirstname" class="col-form-label">Firstname:</label>
+            <input type="text" class="form-control form-control-sm" formControlName="updateFirstname"
+              id="updateFirstname">
+          </div>
+          <div class="mb-3">
+            <label for="updateLastname" class="col-form-label">Lastname:</label>
+            <input type="text" class="form-control form-control-sm" formControlName="updateLastname"
+              id="updateLastname">
+          </div>
+          <div class="mb-3">
+            <label for="updateUsername" class="col-form-label">Username:</label>
+            <input type="text" class="form-control form-control-sm" formControlName="updateUsername"
+              id="updateUsername">
+          </div>
+          <div class="mb-3">
+            <label for="updateEmail" class="col-form-label">Email:</label>
+            <input type="email" class="form-control form-control-sm" formControlName="updateEmail" id="updateEmail">
+          </div>
+          <div class="mb-3">
+            <label for="updatePassword" class="col-form-label">Password:</label>
+            <input type="password" class="form-control form-control-sm" formControlName="updatePassword"
+              id="updatePassword">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-outline-primary" (click)="updateStudent()">Update</button>
+      </div>
+    </div>
+  </div>
+</div>
