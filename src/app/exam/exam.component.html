@@ -1,4 +1,4 @@
-<section class="exam-window">
+<!--section class="exam-window">
   <div class="container-fluid shadow-sm p-3">
     <div class="row">
       <div class="d-flex justify-content-between align-items-center">
@@ -100,5 +100,131 @@
         <button class="btn btn-outline-primary" type="button" data-bs-dismiss="modal">Close</button>
       </div>
     </div>
+  </div>
+</div-->
+
+<section class="app-container">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">🚗</div>
+      <div class="logo-text">TrafQuiz</div>
+    </div>
+
+    <div class="timer">
+      <div class="timer-label">Time Remaining</div>
+      <div class="timer-value" id="timer">
+        <span *ngIf="isLoaded">{{formattedTime}}</span>
+        <mat-progress-spinner *ngIf="!isLoaded" mode="indeterminate" diameter="50" color="accent"
+          class="button-spinner mx-auto my-auto"></mat-progress-spinner>
+      </div>
+    </div>
+
+    <div class="exam-info">
+      <div class="exam-title">Driving Theory Test</div>
+      <div class="exam-details">
+        Category: Class B License<br>
+        Pass Mark: 80% (4/25)<br>
+        Duration: 15 minutes<br>
+        Total Questions: 25
+      </div>
+    </div>
+
+    <div class="progress-section">
+      <div class="progress-header">
+        <div class="progress-title">Progress</div>
+        <div class="progress-stats" id="progressStats">1/25</div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="score-section">
+      <div class="score-title">Current Score</div>
+      <div class="score-display">
+        <span class="correct" id="correctCount">0 Correct</span>
+        <span class="incorrect" id="incorrectCount">0 Wrong</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header">
+      <div class="question-counter" id="questionCounter">Question 1 of 25</div>
+      <div class="action-buttons">
+        <button class="btn btn-secondary" (click)="pauseTimer()">{{pauseState}}</button>
+        <button class="btn btn-secondary">Help</button>
+      </div>
+    </div>
+
+    <!--form [formGroup]="examForm" (submit)="submitExam()">
+      <div *ngFor="let question of questions | slice:0:25; let i = index;" class="pb-4 pt-5">
+        <h6 class="card-title fw-bold">{{i + 1}}. {{question.question}}</h6>
+        <div class="pb-2 mb-3">
+          <img [src]="question.photo" class="image_insert rounded" *ngIf="question.photo" alt="Image for question">
+        </div>
+
+      
+    </form-->
+
+    <div class="question-section" *ngFor="let question of questions | slice:0:25; let i = index;">
+      <div class="question-content">
+        <div class="question-text-area">
+          <div class="question-text" id="questionText">
+            {{question.question}}
+          </div>
+        </div>
+      </div>
+      <div class="options-container" id="optionsContainer">
+        <div class="option" onclick="selectOption(this, 0)">
+          <div class="option-letter">A</div>
+          <div class="option-text">{{question.option_a}}</div>
+        </div>
+
+        <div class="option" onclick="selectOption(this, 1)">
+          <div class="option-letter">B</div>
+          <div class="option-text">{{question.option_b}}</div>
+        </div>
+
+        <div class="option" onclick="selectOption(this, 2)">
+          <div class="option-letter">C</div>
+          <div class="option-text">{{question.option_c}}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-actions">
+      <button class="btn-nav btn-previous" onclick="previousQuestion()" id="prevBtn">
+        ← Previous
+      </button>
+
+      <div class="question-nav">
+        <button class="btn flag-btn" onclick="toggleFlag(this)" id="flagBtn">
+          🏁 Flag Question
+        </button>
+        <button class="btn finish-btn" onclick="finishExam()" id="finishBtn" style="display: none;">
+          Finish Exam
+        </button>
+      </div>
+
+      <button class="btn-nav btn-next" onclick="nextQuestion()" id="nextBtn">
+        Next →
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Results Modal -->
+<div class="modal" id="resultsModal">
+  <div class="modal-content">
+    <div class="modal-title">Exam Complete!</div>
+    <div class="modal-score" id="finalScore">0/25</div>
+    <div class="modal-details" id="modalDetails">
+      You need 4 out of 5 correct answers to pass.<br>
+      <span id="resultMessage">Please review the highway code and try again.</span>
+    </div>
+    <button class="modal-btn" onclick="restartExam()">Start New Exam</button>
   </div>
 </div>
