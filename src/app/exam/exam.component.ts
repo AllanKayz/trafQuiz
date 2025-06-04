@@ -1,9 +1,9 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { TraffiquizService } from '../traffiquiz.service';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs';
+import { finalize, interval, Subscription } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
@@ -26,6 +26,94 @@ interface Question {
   styleUrl: './exam.component.css'
 })
 export class ExamComponent implements OnInit, OnDestroy {
+
+  currentQuestionIndex = signal(0);
+  userAnswers = signal<{[key: number]: number}>({});
+  timeRemaining = signal(1800); // 30 minutes
+  showResults = signal(false);
+  examResults = signal<{score: number, percentage: number, passed: boolean} | null>(null);
+  
+  private timerSubscription?: Subscription;
+
+  constructor(public examService: TraffiquizService) {}
+
+  // Computed signals
+  currentQuestion = computed(() => this.examService.questions[this.currentQuestionIndex()]);
+  progressPercentage = computed(() => ((this.currentQuestionIndex() + 1) / this.examService.questions.length) * 100);
+  formattedTime = computed(() => {
+    const minutes = Math.floor(this.timeRemaining() / 60);
+    const seconds = this.timeRemaining() % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  });
+
+  ngOnInit() {
+    this.startTimer();
+  }
+
+  ngOnDestroy() {
+    this.timerSubscription?.unsubscribe();
+  }
+
+  startTimer() {
+    this.timerSubscription = interval(1000).subscribe(() => {
+      const newTime = this.timeRemaining() - 1;
+      this.timeRemaining.set(newTime);
+      
+      if (newTime <= 0) {
+        this.submitExam();
+      }
+    });
+  }
+
+  selectOption(optionIndex: number) {
+    const answers = { ...this.userAnswers() };
+    answers[this.currentQuestionIndex()] = optionIndex;
+    this.userAnswers.set(answers);
+  }
+
+  previousQuestion() {
+    if (this.currentQuestionIndex() > 0) {
+      this.currentQuestionIndex.set(this.currentQuestionIndex() - 1);
+    }
+  }
+
+  nextQuestion() {
+    if (this.currentQuestionIndex() < this.examService.questions.length - 1) {
+      this.currentQuestionIndex.set(this.currentQuestionIndex() + 1);
+    }
+  }
+
+  submitExam() {
+    this.timerSubscription?.unsubscribe();
+    
+    let score = 0;
+    this.examService.questions.forEach((question, index) => {
+      if (this.userAnswers()[index] === question.correct) {
+        score++;
+      }
+    });
+    
+    const percentage = Math.round((score / this.examService.questions.length) * 100);
+    const passed = percentage >= 80;
+    
+    this.examResults.set({ score, percentage, passed });
+    this.showResults.set(true);
+  }
+
+  restartExam() {
+    this.currentQuestionIndex.set(0);
+    this.userAnswers.set({});
+    this.timeRemaining.set(1800);
+    this.showResults.set(false);
+    this.examResults.set(null);
+    this.startTimer();
+  }
+
+  getOptionLetter(index: number): string {
+    return String.fromCharCode(65 + index);
+  }
+
+  /**
   questions: Question[] = [];
   examForm!: FormGroup;
   timer!: number;
@@ -216,4 +304,6 @@ export class ExamComponent implements OnInit, OnDestroy {
     this.timeUp = false;
     this.isLoaded = false;
   }
+
+  */
 }

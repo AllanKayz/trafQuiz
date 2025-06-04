@@ -114,9 +114,9 @@
     <div class="timer">
       <div class="timer-label">Time Remaining</div>
       <div class="timer-value" id="timer">
-        <span *ngIf="isLoaded">{{formattedTime}}</span>
-        <mat-progress-spinner *ngIf="!isLoaded" mode="indeterminate" diameter="50" color="accent"
-          class="button-spinner mx-auto my-auto"></mat-progress-spinner>
+        <span>{{ formattedTime() }}</span>
+        <!--mat-progress-spinner *ngIf="!isLoaded" mode="indeterminate" diameter="50" color="accent"
+          class="button-spinner mx-auto my-auto"></mat-progress-spinner-->
       </div>
     </div>
 
@@ -152,9 +152,9 @@
   <!-- Main Content -->
   <div class="main-content">
     <div class="header">
-      <div class="question-counter" id="questionCounter">Question 1 of 25</div>
+      <div class="question-counter" id="questionCounter">Question {{ currentQuestionIndex() + 1 }} of 25</div>
       <div class="action-buttons">
-        <button class="btn btn-secondary" (click)="pauseTimer()">{{pauseState}}</button>
+        <button class="btn btn-secondary">pauseState</button>
         <button class="btn btn-secondary">Help</button>
       </div>
     </div>
@@ -169,21 +169,35 @@
       
     </form-->
 
-    <div class="question-section" *ngFor="let question of questions | slice:0:25; let i = index;">
+    <div class="question-section">
       <div class="question-content">
         <div class="question-text-area">
           <div class="question-text" id="questionText">
-            {{question.question}}
+            {{ currentQuestion().question }}
           </div>
+
+          <!--div class="question-image" id="questionImage" *ngIf="currentQuestion()?.hasImage">
+            <img id="questionImg" [src]="currentQuestion().image" alt="Question diagram">
+          </div-->
+
+          <!--div class="question-image" *ngIf="currentQuestion()?.hasImage">
+            <img [src]="currentQuestion().image" alt="Question diagram">
+          </div-->
         </div>
       </div>
       <div class="options-container" id="optionsContainer">
-        <div class="option" onclick="selectOption(this, 0)">
-          <div class="option-letter">A</div>
-          <div class="option-text">{{question.option_a}}</div>
+        <!--div class="option" onclick="selectOption(this, 0)"-->
+        <!--div class="option-letter">A</div-->
+        <div *ngFor="let option of currentQuestion()?.options; let i = index" class="option"
+          [class.selected]="userAnswers()[currentQuestionIndex()] === i" (click)="selectOption(i)">
+          <div class="option-letter">{{ getOptionLetter(i) }}</div>
+          <div class="option-text">{{ option }}</div>
         </div>
 
-        <div class="option" onclick="selectOption(this, 1)">
+        <!--div class="option-text">{{question.option_a}}</div-->
+        <!--/div-->
+
+        <!--div class="option" onclick="selectOption(this, 1)">
           <div class="option-letter">B</div>
           <div class="option-text">{{question.option_b}}</div>
         </div>
@@ -191,12 +205,13 @@
         <div class="option" onclick="selectOption(this, 2)">
           <div class="option-letter">C</div>
           <div class="option-text">{{question.option_c}}</div>
-        </div>
+        </div-->
       </div>
     </div>
 
-    <div class="bottom-actions">
-      <button class="btn-nav btn-previous" onclick="previousQuestion()" id="prevBtn">
+    <!-- Navigation -->
+    <div class="bottom-actions" *ngIf="!showResults()">
+      <button class="btn-nav btn-previous" [disabled]="currentQuestionIndex() === 0" (click)="previousQuestion()">
         ← Previous
       </button>
 
@@ -209,22 +224,37 @@
         </button>
       </div>
 
-      <button class="btn-nav btn-next" onclick="nextQuestion()" id="nextBtn">
+      <button *ngIf="currentQuestionIndex() < examService.questions.length - 1" class="btn-nav btn-next"
+        (click)="nextQuestion()">
         Next →
+      </button>
+
+      <button *ngIf="currentQuestionIndex() === examService.questions.length - 1" class="btn btn-nav finish-btn"
+        (click)="submitExam()">
+        Submit Exam
       </button>
     </div>
   </div>
 </section>
 
 <!-- Results Modal -->
-<div class="modal" id="resultsModal">
+<div class="modal" id="resultsModal" *ngIf="showResults()">
   <div class="modal-content">
-    <div class="modal-title">Exam Complete!</div>
-    <div class="modal-score" id="finalScore">0/25</div>
-    <div class="modal-details" id="modalDetails">
-      You need 4 out of 5 correct answers to pass.<br>
+    <!--div class="modal-title">Exam Complete!</div-->
+    <div class="modal-title" [style.color]="examResults()?.passed ? '#28a745' : '#dc3545'">
+      {{ examResults()?.passed ? 'Congratulations!' : 'Better luck next time' }}
+    </div>
+    <!--div class="modal-score" id="finalScore">0/25</div-->
+    <div class="modal-score">
+      You scored {{ examResults()?.score }} out of {{ examService.questions.length }} 
+      ({{ examResults()?.percentage }}%)
+    </div>
+    <div class="modal-details" id="modalDetails" *ngIf="examResults()!.score < 22">
+      You need 22 out of 25 correct answers to pass.<br>
       <span id="resultMessage">Please review the highway code and try again.</span>
     </div>
-    <button class="modal-btn" onclick="restartExam()">Start New Exam</button>
+    <button class="restart-button" (click)="restartExam()">
+      🔄 Restart Exam
+    </button>
   </div>
 </div>
