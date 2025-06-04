@@ -32,6 +32,8 @@ export class ExamComponent implements OnInit, OnDestroy {
   timeRemaining = signal(1800); // 30 minutes
   showResults = signal(false);
   examResults = signal<{score: number, percentage: number, passed: boolean} | null>(null);
+  isPaused: boolean = false;
+  pauseState: string = "Pause";
   
   private timerSubscription?: Subscription;
 
@@ -57,12 +59,23 @@ export class ExamComponent implements OnInit, OnDestroy {
   startTimer() {
     this.timerSubscription = interval(1000).subscribe(() => {
       const newTime = this.timeRemaining() - 1;
+      if(!this.isPaused) {
       this.timeRemaining.set(newTime);
-      
       if (newTime <= 0) {
         this.submitExam();
       }
+    }
     });
+  }
+
+  pauseTimer() {
+    if (this.pauseState === "Pause") {
+      this.isPaused = true;
+      this.pauseState = "Resume";
+    } else {
+      this.isPaused = false;
+      this.pauseState = "Pause";
+    }
   }
 
   selectOption(optionIndex: number) {
