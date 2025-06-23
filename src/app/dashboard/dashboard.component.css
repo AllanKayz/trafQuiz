@@ -37,6 +37,15 @@
     border-radius: 0px !important;
 }
 
+.mdc-list-item {
+    padding-right: 0px !important;
+}
+
+.mat-icon {
+    overflow: visible;
+    padding-right: 5px;
+}
+
 mat-list-item, a {
     border-radius: 0px !important;
     border: none;

@@ -10,16 +10,13 @@
       <div class="timer-label">Time Remaining</div>
       <div class="timer-value" id="timer">
         <span>{{ formattedTime() }}</span>
-        <!--mat-progress-spinner *ngIf="!isLoaded" mode="indeterminate" diameter="50" color="accent"
-          class="button-spinner mx-auto my-auto"></mat-progress-spinner-->
       </div>
     </div>
 
     <div class="exam-info">
       <div class="exam-title">Driving Theory Test</div>
       <div class="exam-details">
-        Category: Class B License<br>
-        Pass Mark: 80% (22/{{ examService.questions.length }})<br>
+        Pass Mark: 88% (22/{{ examService.questions.length }})<br>
         Duration: 15 minutes<br>
         Total Questions: {{ examService.questions.length }}
       </div>
@@ -28,20 +25,29 @@
     <div class="progress-section">
       <div class="progress-header">
         <div class="progress-title">Progress</div>
-        <div class="progress-stats" id="progressStats">1/25</div>
+        <div class="progress-stats" id="progressStats">{{ currentQuestionIndex() + 1 }} of {{ examService.questions.length }}</div>
       </div>
       <div class="progress-bar">
-        <div class="progress-fill" id="progressFill"></div>
+        <div class="progress-fill" id="progressFill" [style.width.%]="progressPercentage()"></div>
       </div>
     </div>
 
-    <div class="score-section">
+    <!-- Question Navigation Dots -->
+    <div class="navigation-dots">
+      <div *ngFor="let q of examService.questions; let i = index" class="dot"
+        [class.active]="i === currentQuestionIndex()" [class.answered]="userAnswers()[i] !== undefined"
+        [class.flagged]="flaggedQuestions().has(i)" (click)="currentQuestionIndex.set(i)">
+        {{i+1}}
+      </div>
+    </div>
+
+    <!--div class="score-section">
       <div class="score-title">Revision</div>
       <div class="score-display">
         <span class="correct" id="correctCount">{{examResults()?.score}} Correct</span>
         <span class="incorrect" id="incorrectCount">0 Wrong</span>
       </div>
-    </div>
+    </div-->
   </div>
 
   <!-- Main Content -->
@@ -50,11 +56,12 @@
       <div class="question-counter" id="questionCounter">Question {{ currentQuestionIndex() + 1 }} of {{
         examService.questions.length }}</div>
       <div class="action-buttons">
-        <button class="btn btn-secondary" onclick="pauseTimer()">{{pauseState}}</button>
-        <button class="btn btn-secondary">Help</button>
+        <button class="btn btn-secondary" (click)="pauseTimer()">{{pauseState}}</button>
+        <button class="btn btn-secondary" (click)="closeExam()">Close</button>
       </div>
     </div>
-    <div class="question-section">
+
+    <div class="question-section my-auto">
       <div class="question-content">
         <div class="question-text-area">
           <div class="question-text" id="questionText">
@@ -81,12 +88,15 @@
       </button>
 
       <div class="question-nav">
-        <button class="btn flag-btn" id="flagBtn" onclick="toggleFlag(this)">
-          🏁 Flag Question
+        <button class="btn-nav flag-btn" id="flagBtn" [class.flagged]="flaggedQuestions().has(currentQuestionIndex())"
+          (click)="toggleFlag()">
+          {{ flaggedQuestions().has(currentQuestionIndex()) ? '🏁 Unflag' : '🏁 Flag Question' }}
         </button>
-        <button class="btn finish-btn" onclick="finishExam()" id="finishBtn" style="display: none;">
-          Finish Exam
+
+        <button class="btn btn-nav review-button" (click)="jumpToNextFlagged()">
+          Jump to Next Flagged →
         </button>
+
       </div>
 
       <button *ngIf="currentQuestionIndex() < examService.questions.length - 1" class="btn-nav btn-next"

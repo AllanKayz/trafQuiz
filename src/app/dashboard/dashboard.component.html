@@ -1,37 +1,37 @@
 <mat-sidenav-container class="sidenav-container">
-    <mat-sidenav #sidenav mode="side" opened class="bg-secondary-subtle sidenav p-3"
-    [fixedInViewport]="true" [style.width]="isSidenavCollapsed ? '80px':'250px'">
-	<!--[style.width]="isSidenavCollapsed ? '80px':'250px'"-->
-    <div class="menu-header">
-        <button mat-icon-button
-            (click)="toggleSidenav()"><mat-icon>{{isSidenavCollapsed?'m':'x'}}</mat-icon></button>
-    </div>
-    <ng-container *ngIf="isLoggedIn">
-        <mat-nav-list>
-            <div *ngFor="let item of menuItems">
-                <a mat-list-item [routerLink]="[item.toLowerCase()]">
-                    <mat-icon>&copy;</mat-icon>
-                    <span *ngIf="!isSidenavCollapsed" class="text-uppercase fw-bold">{{item}}</span>
-                </a>
-            </div>
-        </mat-nav-list>
-    </ng-container>
-    <ng-container *ngIf="!isLoggedIn">
-        <p>Log in to see menu</p>
-    </ng-container>
-</mat-sidenav>
-<mat-sidenav-content class="content" [ngClass]="{'sidenav-collapsed-content':isSidenavCollapsed}">
-    <mat-toolbar class="floating-toolbar" color="primary" >
-        <button mat-icon-button
-        (click)="toggleSidenav()"><mat-icon>{{isSidenavCollapsed?'menu':'close'}}</mat-icon></button>
-		<span></span>
-		<span class="spacer"></span>
-		<button mat-stroked-button class="mx-auto">
-			notifications
-		</button>
-    </mat-toolbar>
-    <div class="content" *ngIf="isLoggedIn">
-        <router-outlet />
-    </div>
-</mat-sidenav-content>
+    <mat-sidenav #sidenav mode="side" opened class="bg-secondary-subtle sidenav p-3" [fixedInViewport]="true"
+        [style.width]="isSidenavCollapsed ? '80px':'250px'">
+        <!--[style.width]="isSidenavCollapsed ? '80px':'250px'"-->
+        <div class="menu-header">
+            <button mat-icon-button
+                (click)="toggleSidenav()"><mat-icon>{{isSidenavCollapsed?'m':'x'}}</mat-icon></button>
+        </div>
+        <ng-container *ngIf="isLoggedIn">
+            <mat-nav-list>
+                <div *ngFor="let item of menuItems">
+                    <a mat-list-item [routerLink]="[item.toLowerCase()]">
+                        <mat-icon class="">{{item ? icons[item.toLowerCase()]: ''}}</mat-icon>
+                        <span *ngIf="!isSidenavCollapsed" class="text-uppercase fw-bold">{{item}}</span>
+                    </a>
+                </div>
+            </mat-nav-list>
+        </ng-container>
+        <ng-container *ngIf="!isLoggedIn">
+            <p>Log in to see menu</p>
+        </ng-container>
+    </mat-sidenav>
+    <mat-sidenav-content class="content" [ngClass]="{'sidenav-collapsed-content':isSidenavCollapsed}">
+        <mat-toolbar class="floating-toolbar" color="primary">
+            <button mat-icon-button
+                (click)="toggleSidenav()"><mat-icon>{{isSidenavCollapsed?'menu':'close'}}</mat-icon></button>
+            <span></span>
+            <span class="spacer"></span>
+            <button mat-stroked-button class="mx-auto">
+                notifications
+            </button>
+        </mat-toolbar>
+        <div class="content" *ngIf="isLoggedIn">
+            <router-outlet />
+        </div>
+    </mat-sidenav-content>
 </mat-sidenav-container>

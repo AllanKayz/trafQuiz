@@ -28,16 +28,17 @@ interface Question {
 export class ExamComponent implements OnInit, OnDestroy {
 
   currentQuestionIndex = signal(0);
-  userAnswers = signal<{[key: number]: number}>({});
+  userAnswers = signal<{ [key: number]: number }>({});
+  flaggedQuestions = signal<Set<number>>(new Set());
   timeRemaining = signal(1800); // 30 minutes
   showResults = signal(false);
-  examResults = signal<{score: number, percentage: number, passed: boolean} | null>(null);
+  examResults = signal<{ score: number, percentage: number, passed: boolean } | null>(null);
   isPaused: boolean = false;
   pauseState: string = "Pause";
-  
+
   private timerSubscription?: Subscription;
 
-  constructor(public examService: TraffiquizService) {}
+  constructor(public examService: TraffiquizService) { }
 
   // Computed signals
   currentQuestion = computed(() => this.examService.questions[this.currentQuestionIndex()]);
@@ -59,16 +60,16 @@ export class ExamComponent implements OnInit, OnDestroy {
   startTimer() {
     this.timerSubscription = interval(1000).subscribe(() => {
       const newTime = this.timeRemaining() - 1;
-      if(!this.isPaused) {
-      this.timeRemaining.set(newTime);
-      if (newTime <= 0) {
-        this.submitExam();
+      if (!this.isPaused) {
+        this.timeRemaining.set(newTime);
+        if (newTime <= 0) {
+          this.submitExam();
+        }
       }
-    }
     });
   }
 
-  pauseTimer() {
+  pauseTimer(): void {
     if (this.pauseState === "Pause") {
       this.isPaused = true;
       this.pauseState = "Resume";
@@ -96,26 +97,68 @@ export class ExamComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Toggle flag status for a question
+  toggleFlag(): void {
+    const currentIndex = this.currentQuestionIndex();
+    const flagged = new Set(this.flaggedQuestions());
+
+    if (flagged.has(currentIndex)) {
+      flagged.delete(currentIndex);
+    } else {
+      flagged.add(currentIndex);
+    }
+
+    this.flaggedQuestions.set(flagged);
+  }
+
+  jumpToNextFlagged() {
+    const flagged = Array.from(this.flaggedQuestions());
+    if (flagged.length === 0) return;
+
+    // Sort flagged indices
+    flagged.sort((a, b) => a - b);
+
+    // Find next flagged index after current position
+    const nextIndex = flagged.findIndex(i => i > this.currentQuestionIndex());
+
+    if (nextIndex >= 0) {
+      this.currentQuestionIndex.set(flagged[nextIndex]);
+    } else {
+      // Wrap around to first flagged question
+      this.currentQuestionIndex.set(flagged[0]);
+    }
+  }
+
   submitExam() {
-    this.timerSubscription?.unsubscribe();
-    
-    let score = 0;
-    this.examService.questions.forEach((question, index) => {
-      if (this.userAnswers()[index] === question.correct) {
-        score++;
-      }
-    });
-    
-    const percentage = Math.round((score / this.examService.questions.length) * 100);
-    const passed = percentage >= 80;
-    
-    this.examResults.set({ score, percentage, passed });
-    this.showResults.set(true);
+    const flagged = Array.from(this.flaggedQuestions());
+    if (flagged.length === 0) {
+      this.timerSubscription?.unsubscribe();
+
+      let score = 0;
+      this.examService.questions.forEach((question, index) => {
+        if (this.userAnswers()[index] === question.correct) {
+          score++;
+        }
+      });
+
+      const percentage = Math.round((score / this.examService.questions.length) * 100);
+      const passed = percentage >= 88;
+
+      this.examResults.set({ score, percentage, passed });
+      this.showResults.set(true);
+    } else {
+      alert('Unflag questions flagged to make a submission');
+    }
+  }
+
+  newExam(): void {
+
   }
 
   restartExam() {
     this.currentQuestionIndex.set(0);
     this.userAnswers.set({});
+    this.flaggedQuestions.set(new Set())
     this.timeRemaining.set(1800);
     this.showResults.set(false);
     this.examResults.set(null);
@@ -124,6 +167,10 @@ export class ExamComponent implements OnInit, OnDestroy {
 
   getOptionLetter(index: number): string {
     return String.fromCharCode(65 + index);
+  }
+
+  closeExam(): void {
+
   }
 
   /**

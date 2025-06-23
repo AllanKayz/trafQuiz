@@ -26,14 +26,17 @@ export class DashboardComponent implements OnDestroy {
   public isLoggedIn: boolean = false;
   public isSidenavCollapsed: boolean = false;
   public menuItems: string[] = [];
+  public icons!: any;
   public userRole!: string;
   public user!: any;
 
   constructor() {
     this.user = this.trafQuisService.getUser();
-    if(this.user) {
+    if (this.user) {
       this.isLoggedIn = true;
-	  this.menuItems = this.user.sidebar;
+      this.menuItems = this.user.sidebar;
+      this.icons = this.user.sidebarIcons;
+      console.log(this.icons);
     } else {
       this.isLoggedIn = false;
       this.router.navigate(['/login']);
