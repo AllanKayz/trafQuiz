@@ -13,11 +13,10 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AlertComponent } from '../alert/alert.component';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule,MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+    selector: 'app-login',
+    imports: [CommonModule, MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
+    templateUrl: './login.component.html',
+    styleUrl: './login.component.css'
 })
 export class LoginComponent {
   private loadData: TraffiquizService = inject(TraffiquizService);

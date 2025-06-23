@@ -10,11 +10,10 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AlertComponent } from '../alert/alert.component';
 
 @Component({
-  selector: 'app-admin',
-  standalone: true,
-  imports: [CommonModule, RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, MatDialogModule],
-  templateUrl: './admin.component.html',
-  styleUrl: './admin.component.css'
+    selector: 'app-admin',
+    imports: [CommonModule, RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, MatDialogModule],
+    templateUrl: './admin.component.html',
+    styleUrl: './admin.component.css'
 })
 export class AdminComponent implements OnInit, OnDestroy {
   adminData: any;

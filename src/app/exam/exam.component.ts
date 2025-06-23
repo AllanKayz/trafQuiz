@@ -19,11 +19,10 @@ interface Question {
 }
 
 @Component({
-  selector: 'app-exam',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, MatProgressSpinnerModule, MatProgressBarModule, MatSelectModule],
-  templateUrl: './exam.component.html',
-  styleUrl: './exam.component.css'
+    selector: 'app-exam',
+    imports: [CommonModule, ReactiveFormsModule, FormsModule, MatProgressSpinnerModule, MatProgressBarModule, MatSelectModule],
+    templateUrl: './exam.component.html',
+    styleUrl: './exam.component.css'
 })
 export class ExamComponent implements OnInit, OnDestroy {
 

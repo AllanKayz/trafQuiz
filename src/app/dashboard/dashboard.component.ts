@@ -13,11 +13,10 @@ import { TraffiquizService } from '../traffiquiz.service';
 
 
 @Component({
-  selector: 'app-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterModule, MatToolbarModule, MatIconModule, MatInputModule, MatSidenavModule, MatListModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule],
-  templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+    selector: 'app-dashboard',
+    imports: [CommonModule, RouterModule, MatToolbarModule, MatIconModule, MatInputModule, MatSidenavModule, MatListModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule],
+    templateUrl: './dashboard.component.html',
+    styleUrl: './dashboard.component.css'
 })
 export class DashboardComponent implements OnDestroy {
   private router: Router = inject(Router);

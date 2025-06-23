@@ -4,11 +4,10 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({
-  selector: 'app-alert',
-  standalone: true,
-  imports: [CommonModule, MatButtonModule, MatDialogModule],
-  templateUrl: './alert.component.html',
-  styleUrl: './alert.component.css'
+    selector: 'app-alert',
+    imports: [CommonModule, MatButtonModule, MatDialogModule],
+    templateUrl: './alert.component.html',
+    styleUrl: './alert.component.css'
 })
 export class AlertComponent {
   alertType: string;
