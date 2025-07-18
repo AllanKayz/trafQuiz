@@ -17,6 +17,13 @@ export interface Question {
 })
 export class TraffiquizService {
 
+  /*
+  private http = inject(HttpClient);
+  getQuestion: Observable<any> {
+    return this.http.get();
+  }*/
+
+
   questions: Question[] = [
     {
       id: 1,
