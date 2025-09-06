@@ -1,0 +1,35 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit' : 'Add'}} Question</h2>
+<div mat-dialog-content class="p-4">
+    <mat-form-field appearance="outline" class="w-100">
+        <mat-label>Question</mat-label>
+        <textarea matInput [(ngModel)]="question.question" rows="" cols="" required=""></textarea>
+    </mat-form-field>
+
+    <h3>Options</h3>
+    <div *ngFor="let option of question.options; let i = index" class="option-row">
+        <mat-radio-group [(ngModel)]="question.correct">
+            <mat-radio-button [value]="i"></mat-radio-button>
+        </mat-radio-group>
+
+        <mat-form-field appearance="outline" class="option-field">
+            <mat-label>Option {{i + 1}}</mat-label>
+            <input matInput [(ngModel)]="question.options[i]" required>
+        </mat-form-field>
+
+        <button mat-icon-button (click)="removeOption(i)" *ngIf="question.options.length > 2">
+            <mat-icon>delete</mat-icon>
+        </button>
+    </div>
+
+    <button mat-stroked-button (click)="addOption()" class="add-option">
+        <mat-icon>add</mat-icon> Add Option
+    </button>
+
+    <mat-checkbox [(ngModel)]="question.hasImage">Has Image</mat-checkbox>
+    <mat-checkbox [(ngModel)]="question.flagged">Flagged</mat-checkbox>
+</div>
+
+<div mat-dialog-actions>
+    <button mat-button (click)="cancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="save()">Save</button>
+</div>

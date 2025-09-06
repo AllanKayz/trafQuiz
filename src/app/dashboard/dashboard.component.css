@@ -1,30 +1,42 @@
 .sidenav-container {
-    display: flex;
-    height: 100vh;
+	display: flex;
+	height: 100vh;
 	overflow: hidden;
 }
 
 .sidenav {
-    width: 100%;
-    transition: width 0.3s ease;
+	width: 250px;
+	transition: width 0.3s ease;
+	background: linear-gradient(180deg, #1e40af 0%, #3730a3 100%);
+    color: white;
 }
 
-
-.sidenav .collapsed {
-    width: 80px;
+.sidenav::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><pattern id="road" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="none"/><rect x="18" y="0" width="4" height="20" fill="white" opacity="0.1"/><rect x="18" y="30" width="4" height="10" fill="white" opacity="0.1"/></pattern></defs><rect width="200" height="200" fill="url(%23road)"/></svg>');
+    pointer-events: none;
 }
 
-.sidenav:not(.collapsed) {
-    width: 250px;
-}
-
-.sidenav-collapsed-content {
-    margin-left: 80px !important;
-    transition: margin-left 0.3s ease;
+.sidenav.collapsed {
+	width: 80px;
 }
 
 .sidenav-container mat-sidenav-content {
-    transition: margin-left 0.3s ease;
+	transition: margin-left 0.2s ease;
+	margin-left: 250px;
+}
+
+.sidenav-container mat-sidenav-content.collapsed-content {
+	margin-left: 80px !important;
+}
+
+.menu-label {
+	color: #fbbf24 !important;
 }
 
 ::ng-deep .mat-drawer-inner-container {
@@ -53,8 +65,8 @@ mat-list-item, a {
     text-decoration: none;
     &:hover {
         cursor: pointer;
-        background-color: #fafafa;
-        border-left: solid 3px #1976d2;
+        background-color: rgba(255, 255, 255, 0.15);;
+        border-left: solid 5px #fbbf24;
     }
 }
 
@@ -80,13 +92,19 @@ mat-icon {
 	flex: 1 !important;
 }
 
+.content-wrapper {
+	padding: 24px;
+}
+
 mat-toolbar {
-    position: fixed;
-	z-index: 1000;
-	width: 100%;
-	background-color: purple;
+	background-color: #fafafa;
 }
 
 .spacer {
 	flex: 1 1 auto;
+}
+
+.content-wrapper {
+	height: calc(100vh - var(--mat-toolbar-standard-height, 64px));
+	overflow-y: auto;
 }

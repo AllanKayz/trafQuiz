@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -13,84 +13,73 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AlertComponent } from '../alert/alert.component';
 
 @Component({
-    selector: 'app-login',
-    imports: [CommonModule, MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
-    templateUrl: './login.component.html',
-    styleUrl: './login.component.css'
+	selector: 'app-login',
+	imports: [CommonModule, MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
+	templateUrl: './login.component.html',
+	styleUrl: './login.component.css'
 })
 export class LoginComponent {
-  private loadData: TraffiquizService = inject(TraffiquizService);
-  private router: Router = inject(Router);
-  public alert: MatDialog = inject(MatDialog);
-  isLoading = false;
-  public USER: any;
+	private trafQuizService = inject(TraffiquizService);
+	private router = inject(Router);
+	public alert = inject(MatDialog);
 
-  loginForm = new FormGroup({
-    username: new FormControl('', Validators.required),
-    password: new FormControl('', Validators.required)
-  });
+	isLoading = signal(false);
+	loginForm = new FormGroup({
+		username: new FormControl('', Validators.required),
+		password: new FormControl('', Validators.required)
+	});
 
-  constructor() { }
+	constructor() { }
 
-  loadLicence() {
+	loadLicence() {
 
-  }
+	}
 
-  Login() {
-    if (this.loginForm.valid) {
-      const payload = { username: this.loginForm.value.username, password: this.loginForm.value.password };
-      this.isLoading = true;
-      this.loadData.login(payload).pipe(finalize(() => this.isLoading = false)).subscribe({
-        next: (res) => {
-          this.USER = res;
-          localStorage.setItem('user', JSON.stringify({
-            username: this.USER['username'],
-            token: this.USER['token'],
-			role: this.USER['role']
-          }));
-        },
-        error: (err) => {
-          console.error('Error fetching data:', err);
-          const data = {
-            title: 'Error',
-            message: `Error fetching data: ${JSON.stringify(err)}`,
-            type: 'error',
-            buttonText: 'OK'
-          };
-          this.openAlertDialog(data);
-        },
-        complete: () => {
-          if (this.USER['status'] == 200) {
-            if (this.USER['role'] == 'user') {
-              this.router.navigate(['/exam']);
-            } else {
-              this.router.navigate(['/dashboard']);
-            }
-          } else {
-            const data = {
-              title: 'Error',
-              message: 'Failed to load data',
-              type: 'error',
-              buttonText: 'OK'
-            };
-            this.openAlertDialog(data);
-          }
-        }
-      });
-    } else {
-      const data = {
-        title: 'Error',
-        message: 'Fill all required details',
-        type: 'error',
-        buttonText: 'OK'
-      };
-      this.openAlertDialog(data);
-    }
-  }
+	login() {
+		if (this.loginForm.valid) {
+			this.isLoading.set(true);
+			const payload = this.loginForm.value;
 
-  openAlertDialog(data: any): void {
-    this.alert.open(AlertComponent, {
-      data: data
-    });
-  }
+			this.trafQuizService.login(payload).pipe(
+				finalize(() => this.isLoading.set(false))
+			).subscribe({
+				next: (response) => {
+					if (response) {
+						this.router.navigate(['/dashboard']);
+					} else {
+						this.showAlert(
+							response.statusText || 'Error',
+							response.message || 'Login failed. Parsing Error.',
+							'error'
+						);
+						this.router.navigate(['/login']);
+					}
+				},
+				error: (err) => {
+					this.showAlert(
+						err.statusText || 'Error',
+						err.error?.message || 'Login failed. Please check your credentials.',
+						'error'
+					);
+				}
+			});
+		} else {
+			this.showAlert(
+				'Validation Error',
+				'Please fill in all required fields',
+				'error'
+			);
+		}
+	}
+
+	private showAlert(title: string, message: string, type: 'error' | 'success') {
+		this.alert.open(AlertComponent, {
+			data: {
+				title,
+				message,
+				type,
+				buttonText: 'OK'
+			}
+		});
+	}
 }

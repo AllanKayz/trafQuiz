@@ -45,20 +45,18 @@ body {
 .logo {
     display: flex;
     align-items: center;
-    margin-bottom: 35px;
+    margin-bottom: 15px;
     position: relative;
     z-index: 1;
 }
 
 .logo-icon {
-    width: 45px;
-    height: 45px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 15px;
+    margin-right: 0px;
     font-size: 22px;
 }
 

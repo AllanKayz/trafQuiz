@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -8,49 +8,50 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { Router, RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { TraffiquizService } from '../traffiquiz.service';
 
-
 @Component({
-    selector: 'app-dashboard',
-    imports: [CommonModule, RouterModule, MatToolbarModule, MatIconModule, MatInputModule, MatSidenavModule, MatListModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule],
-    templateUrl: './dashboard.component.html',
-    styleUrl: './dashboard.component.css'
+  selector: 'app-dashboard',
+  imports: [CommonModule, RouterModule, MatToolbarModule, MatIconModule, MatInputModule, MatSidenavModule, MatListModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule],
+  templateUrl: './dashboard.component.html',
+  styleUrl: './dashboard.component.css'
 })
-export class DashboardComponent implements OnDestroy {
-  private router: Router = inject(Router);
-  private trafQuisService: TraffiquizService = inject(TraffiquizService);
+export class DashboardComponent {
+  private router = inject(Router);
+  private trafQuizService = inject(TraffiquizService);
 
-  public isLoggedIn: boolean = false;
-  public isSidenavCollapsed: boolean = false;
-  public menuItems: string[] = [];
-  public icons!: any;
-  public userRole!: string;
-  public user!: any;
+  isSidenavCollapsed = signal(false);
+  user = this.trafQuizService.currentUser;
+  isLoggedIn = computed(() => !!this.user());
+  menuItems = computed(() => this.isLoggedIn() ? this.user()?.sidebar : []);
+  icons = computed(() => this.user()?.sidebarIcons || {});
+
+  public widgetsSignal = this.trafQuizService.userWidgets;
 
   constructor() {
-    this.user = this.trafQuisService.getUser();
-    if (this.user) {
-      this.isLoggedIn = true;
-      this.menuItems = this.user.sidebar;
-      this.icons = this.user.sidebarIcons;
-      console.log(this.icons);
-    } else {
-      this.isLoggedIn = false;
+    if (!this.isLoggedIn()) {
       this.router.navigate(['/login']);
     }
   }
 
   toggleSidenav() {
-    this.isSidenavCollapsed = !this.isSidenavCollapsed;
+    this.isSidenavCollapsed.update(prev => !prev);
+  }
+
+  sidenavLink() {
+    this.router.events.subscribe(event => {
+      if(event instanceof NavigationEnd) {
+		if(event.url === '/dashboard/exam') {
+			this.router.navigate(['/exam']);
+		}
+      }
+    });
   }
 
   onLogout() {
-
+    this.trafQuizService.logout();
+    this.router.navigate(['/login']);
   }
-
-  ngOnDestroy(): void {
-
-  }
+  
 }

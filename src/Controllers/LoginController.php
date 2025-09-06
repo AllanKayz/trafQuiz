@@ -13,7 +13,7 @@ class LoginController {
 		
 		if(!$data) {
 			file_put_contents('debug.log',"Input Data: " . file_get_contents("php://input") . PHP_EOL, FILE_APPEND);
-			echo json_encode(["messaage" => "No data recieved or invalid JSON"]);
+			echo json_encode(["message" => "No data recieved or invalid JSON"]);
 			return;
 		}
 
@@ -35,7 +35,7 @@ class LoginController {
             echo json_encode(["status" =>"200", "message"=>"OK", "token" => $token, "username" => $username, "role" => $user['role']]);
         } else {
             http_response_code(401);
-            echo json_encode(["messaage" => "Invalid Credentials"]);
+            echo json_encode("Invalid Credentials");
         }
 		
     }

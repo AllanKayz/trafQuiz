@@ -14,9 +14,16 @@ export class AlertComponent {
 
   constructor(public dialogRef: MatDialogRef<AlertComponent>, @Inject(MAT_DIALOG_DATA) public data: any) { 
     this.alertType = data.type || 'error';
+	
+	// Ensure buttons array exists
+	if(!this.data.buttons) {
+		this.data.buttons = [{text: data.buttonText || 'OK', value: 'ok'}];
+	}
   }
 
+  
   onClose(): void {
     this.dialogRef.close();
   }
+  
 }

@@ -1,0 +1,114 @@
+<h2 mat-dialog-title class="p-3">{{ title() }}</h2>
+<div mat-dialog-content class="p-4">
+<form [formGroup]="form()" (ngSubmit)="onSubmit()" class="dynamic-form">
+    <div *ngFor="let row of groupedFields()" class="form-row">
+      <div *ngFor="let field of row" [class]="'field-col-' + (field.colspan || 1)">
+        <ng-container [ngSwitch]="field.type">
+          <!-- Text Input -->
+          <mat-form-field *ngSwitchCase="'text'" appearance="outline" class="w-100">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput [formControlName]="field.key" [placeholder]="field.placeholder || ''">
+            <mat-error *ngIf="isFieldInvalid(field.key)">
+              {{ getErrorMessage(field.key) }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- Number Input -->
+          <mat-form-field *ngSwitchCase="'number'" appearance="outline" class="w-100">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput type="number" [formControlName]="field.key" [placeholder]="field.placeholder || ''">
+            <mat-error *ngIf="isFieldInvalid(field.key)">
+              {{ getErrorMessage(field.key) }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- Email Input -->
+          <mat-form-field *ngSwitchCase="'email'" appearance="outline" class="w-100">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput type="email" [formControlName]="field.key" [placeholder]="field.placeholder || ''">
+            <mat-error *ngIf="isFieldInvalid(field.key)">
+              {{ getErrorMessage(field.key) }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- Password Input -->
+          <mat-form-field *ngSwitchCase="'password'" appearance="outline" class="w-100">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput type="password" [formControlName]="field.key" [placeholder]="field.placeholder || ''">
+            <mat-error *ngIf="isFieldInvalid(field.key)">
+              {{ getErrorMessage(field.key) }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- Textarea -->
+          <mat-form-field *ngSwitchCase="'textarea'" appearance="outline" class="w-100">
+            <mat-label>{{ field.label }}</mat-label>
+            <textarea matInput [formControlName]="field.key" [placeholder]="field.placeholder || ''" rows="3"></textarea>
+            <mat-error *ngIf="isFieldInvalid(field.key)">
+              {{ getErrorMessage(field.key) }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- Select -->
+          <mat-form-field *ngSwitchCase="'select'" appearance="outline" class="w-100">
+            <mat-label>{{ field.label }}</mat-label>
+            <mat-select [formControlName]="field.key" >
+              <mat-option *ngFor="let option of field.options" [value]="option.value">
+                {{ option.label }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="isFieldInvalid(field.key)">
+              {{ getErrorMessage(field.key) }}
+            </mat-error>
+          </mat-form-field>
+		  
+		  <!-- Toggle -->
+  
+          <!-- Checkbox -->
+          <mat-checkbox *ngSwitchCase="'checkbox'" [formControlName]="field.key">{{ field.label }}</mat-checkbox>
+  
+          <!-- Radio Group -->
+          <div *ngSwitchCase="'radio'" class="radio-group">
+            <label>{{ field.label }}</label>
+            <mat-radio-group [formControlName]="field.key" >
+              <mat-radio-button *ngFor="let option of field.options" [value]="option.value">
+                {{ option.label }}
+              </mat-radio-button>
+            </mat-radio-group>
+          </div>
+  
+          <!-- Date Picker -->
+          <mat-form-field *ngSwitchCase="'date'" appearance="outline">
+            <mat-label>{{ field.label }}</mat-label>
+            <input matInput [matDatepicker]="picker" [formControlName]="field.key">
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+            <mat-error *ngIf="isFieldInvalid(field.key)">
+              {{ getErrorMessage(field.key) }}
+            </mat-error>
+          </mat-form-field>
+  
+          <!-- File Input -->
+          <div *ngSwitchCase="'file'" class="file-inpu input-group mb-3">
+            <input type="file" class="form-control" id="inputGroupFile" [formControlName]="field.key" (change)="onFileChange($event, field.key)">
+			<label class="input-group-text" for="inputGroupFile">{{ field.label }}</label>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  
+    <div *ngIf="error()" class="error-message">
+      {{ error() }}
+    </div>
+  </form>
+  </div>
+  <div mat-dialog-actions>
+	<button mat-button type="button" (click)="onCancel()">
+        {{ cancelText() }}
+      </button>
+      <button mat-raised-button color="primary" type="button" (click)="onSubmit()" [disabled]="loading()">
+        {{ submitText() }}
+        <mat-icon *ngIf="loading()">hourglass_empty</mat-icon>
+      </button>
+  </div>
+  

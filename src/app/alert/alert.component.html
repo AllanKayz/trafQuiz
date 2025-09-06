@@ -3,7 +3,7 @@
     <div mat-dialog-content class="alert_content pt-3">
         <p>{{data.message}}</p>
     </div>
-    <div mat-dialog-actions class="alert_actions">
-        <button mat-raised-button mat-dialog-close class="">{{data.buttonText}}</button>
+    <div mat-dialog-actions class="alert_action">
+        <button *ngFor="let btn of data.buttons" mat-raised-button [mat-dialog-close]="btn.value" [color]="btn.color">{{btn.text}}</button>
     </div>
 </div>

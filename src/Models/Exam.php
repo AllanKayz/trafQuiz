@@ -29,7 +29,7 @@ class Exam {
 
         $rand_exam_id = $questions_id[0];
 
-        $stmt = $db->getConnection()->prepare('SELECT TRIM(question_text) AS question, TRIM(option_a) AS option_a, TRIM(option_b) AS option_b, TRIM(option_c) AS option_c, TRIM(answer) AS answer, img_insert AS photo FROM questions WHERE exam_id = :random_exam_id LIMIT 25');
+        $stmt = $db->getConnection()->prepare('SELECT id, TRIM(question_text) AS question, TRIM(option_a) AS option_a, TRIM(option_b) AS option_b, TRIM(option_c) AS option_c, TRIM(answer) AS answer, img_insert AS photo FROM questions WHERE exam_id = :random_exam_id LIMIT 25');
         $stmt->bindParam(':random_exam_id', $rand_exam_id);
         $stmt->execute();
         $questions =  $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -43,4 +43,11 @@ class Exam {
 		$stmt->execute();
 		return $stmt->fetch(PDO::FETCH_ASSOC);
 	}
+
+    public static function getAllQuestions() {
+        $db = new Database();
+        $stmt = $db->getConnection()->prepare('SELECT id, TRIM(question_text) AS question, TRIM(option_a) AS option_a, TRIM(option_b) AS option_b, TRIM(option_c) AS option_c, TRIM(answer) AS answer, img_insert AS photo FROM questions');
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

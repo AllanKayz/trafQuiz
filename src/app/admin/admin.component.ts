@@ -128,8 +128,10 @@ export class AdminComponent implements OnInit, OnDestroy {
         email: this.addStudentForm.value.email?.trim(),
         password: this.addStudentForm.value.password?.trim()
       };
+	  
+	  console.log(payload);
 
-      this.getAdminData.addStudent(payload).subscribe({
+      this.getAdminData.addInstructor(payload).subscribe({
         next: (res) => {
           if (res.success) {
             const data = {
@@ -185,7 +187,7 @@ export class AdminComponent implements OnInit, OnDestroy {
     const id = parseInt(splitArray[1]);
     const payload = { id: id }
     this.isLoading = true;
-    this.getAdminData.deleteStudent(payload).subscribe({
+    this.getAdminData.deleteStudet(payload).subscribe({
       next: (res) => {
         if (res.success) {
           const data = {

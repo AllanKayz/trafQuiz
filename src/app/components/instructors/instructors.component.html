@@ -1,0 +1,10 @@
+<section>
+	<app-sectionheader [header]="header" [content]="content" [buttons]="buttons()" (buttonClicked)="handleButtonAction($event)" />
+</section>
+<section class="widgets-grid">
+	<app-stat-card *ngFor="let widget of widgets()" [title]="widget.title" [data]="widget.data"
+		[footer]="widget.footer" />
+</section>
+<section class="questions-table pt-3">
+	<app-table [columns]="tableColumns()" [data]="tableData()" [actions]="tableActions()" [filterPlaceholder]="'Search questions...'" (rowAction)="handleTableAction($event)"></app-table>
+</section>
