@@ -231,19 +231,19 @@ export class TraffiquizService {
       label: p.package + `- ${p.amount}`
     }))
   });
-  
+
   public specializations = computed(() => {
-	return this.specializationsSignal().map(s => ({
-		value: s.id,
-		label: s.specialization
-	}))
+    return this.specializationsSignal().map(s => ({
+      value: s.id,
+      label: s.specialization
+    }))
   });
 
   public certifications = computed(() => {
-	return this.certificationsSignal().map(c => ({
-		value: c.id,
-		label: c.certification
-	}))
+    return this.certificationsSignal().map(c => ({
+      value: c.id,
+      label: c.certification
+    }))
   });
 
   constructor() {
@@ -252,6 +252,7 @@ export class TraffiquizService {
 
   private initializeUser() {
     const userJson = localStorage.getItem('user');
+
     if (userJson) {
       try {
         const user = JSON.parse(userJson);
@@ -259,13 +260,13 @@ export class TraffiquizService {
         if (user.role === 'admin' || user.role === 'instructor') {
           this.fetchQuestions();
           this.fetchStudents();
-		  this.fetchInstructors();
+          this.fetchInstructors();
           this.getPackages();
           this.getSpecializations();
           this.getCertifications();
         }
       } catch (e) {
-		const data = {
+        const data = {
           title: `Error`,
           message: `Error parsing user data: ${e}`,
           type: 'error',
@@ -273,7 +274,7 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
         console.error('Error parsing user data', e);
       }
@@ -407,7 +408,7 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
         this.questionsSignal.set([]);
       }
@@ -444,7 +445,7 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
       }
     });
@@ -479,14 +480,14 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
       }
     })
   }
 
   addInstructor(instructor: any): Observable<any> {
-	console.log(instructor);
+    console.log(instructor);
     return this.http.post(this.url + 'addinstructor', instructor);
   }
 
@@ -544,7 +545,7 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
       }
     });
@@ -562,8 +563,8 @@ export class TraffiquizService {
       next: (qctgy) => {
         localStorage.setItem('questioncategories', JSON.stringify(this.transformQuestionCategoriesJson(qctgy)));
       },
-      error: (error) => { 
-		const data = {
+      error: (error) => {
+        const data = {
           title: `Error: ${error.status} (${error.statusText})`,
           message: `Error fetching categories: ${error.error.message}`,
           type: 'error',
@@ -571,9 +572,9 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
-	  }
+      }
     });
   }
 
@@ -581,7 +582,7 @@ export class TraffiquizService {
     this.http.get<any[]>(this.url + 'specializations').subscribe({
       next: (sptzn) => {
         this.specializationsSignal.set(sptzn.map(item => item));
-		localStorage.setItem('specializations', JSON.stringify(this.transformSpecializationJson(sptzn)));
+        localStorage.setItem('specializations', JSON.stringify(this.transformSpecializationJson(sptzn)));
       },
       error: (error) => {
         const data = {
@@ -592,20 +593,20 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
       }
 
     });
   }
-  
+
   private transformSpecializationJson(data: any): any {
     return data.map((item: any) => ({
       value: item.id,
       label: item.specialization
     }))
   }
-  
+
   addSpecialization(specialization: any): Observable<any> {
     return this.http.post(this.url + 'addspecialization', specialization);
   }
@@ -619,7 +620,7 @@ export class TraffiquizService {
     this.http.get<any[]>(this.url + 'certifications').subscribe({
       next: (cert) => {
         this.certificationsSignal.set(cert.map(item => item));
-		localStorage.setItem('certifications', JSON.stringify(this.transformCertificationJson(cert)));
+        localStorage.setItem('certifications', JSON.stringify(this.transformCertificationJson(cert)));
       },
       error: (error) => {
         const data = {
@@ -630,19 +631,19 @@ export class TraffiquizService {
             { text: 'Close', value: 'close', color: 'warn' }
           ]
         };
-  
+
         this.openAlertDialog(data);
       }
     });
   }
-  
+
   private transformCertificationJson(data: any): any {
     return data.map((item: any) => ({
       value: item.id,
       label: item.certification
     }))
   }
-  
+
   updateCertification(certification: any): Observable<any> {
     return this.http.put(this.url + `certifications/${certification.id}`, certification);
   }
@@ -656,12 +657,12 @@ export class TraffiquizService {
     return this.alert.open(AlertComponent, {
       data: data
     });
-	
-	/*
-	this.alert.afterClosed().subscribe(result => {
-		console.log('Dialog closed', result);
-	});
-	*/
+
+    /*
+    this.alert.afterClosed().subscribe(result => {
+      console.log('Dialog closed', result);
+    });
+    */
   }
 
 }
