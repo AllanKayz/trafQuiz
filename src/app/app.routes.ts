@@ -16,13 +16,19 @@ import { FinancesComponent } from './components/finances/finances.component';
 import { ReportsComponent } from './components/reports/reports.component';
 import { SettingsComponent } from './components/settings/settings.component';
 
+/**
+ * Defines the routes for the application.
+ */
 export const routes: Routes = [
   {
+    // The default route, which displays the login component.
     path: '',
     component: LoginComponent,
     title: 'TraffiQuiz'
   },
   {
+    // The dashboard route, which is the main view for logged-in users.
+    // It contains nested routes for the different sections of the dashboard.
     path: 'dashboard',
     component: DashboardComponent,
     children: [
@@ -80,17 +86,21 @@ export const routes: Routes = [
     ]
   },
   {
+    // The exam route, which displays the quiz.
     path: 'exam',
     component: ExamComponent
   },
   {
+    // The admin route, for administrative tasks.
     path: 'admin',
     component: AdminComponent
   },
   {
+    // A redirect from '/login' to the default route.
     path: 'login', redirectTo: '', pathMatch: 'full'
   },
   {
+    // A wildcard route that displays a "page not found" message for any other routes.
     path: '**', component: PagenotfoundComponent, title: 'Error 404'
   }
 ];
