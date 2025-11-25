@@ -108,3 +108,11 @@ mat-toolbar {
 	height: calc(100vh - var(--mat-toolbar-standard-height, 64px));
 	overflow-y: auto;
 }
+
+.mat-stroked-button {
+    transition: background-color 0.3s ease;
+}
+
+.mat-stroked-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}

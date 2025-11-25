@@ -20,12 +20,12 @@ export class AdminComponent implements OnInit, OnDestroy {
   currentExamDuration!: number;
   loggedUser: any;
   isLoading: boolean = true;
-  usersList: any;
   chosenUser: any;
 
 
   public alertDialog: MatDialog = inject(MatDialog);
   getAdminData: TraffiquizService = inject(TraffiquizService);
+  usersList = this.getAdminData.studentsSignal;
 
   examTime = new FormGroup({
     newtime: new FormControl('', Validators.required),
@@ -33,37 +33,26 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   addStudentForm = new FormGroup({
     username: new FormControl('', Validators.required),
-    firstname: new FormControl('', Validators.required),
-    lastname: new FormControl('', Validators.required),
+    firstName: new FormControl('', Validators.required),
+    lastName: new FormControl('', Validators.required),
     password: new FormControl('', Validators.required),
     email: new FormControl('', Validators.required)
   });
 
   updateStudentForm = new FormGroup({
     updateUsername: new FormControl('', Validators.required),
-    updateFirstname: new FormControl('', Validators.required),
-    updateLastname: new FormControl('', Validators.required),
+    updateFirstName: new FormControl('', Validators.required),
+    updateLastName: new FormControl('', Validators.required),
     updatePassword: new FormControl('', Validators.required),
     updateEmail: new FormControl('', Validators.required),
     updateUid: new FormControl('', Validators.required)
   });
 
   ngOnInit(): void {
-    this.loadAdminData();
-  }
-
-  loadAdminData(): void {
-    this.loggedUser = JSON.parse(localStorage['user']);
-    this.getAdminData.getAdminData(this.loggedUser.token).pipe(finalize(() => this.isLoading = false)).subscribe({
-      next: (data) => {
-        this.adminData = data;
-        this.currentExamDuration = parseInt(this.adminData['examtimeframe']['period']);
-        this.usersList = this.adminData['userlist'];
-      },
-      error: (err) => {
-        console.error('Error fetching admin data', err);
-      }
-    })
+    this.getAdminData.fetchStudents();
+    this.getAdminData.fetchExamDuration().subscribe(duration => {
+      this.currentExamDuration = duration;
+    });
   }
 
   get formattedTime(): string {
@@ -123,8 +112,8 @@ export class AdminComponent implements OnInit, OnDestroy {
     if (this.addStudentForm.valid) {
       const payload = {
         username: this.addStudentForm.value.username?.trim(),
-        firstname: this.addStudentForm.value.firstname?.trim(),
-        lastname: this.addStudentForm.value.lastname?.trim(),
+        firstName: this.addStudentForm.value.firstName?.trim(),
+        lastName: this.addStudentForm.value.lastName?.trim(),
         email: this.addStudentForm.value.email?.trim(),
         password: this.addStudentForm.value.password?.trim()
       };
@@ -154,7 +143,7 @@ export class AdminComponent implements OnInit, OnDestroy {
           this.openAlertDialog(data);
         },
         complete: () => {
-          this.loadAdminData();
+          this.getAdminData.fetchStudents();
         }
       });
     } else {
@@ -171,9 +160,9 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   btnEdit(event: Event): void {
     const clickedBtn = event.target as HTMLButtonElement; //Ensure type safety
-    this.chosenUser = this.usersList.find((obj: any) => obj.id === parseInt(clickedBtn.id));
-    this.updateStudentForm.controls['updateFirstname'].setValue(this.chosenUser['firstname']);
-    this.updateStudentForm.controls.updateLastname.setValue(this.chosenUser.lastname ?? '');
+    this.chosenUser = this.usersList().find((obj: any) => obj.id === parseInt(clickedBtn.id));
+    this.updateStudentForm.controls['updateFirstName'].setValue(this.chosenUser['firstName']);
+    this.updateStudentForm.controls.updateLastName.setValue(this.chosenUser.lastName ?? '');
     this.updateStudentForm.controls.updateUsername.setValue(this.chosenUser.username ?? '');
     this.updateStudentForm.controls.updateEmail.setValue(this.chosenUser.email ?? '');
     this.updateStudentForm.controls.updatePassword.setValue(this.chosenUser.password ?? '');
@@ -185,10 +174,10 @@ export class AdminComponent implements OnInit, OnDestroy {
     const str = clickedBtn.id;
     const splitArray = str.split(".");
     const id = parseInt(splitArray[1]);
-    const payload = { id: id }
-    this.isLoading = true;
-    this.getAdminData.deleteStudet(payload).subscribe({
-      next: (res) => {
+    const studentToDelete = this.usersList().find(student => student.id === id);
+    if (studentToDelete) {
+      this.getAdminData.deleteStudent(studentToDelete).subscribe({
+        next: (res) => {
         if (res.success) {
           const data = {
             title: 'Notification',
@@ -209,9 +198,10 @@ export class AdminComponent implements OnInit, OnDestroy {
         this.openAlertDialog(data);
       },
       complete: () => {
-        this.loadAdminData();
+        this.getAdminData.fetchStudents();
       }
     });
+    }
   }
 
   updateStudent(): void {
@@ -219,8 +209,8 @@ export class AdminComponent implements OnInit, OnDestroy {
       const payload = {
         id: this.updateStudentForm.value.updateUid,
         username: this.updateStudentForm.value.updateUsername,
-        firstname: this.updateStudentForm.value.updateFirstname,
-        lastname: this.updateStudentForm.value.updateLastname,
+        firstName: this.updateStudentForm.value.updateFirstName,
+        lastName: this.updateStudentForm.value.updateLastName,
         email: this.updateStudentForm.value.updateEmail,
         password: this.updateStudentForm.value.updatePassword
       };

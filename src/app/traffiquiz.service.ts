@@ -650,27 +650,10 @@ export class TraffiquizService {
     return responses ? JSON.parse(responses) : null
   }
 
-  // To be removed section
-  /**
-   * @deprecated This method should be removed.
-   */
-  getAdminData(token: any): Observable<any> {
-    return this.http.get(this.url + 'admin?token=' + token.trim());
-  }
-
-  /**
-   * @deprecated This method should be removed.
-   */
   setExamTimeframe(time: any): Observable<any> {
     return this.http.post(this.url + 'timeupdate', time);
   }
 
-  /**
-   * @deprecated This method should be removed.
-   */
-  deleteStudet(studentId: any): Observable<any> {
-    return this.http.post(this.url + 'deletestudent', studentId);
-  }
 
   // Miscelleneous CRUD
   /**

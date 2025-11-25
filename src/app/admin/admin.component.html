@@ -60,11 +60,11 @@
               </div>
               <div class="col-md-4">
                 <label for="firstname" class="form-label">Firstname:</label>
-                <input type="text" class="form-control" formControlName="firstname" id="firstname">
+                <input type="text" class="form-control" formControlName="firstName" id="firstname">
               </div>
               <div class="col-md-4">
                 <label for="lastname" class="form-label">Lastname:</label>
-                <input type="text" class="form-control" formControlName="lastname" id="lastname">
+                <input type="text" class="form-control" formControlName="lastName" id="lastname">
               </div>
               <div class="col-12">
                 <button type="submit" class="btn btn-outline-primary w-50 float-end">
@@ -87,9 +87,9 @@
               </tr>
             </thead>
             <tbody class="table-group-divider">
-              <tr *ngFor="let user of usersList; let i = index;">
+              <tr *ngFor="let user of usersList(); let i = index;">
                 <th scope="row">{{i + 1}}</th>
-                <td>{{user.firstname}} {{user.lastname}}</td>
+                <td>{{user.firstName}} {{user.lastName}}</td>
                 <td>{{user.username}}</td>
                 <td>{{user.email}}</td>
                 <td>
@@ -131,12 +131,12 @@
           </div>
           <div class="mb-3">
             <label for="updateFirstname" class="col-form-label">Firstname:</label>
-            <input type="text" class="form-control form-control-sm" formControlName="updateFirstname"
+            <input type="text" class="form-control form-control-sm" formControlName="updateFirstName"
               id="updateFirstname">
           </div>
           <div class="mb-3">
             <label for="updateLastname" class="col-form-label">Lastname:</label>
-            <input type="text" class="form-control form-control-sm" formControlName="updateLastname"
+            <input type="text" class="form-control form-control-sm" formControlName="updateLastName"
               id="updateLastname">
           </div>
           <div class="mb-3">
