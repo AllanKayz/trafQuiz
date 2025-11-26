@@ -233,7 +233,7 @@ export class ExamComponent implements OnDestroy {
     }
   }
 
-  // Restart method allowing choice 
+  // Restart method allowing choice
   restartExam(sameQuestions: boolean = true) {
     if (sameQuestions) {
       // Reset with same questions

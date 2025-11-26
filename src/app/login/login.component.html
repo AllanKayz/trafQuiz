@@ -14,7 +14,10 @@
 
                     <mat-form-field appearance="outline" class="full-width pb-3">
                         <label>Password</label>
-                        <input matInput formControlName="password" type="text" required>
+                        <input matInput formControlName="password" [type]="hide ? 'password' : 'text'" required>
+                        <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button">
+                            <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+                        </button>
                     </mat-form-field>
 
                     <div class="button-flex-container">

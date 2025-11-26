@@ -5,6 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TraffiquizService } from '../traffiquiz.service';
 import { Router } from '@angular/router';
@@ -18,7 +19,7 @@ import { AlertComponent } from '../alert/alert.component';
  */
 @Component({
 	selector: 'app-login',
-	imports: [CommonModule, MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule, MatProgressSpinnerModule],
+	imports: [CommonModule, MatDialogModule, ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatCardModule, MatIconModule, MatProgressSpinnerModule],
 	templateUrl: './login.component.html',
 	styleUrl: './login.component.css'
 })
@@ -34,8 +35,13 @@ export class LoginComponent {
 		username: new FormControl('', Validators.required),
 		password: new FormControl('', Validators.required)
 	});
+	hide = true;
 
 	constructor() { }
+
+	togglePasswordVisibility() {
+		this.hide = !this.hide;
+	}
 
 	loadLicence() {
 
