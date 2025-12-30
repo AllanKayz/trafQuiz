@@ -1,12 +1,37 @@
 {
   "name": "canova",
   "version": "0.0.0",
+  "main": "main.js",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "start:electron": "ng build --base-href ./ && electron .",
+    "package:electron": "ng build --base-href ./ && electron-builder"
+  },
+  "build": {
+    "appId": "com.example.traffquiz",
+    "productName": "TraffQuiz",
+    "directories": {
+      "output": "dist/electron"
+    },
+    "files": [
+      "dist/browser/**/*",
+      "main.js",
+      "preload.js"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "electron-userland",
+        "repo": "electron-builder-test"
+      }
+    ]
   },
   "private": true,
   "dependencies": {
@@ -20,8 +45,12 @@
     "@angular/platform-browser": "^20.0.4",
     "@angular/platform-browser-dynamic": "^20.0.4",
     "@angular/router": "^20.0.4",
+    "bcrypt": "^6.0.0",
     "bootstrap": "^5.3.3",
+    "electron-updater": "^6.6.2",
     "rxjs": "~7.8.0",
+    "sequelize": "^6.37.7",
+    "sqlite3": "^5.1.7",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.1"
   },
@@ -30,6 +59,8 @@
     "@angular/cli": "^20.0.3",
     "@angular/compiler-cli": "^20.0.4",
     "@types/jasmine": "~5.1.0",
+    "electron": "^39.2.7",
+    "electron-builder": "^26.0.12",
     "jasmine-core": "~5.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",

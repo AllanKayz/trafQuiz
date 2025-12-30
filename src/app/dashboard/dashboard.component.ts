@@ -54,5 +54,11 @@ export class DashboardComponent {
     this.trafQuizService.logout();
     this.router.navigate(['/login']);
   }
+
+  onSync() {
+    this.trafQuizService.sync();
+    // Show a snackbar notification
+    // this.snackBar.open('Syncing data...', 'Close', { duration: 3000 });
+  }
   
 }

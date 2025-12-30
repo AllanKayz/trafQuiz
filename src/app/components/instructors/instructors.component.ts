@@ -14,242 +14,228 @@ import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheade
 import { MatNativeDateModule } from '@angular/material/core';
 
 @Component({
-	selector: 'app-instructors',
-	standalone: true,
-	imports: [CommonModule, MatDialogModule, MatSnackBarModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
-	templateUrl: './instructors.component.html',
-	styleUrls: ['./instructors.component.css']
+  selector: 'app-instructors',
+  standalone: true,
+  imports: [CommonModule, MatDialogModule, MatSnackBarModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
+  templateUrl: './instructors.component.html',
+  styleUrls: ['./instructors.component.css']
 })
 export class InstructorsComponent {
-	header = 'Instructor Management';
-	content = 'Manage driving instructors and their schedules.';
+  header = 'Instructor Management';
+  content = 'Manage driving instructors and their schedules.';
 
-	private trafQuizService = inject(TraffiquizService);
-	private buttonService = inject(ButtonConfigService);
-	private router = inject(Router);
-	private snackBar = inject(MatSnackBar);
-	private dialog = inject(MatDialog);
-	private formConfig = inject(FormConfigService);
+  private trafQuizService = inject(TraffiquizService);
+  private buttonService = inject(ButtonConfigService);
+  private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
+  private formConfig = inject(FormConfigService);
 
-	user = this.trafQuizService.currentUser();
-	menuName = 'instructors'; // Current menu identifier
+  user = this.trafQuizService.currentUser();
+  menuName = 'instructors'; // Current menu identifier
 
-	// Table Configurations
-	tableColumns = signal<TableColumn[]>([
-		{ key: 'id', header: 'ID', type: 'number', width: '40px' },
-		{ key: 'name', header: 'Name', type: 'text' },
-		{ key: 'email', header: 'Email', type: 'text' },
-		{ key: 'phone', header: 'Phone', type: 'text' },
-		{ key: 'specialization', header: 'Specialization', type: 'text' },
-		{ key: 'certified', header: 'Certified', type: 'text', width: '40px' },
-		{ key: 'availability', header: 'Avaibility', type: 'text' }
-	]);
+  // Table Configurations
+  tableColumns = signal<TableColumn[]>([
+    { key: 'id', header: 'ID', type: 'number', width: '40px' },
+    { key: 'name', header: 'Name', type: 'text' },
+    { key: 'email', header: 'Email', type: 'text' },
+    { key: 'phone', header: 'Phone', type: 'text' },
+    { key: 'specialization', header: 'Specialization', type: 'text' },
+    { key: 'certified', header: 'Certified', type: 'text', width: '40px' },
+    { key: 'availability', header: 'Avaibility', type: 'text' }
+  ]);
 
-	tableActions = signal<string[]>(['edit', 'delete', 'activate']);
+  tableActions = signal<string[]>(['edit', 'delete', 'activate']);
 
-	// Get data from service
-	tableData: any = this.trafQuizService.tableInstructors;
+  // Get data from service
+  tableData: any = this.trafQuizService.tableInstructors;
 
-	//Get buttons based on user role and current menu
-	buttons = computed(() => {
-		if (!this.user) return [];
-		return this.buttonService.getButtons(this.menuName, this.user.role);
-	});
+  //Get buttons based on user role and current menu
+  buttons = computed(() => {
+    if (!this.user) return [];
+    return this.buttonService.getButtons(this.menuName, this.user.role);
+  });
 
-	widgetsSignal = this.trafQuizService.userInstructorWidgets;
-	widgets = input<any[]>(this.widgetsSignal());
+  widgetsSignal = this.trafQuizService.userInstructorWidgets;
+  widgets = input<any[]>(this.widgetsSignal());
 
-	constructor() {
-		this.trafQuizService.fetchInstructors(); // Fetch questions on component initialization
-	}
+  constructor() {
+    this.trafQuizService.fetchInstructors(); // Fetch questions on component initialization
+  }
 
-	handleButtonAction(action: string) {
-		switch (action) {
-			case 'addInstructor':
-				this.openInstructorForm();
-				break;
-			case 'addSpecialization':
-				this.openSpecializationForm();
-				break;
-			case 'addCertification':
-				this.openCertificationForm();
-				break;
-		}
-	}
+  handleButtonAction(action: string) {
+    switch (action) {
+      case 'addInstructor':
+        this.openInstructorForm();
+        break;
+      case 'addSpecialization':
+        this.openSpecializationForm();
+        break;
+      case 'addCertification':
+        this.openCertificationForm();
+        break;
+    }
+  }
 
-	handleTableAction(event: { action: string, item: any }) {
-		const instructorId = event.item.id;
-		const instructor = this.trafQuizService.instructorsSignal().find(i => i.id === instructorId);
+  handleTableAction(event: { action: string, item: any }) {
+    const instructorId = event.item.id;
+    const instructor = this.trafQuizService.instructorsSignal().find(i => i.id === instructorId);
 
-		if (!instructor) return;
+    if (!instructor) return;
 
-		switch (event.action) {
-			case 'edit':
-				this.openInstructorForm(instructor);
-				break;
-			case 'activate':
-				this.deleteStudent(instructorId);
-				break;
-			case 'delete':
-				this.deleteStudent(instructorId);
-				break;
-		}
-	}
+    switch (event.action) {
+      case 'edit':
+        this.openInstructorForm(instructor);
+        break;
+      case 'activate':
+        this.deleteStudent(instructorId);
+        break;
+      case 'delete':
+        this.deleteStudent(instructorId);
+        break;
+    }
+  }
 
-	openInstructorForm(instructor?: any) {
-		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
-			data: {
-				title: instructor ? 'Edit Instructor' : 'Add New Instructor',
-				fields: this.formConfig.getFormConfig('instructor'),
-				initialData: instructor || {},
-				submitText: instructor ? 'Update' : 'Add'
-			}
-		});
+  openInstructorForm(instructor?: any) {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '800px',
+      data: {
+        title: instructor ? 'Edit Instructor' : 'Add New Instructor',
+        fields: this.formConfig.getFormConfig('instructor'),
+        initialData: instructor || {},
+        submitText: instructor ? 'Update' : 'Add'
+      }
+    });
 
-		dialogRef.componentInstance.submitted.subscribe(formData => {
-			this.saveInstructor(formData, instructor?.id);
-			dialogRef.close();
-		});
-	}
+    dialogRef.componentInstance.submitted.subscribe(formData => {
+      this.saveInstructor(formData, instructor?.id);
+      dialogRef.close();
+    });
+  }
 
-	// Function to decide which form view to show
-	private checkTitle(title: any) {
-		let fields = [];
-		if (title == 'Edit Student') {
-			fields = STUDENT_FORM_FIELDS;
-		} else {
-			fields = STUDENT_FORM_FIELDS;
-		}
+  // Function to decide which form view to show
+  private checkTitle(title: any) {
+    let fields = [];
+    if (title == 'Edit Student') {
+      fields = STUDENT_FORM_FIELDS;
+    } else {
+      fields = STUDENT_FORM_FIELDS;
+    }
 
-		return fields;
-	}
+    return fields;
+  }
 
-	private saveInstructor(data: any, id?: number) {
-		
-		const newInstructorData = {
-			name: data.firstName + ' ' + data.lastName,
-			username: data.username,
-			email: data.email,
-			phone: data.phone,
-			license_number: data.license,
-			password: data.password,
-			experience: data.experience,
-			specialization: data.specialization,
-			certification: data.certification,
-			availability: data.available
-		};
+  private async saveInstructor(data: any, id?: number) {
 
-		const instructorData = {
-			id: id || 0,
-			name: data.firstName + ' ' + data.lastName,
-			username: data.username,
-			email: data.email,
-			phone: data.phone,
-			license_number: data.license,
-			password: data.password,
-			experience: data.experience,
-			specialization: data.specialization,
-			certification: data.certification,
-			availability: data.available
-		};
+    const newInstructorData = {
+      name: data.firstName + ' ' + data.lastName,
+      username: data.username,
+      email: data.email,
+      phone: data.phone,
+      license_number: data.license,
+      password: data.password,
+      experience: data.experience,
+      specialization: data.specialization,
+      certification: data.certification,
+      availability: data.available
+    };
 
-		const action = id ? this.trafQuizService.updateInstructor(instructorData) : this.trafQuizService.addInstructor(newInstructorData);
+    const instructorData = {
+      id: id || 0,
+      name: data.firstName + ' ' + data.lastName,
+      username: data.username,
+      email: data.email,
+      phone: data.phone,
+      license_number: data.license,
+      password: data.password,
+      experience: data.experience,
+      specialization: data.specialization,
+      certification: data.certification,
+      availability: data.available
+    };
 
-		action.subscribe({
-			next: (res) => {
-				console.log(res);
-				if(res.success) {
-					this.snackBar.open(`Instructor ${id ? 'updated' : 'added'} successfully`, 'Close', { verticalPosition: 'top', duration: 4000 });
-					this.trafQuizService.fetchStudents();
-				} else {
-					this.snackBar.open(res.message, 'Close', { verticalPosition: 'top', duration: 4000 });
-				}
-				
-			},
-			error: (err) => {
-				console.log(err);
-				this.snackBar.open('Error saving instructor', 'Close', { verticalPosition: 'top',  duration: 4000 });
-			}
-		});
-	}
+    try {
+      const res: any = id ? await this.trafQuizService.updateInstructor(instructorData) : await this.trafQuizService.addInstructor(newInstructorData);
+      if (res.success) {
+        this.snackBar.open(`Instructor ${id ? 'updated' : 'added'} successfully`, 'Close', { verticalPosition: 'top', duration: 4000 });
+        this.trafQuizService.fetchStudents();
+      } else {
+        this.snackBar.open(res.message, 'Close', { verticalPosition: 'top', duration: 4000 });
+      }
+    } catch (err) {
+      console.log(err);
+      this.snackBar.open('Error saving instructor', 'Close', { verticalPosition: 'top', duration: 4000 });
+    }
+  }
 
-	deleteStudent(studentID: number) { }
-	
-	openCertificationForm(certification?: any) {
-		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
-			data: {
-				title: certification ? 'Edit Certification' : 'Add New Certification',
-				fields: this.formConfig.getFormConfig('certification'),
-				initialData: certification || {},
-				submitText: certification ? 'Update' : 'Add'
-			}
-		});
+  deleteStudent(studentID: number) { }
 
-		dialogRef.componentInstance.submitted.subscribe(formData => {
-			this.saveCertification(formData, certification?.id);
-			dialogRef.close();
-		});
-	}
-	
-	private saveCertification(data: any, id: any) {
-		const certification = {
-			id: data.id || 0,
-			certification: data.certification,
-			description: data.description
-		}
-		
-		const action = id ? this.trafQuizService.updateCertification(certification) : this.trafQuizService.addCertification(certification);
+  openCertificationForm(certification?: any) {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '800px',
+      data: {
+        title: certification ? 'Edit Certification' : 'Add New Certification',
+        fields: this.formConfig.getFormConfig('certification'),
+        initialData: certification || {},
+        submitText: certification ? 'Update' : 'Add'
+      }
+    });
 
-		action.subscribe({
-			next: (res) => {
-				this.snackBar.open(`Certification ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
-				this.trafQuizService.getSpecializations();
-			},
-			error: (err) => {
-				console.log(err);
-				this.snackBar.open('Error saving certification', 'Close', { duration: 3000 });
-			}
-		});		
-	}
-	
-	openSpecializationForm(specialization?: any) {
-		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
-			data: {
-				title: specialization ? 'Edit Specialization' : 'Add New Specialization',
-				fields: this.formConfig.getFormConfig('specialization'),
-				initialData: specialization || {},
-				submitText: specialization ? 'Update' : 'Add'
-			}
-		});
+    dialogRef.componentInstance.submitted.subscribe(formData => {
+      this.saveCertification(formData, certification?.id);
+      dialogRef.close();
+    });
+  }
 
-		dialogRef.componentInstance.submitted.subscribe(formData => {
-			this.saveSpecialization(formData, specialization?.id);
-			dialogRef.close();
-		});
-	}
-	
-	private saveSpecialization(data: any, id: any) {
-	
-		const specialization = {
-			id: data.id || 0,
-			specialization: data.specialization,
-			description: data.description
-		}
-		
-		const action = id ? this.trafQuizService.updateSpecialization(specialization) : this.trafQuizService.addSpecialization(specialization);
+  private async saveCertification(data: any, id: any) {
+    const certification = {
+      id: data.id || 0,
+      certification: data.certification,
+      description: data.description
+    }
 
-		action.subscribe({
-			next: (res) => {
-				this.snackBar.open(`Specialization ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
-				this.trafQuizService.getSpecializations();
-			},
-			error: (err) => {
-				console.log(err);
-				this.snackBar.open('Error saving specialization', 'Close', { duration: 3000 });
-			}
-		});
-	}
+    try {
+      const res: any = id ? await this.trafQuizService.updateCertification(certification) : await this.trafQuizService.addCertification(certification);
+      this.snackBar.open(`Certification ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
+      this.trafQuizService.getSpecializations();
+    } catch (err) {
+      console.log(err);
+      this.snackBar.open('Error saving certification', 'Close', { duration: 3000 });
+    }
+  }
+
+  openSpecializationForm(specialization?: any) {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '800px',
+      data: {
+        title: specialization ? 'Edit Specialization' : 'Add New Specialization',
+        fields: this.formConfig.getFormConfig('specialization'),
+        initialData: specialization || {},
+        submitText: specialization ? 'Update' : 'Add'
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe(formData => {
+      this.saveSpecialization(formData, specialization?.id);
+      dialogRef.close();
+    });
+  }
+
+  private async saveSpecialization(data: any, id: any) {
+
+    const specialization = {
+      id: data.id || 0,
+      specialization: data.specialization,
+      description: data.description
+    }
+
+    try {
+      const res: any = id ? await this.trafQuizService.updateSpecialization(specialization) : await this.trafQuizService.addSpecialization(specialization);
+      this.snackBar.open(`Specialization ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
+      this.trafQuizService.getSpecializations();
+    } catch (err) {
+      console.log(err);
+      this.snackBar.open('Error saving specialization', 'Close', { duration: 3000 });
+    }
+  }
 }

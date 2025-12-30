@@ -25,6 +25,9 @@
         <ng-container class="content" *ngIf="isLoggedIn()">
             <mat-toolbar class="floating-toolbar shadow-sm" color="primary">
                 <span class="spacer"></span>
+                <button mat-stroked-button class="mx-auto" (click)="onSync()">
+                    Sync
+                </button>
                 <button mat-stroked-button class="mx-auto" (click)="onLogout()">
                     Logout
                 </button>

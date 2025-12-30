@@ -64,7 +64,7 @@ export class ExamComponent implements OnDestroy {
     this.UserData = JSON.parse(localStorage['user']);
     this.examToken.set(this.UserData.token);
     this.fetchDurationAndStartExam();
-		
+
     // Watch for questions to be loaded
     effect(() => {
       if (this.questions().length > 0) {
@@ -73,22 +73,21 @@ export class ExamComponent implements OnDestroy {
     });
   }
 
-  private fetchDurationAndStartExam() {
-    this.examService.fetchExamDuration().subscribe(duration => {
-      this.baseDuration.set(duration);
-      this.startNewExam();
-    });
+  private async fetchDurationAndStartExam() {
+    await this.examService.fetchExamDuration();
+    this.baseDuration.set(this.examService.examDuration());
+    this.startNewExam();
   }
 
   // Method to start a fresh exam
-  startNewExam() {
+  async startNewExam() {
     this.loading.set(true);
 
     // Reset time to base duration
     this.timeRemaining.set(this.baseDuration());
 
     // Fetch new Questions
-    this.examService.fetchExam(this.examToken());
+    await this.examService.fetchExam(this.examToken());
 
     // Reset exam state
     this.currentQuestionIndex.set(0);
@@ -258,12 +257,12 @@ export class ExamComponent implements OnDestroy {
     return this.alert.open(AlertComponent, {
       data: data
     });
-	
-	/*
-	this.alert.afterClosed().subscribe(result => {
-		console.log('Dialog closed', result);
-	});
-	*/
+
+    /*
+    this.alert.afterClosed().subscribe(result => {
+      console.log('Dialog closed', result);
+    });
+    */
   }
 
   closeModal() {
@@ -273,7 +272,7 @@ export class ExamComponent implements OnDestroy {
   closeExam(): void {
     this.router.navigate(['/dashboard']);
   }
-  
+
   ngOnDestroy() {
     this.timerSubscription?.unsubscribe();
   }

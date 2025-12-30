@@ -1,9 +1,10 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { Injectable, signal, computed } from '@angular/core';
+import { of } from 'rxjs';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+
+// Define the electron API as a constant
+const electron = window.electron;
 
 /**
  * Interface representing a single quiz question.
@@ -107,9 +108,7 @@ export interface instructorApiResponse {
 })
 export class TraffiquizService {
 
-  private http: HttpClient = inject(HttpClient);
-  private url = 'http://localhost:84/trafQuiz/public/api/';
-  public alert = inject(MatDialog);
+  private alert = inject(MatDialog);
 
   // Convert user data to signal for reactive user state management.
   private userSignal = signal<any>(null);
@@ -313,23 +312,13 @@ export class TraffiquizService {
           this.getCertifications();
         }
       } catch (e) {
-        const data = {
-          title: `Error`,
-          message: `Error parsing user data: ${e}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
         console.error('Error parsing user data', e);
       }
     }
   }
 
   /**
-   * Formats the raw user data from the API into a more usable format for the application.
+   * Formats the raw user data into a more usable format for the application.
    * @param user The raw user data.
    * @returns The formatted user object.
    */
@@ -368,21 +357,16 @@ export class TraffiquizService {
   }
 
   /**
-   * Logs a user in by sending their credentials to the API.
+   * Logs a user in.
    * @param payload The user's login credentials.
-   * @returns An observable that emits the API response.
    */
-  login(payload: any): Observable<any> {
-    return this.http.post(this.url + 'login', payload).pipe(
-      tap((response: any) => {
-        if (response.status == 200) {
-          localStorage.setItem('user', JSON.stringify(response));
-          this.userSignal.set(this.formatUser(response));
-        } else {
-          console.error('Fatal error', response.message);
-        }
-      })
-    );
+  async login(payload: any) {
+    const user = await electron.login(payload);
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+      this.userSignal.set(this.formatUser(user));
+    }
+    return user;
   }
 
   /**
@@ -394,446 +378,310 @@ export class TraffiquizService {
   }
 
   /**
-   * Fetches the exam questions from the API.
-   * @param token The user's authentication token.
+   * Fetches the exam questions from the database.
    */
-  fetchExam(token: any) {
-    this.http.get<ApiResponse[]>(this.url + 'exam?token=' + token.trim()).subscribe({
-      next: (data) => {
-        this.questionsSignal.set(
-          data.map((item) => this.transformQuestion(item))
-        );
-      },
-      error: (error) => {
-        console.error('Error Fetching Data', error);
-        this.questionsSignal.set([]); // Reset on error
-      }
-    });
+  async fetchQuestions() {
+    try {
+      const questions = await electron.getQuizzes();
+      this.questionsSignal.set(questions.map(this.transformQuestion));
+    } catch (error) {
+      console.error('Error fetching questions', error);
+    }
   }
 
   /**
-   * Transforms the raw question data from the API into the `Question` interface format.
+   * Transforms the raw question data from the database into the `Question` interface format.
    * @param item The raw question data.
    * @returns The transformed question.
    */
-  private transformQuestion(item: ApiResponse): Question {
-    const options = [
-      item.option_a.trim(),
-      item.option_b.trim(),
-      item.option_c.trim()
-    ];
-
+  private transformQuestion(item: any): Question {
     return {
       id: item.id,
-      question: item.question.trim(),
-      options: options,
-      correct: options.indexOf(item.answer),
-      hasImage: this.isNotEmpty(item.photo),
-      image: item.photo,
+      question: item.question,
+      options: item.options,
+      correct: item.correct,
+      hasImage: !!item.image,
+      image: item.image,
       flagged: false
     };
   }
 
   /**
-   * Checks if a string is not null, undefined, or empty.
-   * @param str The string to check.
-   * @returns `true` if the string is not empty, `false` otherwise.
+   * Fetches all students from the database.
    */
-  isNotEmpty(str: string | null | undefined): boolean {
-    return str !== null && str !== undefined && str !== '';
+  async fetchStudents() {
+    try {
+      const students = await electron.getUsers();
+      this.studentsSignal.set(students);
+    } catch (error) {
+      console.error('Error fetching students', error);
+    }
   }
 
   /**
-   * Saves the user's quiz responses to local storage.
-   * @param responses The user's responses.
+   * Fetches all instructors from the database.
    */
-  saveResponses(responses: any) {
-    localStorage.setItem('quizResponses', JSON.stringify(responses));
-    // Update signal if needed (example)
-    // this.responsesSignal.set(responses);
-  }
-
-  /**
-   * Fetches the exam duration from the API.
-   * @returns An observable that emits the exam duration in seconds.
-   */
-  fetchExamDuration(): Observable<number> {
-    return this.http.get<any>(this.url + 'time').pipe(map(response => {
-      const minutes = parseInt(response.period || '30', 10);
-      return minutes * 60; // Convert to seconds
-    }),
-      tap(duration => this.examDuration.set(duration)),
-      catchError(() => {
-        const fallback = 1800; // 30 minutes fallback
-        this.examDuration.set(fallback);
-        return of(fallback);
-      })
-    );
-  }
-
-  // Questions CRUD
-  /**
-   * Fetches all questions from the API.
-   */
-  fetchQuestions() {
-    this.http.get<ApiResponse[]>(this.url + 'questions').subscribe({
-      next: (questions) => {
-        this.questionsSignal.set(questions.map((item) => this.transformQuestion(item)));
-        this.questionWidgetConfig.admin[0].title = this.totalQuestions().toString();
-      },
-      error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching questions /c: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
-        this.questionsSignal.set([]);
-      }
-    });
-  }
-
-  /**
-   * Deletes a question.
-   * @param questionId The ID of the question to delete.
-   * @returns An observable that emits the API response.
-   */
-  deleteQuestion(questionId: number): Observable<any> {
-    return this.http.delete(this.url + `questions/${questionId}`);
+  async fetchInstructors() {
+    try {
+      const instructors = await electron.getInstructors();
+      this.instructorsSignal.set(instructors);
+    } catch (error) {
+      console.error('Error fetching instructors', error);
+    }
   }
 
   /**
    * Adds a new question.
    * @param question The question to add.
-   * @returns An observable that emits the API response.
    */
-  addQuestion(question: any): Observable<any> {
-    return this.http.post(this.url + 'questions', question);
-  }
-
-  /**
-   * Updates an existing question.
-   * @param question The question to update.
-   * @returns An observable that emits the API response.
-   */
-  updateQuestion(question: any): Observable<any> {
-    return this.http.put(this.url + `questions/${question.id}`, question);
-  }
-
-  // Students CRUD
-  /**
-   * Fetches all students from the API.
-   */
-  fetchStudents() {
-    this.http.get<studentApiResponse[]>(this.url + 'students').subscribe({
-      next: (students) => {
-        //this.studentsSignal.set([students]);
-        this.studentsSignal.set(students.map(item => item));
-        this.widgetsConfig.admin[0].data = this.totalStudents().toString();
-        this.studentWidgetConfig.admin[0].title = this.totalStudents().toString();
-      },
-      error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching students: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
-      }
-    });
+  async addQuestion(question: any) {
+    try {
+      await electron.addQuiz(question);
+      this.fetchQuestions();
+    } catch (error) {
+      console.error('Error adding question', error);
+    }
   }
 
   /**
    * Adds a new student.
    * @param student The student to add.
-   * @returns An observable that emits the API response.
    */
-  addStudent(student: any): Observable<Student[]> {
-    return this.http.post<Student[]>(this.url + 'addstudent', student);
-  }
-
-  /**
-   * Updates an existing student.
-   * @param student The student to update.
-   * @returns An observable that emits the API response.
-   */
-  updateStudent(student: any): Observable<any> {
-    return this.http.put(this.url + `students/${student.id}`, student);
-  }
-
-  /**
-   * Deletes a student.
-   * @param student The student to delete.
-   * @returns An observable that emits the API response.
-   */
-  deleteStudent(student: Student): Observable<any> {
-    return this.http.delete(this.url + `deletestudent/${student.id}`);
-  }
-
-  // Instructors CRUD
-  /**
-   * Fetches all instructors from the API.
-   */
-  fetchInstructors() {
-    this.http.get<instructorApiResponse[]>(this.url + 'instructors').subscribe({
-      next: (instructors) => {
-        this.instructorsSignal.set(instructors.map((item: any) => item));
-        this.widgetsConfig.admin[4].data = this.totalInstructors().toString();
-        this.instructorWidgetConfig.admin[0].title = this.totalInstructors().toString();
-      },
-      error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching instructors: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
-      }
-    })
+  async addStudent(student: any) {
+    try {
+      await electron.addUser(student);
+      this.fetchStudents();
+    } catch (error) {
+      console.error('Error adding student', error);
+    }
   }
 
   /**
    * Adds a new instructor.
    * @param instructor The instructor to add.
-   * @returns An observable that emits the API response.
    */
-  addInstructor(instructor: any): Observable<any> {
-    console.log(instructor);
-    return this.http.post(this.url + 'addinstructor', instructor);
+  async addInstructor(instructor: any) {
+    try {
+      await electron.addInstructor(instructor);
+      this.fetchInstructors();
+    } catch (error) {
+      console.error('Error adding instructor', error);
+    }
+  }
+
+  /**
+   * Fetches the available packages from the database.
+   */
+  async getPackages() {
+    try {
+      const packages = await electron.getPackages();
+      this.packagesSignal.set(packages);
+    } catch (error) {
+      console.error('Error fetching packages', error);
+    }
+  }
+
+  /**
+   * Fetches the instructor specializations from the database.
+   */
+  async getSpecializations() {
+    try {
+      const specializations = await electron.getSpecializations();
+      this.specializationsSignal.set(specializations);
+    } catch (error) {
+      console.error('Error fetching specializations', error);
+    }
+  }
+
+  /**
+   * Fetches the instructor certifications from the database.
+   */
+  async getCertifications() {
+    try {
+      const certifications = await electron.getCertifications();
+      this.certificationsSignal.set(certifications);
+    } catch (error) {
+      console.error('Error fetching certifications', error);
+    }
+  }
+
+  /**
+   * Adds a new certification.
+   * @param certification The certification to add.
+   */
+  async addCertification(certification: any) {
+    try {
+      await electron.addCertification(certification);
+      this.getCertifications();
+    } catch (error) {
+      console.error('Error adding certification', error);
+    }
+  }
+
+  /**
+   * Adds a new specialization.
+   * @param specialization The specialization to add.
+   */
+  async addSpecialization(specialization: any) {
+    try {
+      await electron.addSpecialization(specialization);
+      this.getSpecializations();
+    } catch (error) {
+      console.error('Error adding specialization', error);
+    }
+  }
+
+  /**
+   * Updates an existing student.
+   * @param student The student to update.
+   */
+  async updateStudent(student: any) {
+    try {
+      await electron.updateUser(student);
+      this.fetchStudents();
+    } catch (error) {
+      console.error('Error updating student', error);
+    }
+  }
+
+  /**
+   * Updates an existing question.
+   * @param question The question to update.
+   */
+  async updateQuestion(question: any) {
+    try {
+      await electron.updateQuiz(question);
+      this.fetchQuestions();
+    } catch (error) {
+      console.error('Error updating question', error);
+    }
   }
 
   /**
    * Updates an existing instructor.
    * @param instructor The instructor to update.
-   * @returns An observable that emits the API response.
    */
-  updateInstructor(instructor: any): Observable<any> {
-    return this.http.put(this.url + `instructors/${instructor.id}`, instructor);
+  async updateInstructor(instructor: any) {
+    try {
+      await electron.updateInstructor(instructor);
+      this.fetchInstructors();
+    } catch (error) {
+      console.error('Error updating instructor', error);
+    }
+  }
+
+  /**
+   * Updates an existing specialization.
+   * @param specialization The specialization to update.
+   */
+  async updateSpecialization(specialization: any) {
+    try {
+      await electron.updateSpecialization(specialization);
+      this.getSpecializations();
+    } catch (error) {
+      console.error('Error updating specialization', error);
+    }
+  }
+
+  /**
+   * Updates an existing certification.
+   * @param certification The certification to update.
+   */
+  async updateCertification(certification: any) {
+    try {
+      await electron.updateCertification(certification);
+      this.getCertifications();
+    } catch (error) {
+      console.error('Error updating certification', error);
+    }
+  }
+
+  /**
+   * Deletes a student.
+   * @param studentId The ID of the student to delete.
+   */
+  async deleteStudent(studentId: number) {
+    try {
+      await electron.deleteUser(studentId);
+      this.fetchStudents();
+    } catch (error) {
+      console.error('Error deleting student', error);
+    }
+  }
+
+  /**
+   * Deletes a question.
+   * @param questionId The ID of the question to delete.
+   */
+  async deleteQuestion(questionId: number) {
+    try {
+      await electron.deleteQuiz(questionId);
+      this.fetchQuestions();
+    } catch (error) {
+      console.error('Error deleting question', error);
+    }
   }
 
   /**
    * Deletes an instructor.
-   * @param instructor The instructor to delete.
-   * @returns An observable that emits the API response.
+   * @param instructorId The ID of the instructor to delete.
    */
-  deleteInstructor(instructor: Instructor): Observable<any> {
-    return this.http.delete<Instructor[]>(this.url + `deleteinstructor/${instructor.id}`);
+  async deleteInstructor(instructorId: number) {
+    try {
+      await electron.deleteInstructor(instructorId);
+      this.fetchInstructors();
+    } catch (error) {
+      console.error('Error deleting instructor', error);
+    }
   }
 
   /**
-   * Adds a new question category.
-   * @param category The category to add.
-   * @returns An observable that emits the API response.
+   * Fetches an exam.
+   * @param token The exam token.
    */
-  addCategory(category: any): Observable<any> {
-    return this.http.post(this.url + 'category', category);
+  async fetchExam(token: any) {
+    try {
+      const exam = await electron.fetchExam(token);
+      this.questionsSignal.set(exam.map(this.transformQuestion));
+    } catch (error) {
+      console.error('Error fetching exam', error);
+    }
   }
 
   /**
-   * Retrieves the user's quiz responses from local storage.
-   * @returns The user's responses, or `null` if they don't exist.
+   * Fetches the exam duration.
    */
-  getStoredResponses() {
-    const responses = localStorage.getItem('quizResponses');
-    return responses ? JSON.parse(responses) : null
-  }
-
-  setExamTimeframe(time: any): Observable<any> {
-    return this.http.post(this.url + 'timeupdate', time);
-  }
-
-
-  // Miscelleneous CRUD
-  /**
-   * Transforms the raw packages data into a format suitable for use in form controls.
-   * @param data The raw packages data.
-   * @returns The transformed packages data.
-   */
-  private transformPackagesJson(data: any): any {
-    return data.map((item: any) => ({
-      value: item.id,
-      label: item.package + ' - $' + `${item.amount}`
-    }))
+  async fetchExamDuration() {
+    try {
+      const duration = await electron.fetchExamDuration();
+      this.examDuration.set(duration);
+    } catch (error) {
+      console.error('Error fetching exam duration', error);
+    }
   }
 
   /**
-   * Fetches the available packages from the API.
+   * Sets the exam timeframe.
+   * @param time The new exam timeframe.
    */
-  getPackages() {
-    this.http.get<any[]>(this.url + 'packages').subscribe({
-      next: (pkgs) => {
-        this.packagesSignal.set(pkgs.map(item => item));
-        localStorage.setItem('packages', JSON.stringify(this.transformPackagesJson(pkgs)));
-      },
-      error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching packages: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
-      }
-    });
+  async setExamTimeframe(time: any) {
+    try {
+      return await electron.setExamTimeframe(time);
+    } catch (error) {
+      console.error('Error setting exam timeframe', error);
+    }
   }
 
   /**
-   * Transforms the raw question categories data into a format suitable for use in form controls.
-   * @param data The raw question categories data.
-   * @returns The transformed question categories data.
+   * Syncs the local database with the remote server.
    */
-  private transformQuestionCategoriesJson(data: any): any {
-    return data.map((item: any) => ({
-      value: item.id,
-      label: item.category
-    }))
-  }
-
-  /**
-   * Fetches the question categories from the API.
-   */
-  getQuestionCategories() {
-    this.http.get<any[]>(this.url + 'questioncategories').subscribe({
-      next: (qctgy) => {
-        localStorage.setItem('questioncategories', JSON.stringify(this.transformQuestionCategoriesJson(qctgy)));
-      },
-      error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching categories: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
-      }
-    });
-  }
-
-  /**
-   * Fetches the instructor specializations from the API.
-   */
-  getSpecializations() {
-    this.http.get<any[]>(this.url + 'specializations').subscribe({
-      next: (sptzn) => {
-        this.specializationsSignal.set(sptzn.map(item => item));
-        localStorage.setItem('specializations', JSON.stringify(this.transformSpecializationJson(sptzn)));
-      },
-      error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching specializations: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
-      }
-
-    });
-  }
-
-  /**
-   * Transforms the raw specialization data into a format suitable for use in form controls.
-   * @param data The raw specialization data.
-   * @returns The transformed specialization data.
-   */
-  private transformSpecializationJson(data: any): any {
-    return data.map((item: any) => ({
-      value: item.id,
-      label: item.specialization
-    }))
-  }
-
-  /**
-   * Adds a new instructor specialization.
-   * @param specialization The specialization to add.
-   * @returns An observable that emits the API response.
-   */
-  addSpecialization(specialization: any): Observable<any> {
-    return this.http.post(this.url + 'addspecialization', specialization);
-  }
-
-  /**
-   * Updates an existing instructor specialization.
-   * @param specialization The specialization to update.
-   * @returns An observable that emits the API response.
-   */
-  updateSpecialization(specialization: any): Observable<any> {
-    return this.http.put(this.url + `specializations/${specialization.id}`, specialization);
-  }
-
-  /**
-   * Fetches the instructor certifications from the API.
-   */
-  getCertifications() {
-    this.http.get<any[]>(this.url + 'certifications').subscribe({
-      next: (cert) => {
-        this.certificationsSignal.set(cert.map(item => item));
-        localStorage.setItem('certifications', JSON.stringify(this.transformCertificationJson(cert)));
-      },
-      error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-        message: `Error fetching certifications: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
-      }
-    });
-  }
-
-  /**
-   * Transforms the raw certification data into a format suitable for use in form controls.
-   * @param data The raw certification data.
-   * @returns The transformed certification data.
-   */
-  private transformCertificationJson(data: any): any {
-    return data.map((item: any) => ({
-      value: item.id,
-      label: item.certification
-    }))
-  }
-
-  /**
-   * Updates an existing instructor certification.
-   * @param certification The certification to update.
-   * @returns An observable that emits the API response.
-   */
-  updateCertification(certification: any): Observable<any> {
-    return this.http.put(this.url + `certifications/${certification.id}`, certification);
-  }
-
-  /**
-   * Adds a new instructor certification.
-   * @param certification The certification to add.
-   * @returns An observable that emits the API response.
-   */
-  addCertification(certification: any): Observable<any> {
-    return this.http.post(this.url + 'addcertification', certification);
+  async sync() {
+    try {
+      const result = await electron.sync();
+      console.log('Sync result:', result);
+    } catch (error) {
+      console.error('Error syncing data', error);
+    }
   }
 
   /**
@@ -845,12 +693,6 @@ export class TraffiquizService {
     return this.alert.open(AlertComponent, {
       data: data
     });
-
-    /*
-    this.alert.afterClosed().subscribe(result => {
-      console.log('Dialog closed', result);
-    });
-    */
   }
 
 }

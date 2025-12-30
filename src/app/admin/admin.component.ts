@@ -5,15 +5,15 @@ import { TraffiquizService } from '../traffiquiz.service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { finalize } from 'rxjs';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { AlertComponent } from '../alert/alert.component';
 
 @Component({
-    selector: 'app-admin',
-    imports: [CommonModule, RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, MatDialogModule],
-    templateUrl: './admin.component.html',
-    styleUrl: './admin.component.css'
+  selector: 'app-admin',
+  standalone: true,
+  imports: [CommonModule, RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, MatDialogModule],
+  templateUrl: './admin.component.html',
+  styleUrl: './admin.component.css'
 })
 export class AdminComponent implements OnInit, OnDestroy {
   adminData: any;
@@ -48,11 +48,10 @@ export class AdminComponent implements OnInit, OnDestroy {
     updateUid: new FormControl('', Validators.required)
   });
 
-  ngOnInit(): void {
-    this.getAdminData.fetchStudents();
-    this.getAdminData.fetchExamDuration().subscribe(duration => {
-      this.currentExamDuration = duration;
-    });
+  async ngOnInit() {
+    await this.getAdminData.fetchStudents();
+    await this.getAdminData.fetchExamDuration();
+    this.currentExamDuration = this.getAdminData.examDuration();
   }
 
   get formattedTime(): string {
@@ -65,36 +64,34 @@ export class AdminComponent implements OnInit, OnDestroy {
     return value < 10 ? '0' + value : value.toString();
   }
 
-  updateExamDuration(): void {
+  async updateExamDuration() {
     let newtime: any;
     if (this.examTime.valid) {
       newtime = this.examTime.value.newtime;
       newtime = newtime * 60;
       const payload = { time: newtime };
-      this.getAdminData.setExamTimeframe(payload).subscribe({
-        next: (response) => {
-          if (response.success) {
-            const data = {
-              title: 'Notification',
-              message: response.message,
-              type: 'success',
-              buttonText: 'OK'
-            };
-            this.examTime.reset();
-            this.openAlertDialog(data);
-            this.currentExamDuration = response.new_time;
-          }
-        },
-        error: (err) => {
+      try {
+        const response: any = await this.getAdminData.setExamTimeframe(payload);
+        if (response.success) {
           const data = {
-            title: 'Error',
-            message: err,
-            type: 'error',
+            title: 'Notification',
+            message: response.message,
+            type: 'success',
             buttonText: 'OK'
           };
+          this.examTime.reset();
           this.openAlertDialog(data);
+          this.currentExamDuration = response.new_time;
         }
-      });
+      } catch (err) {
+        const data = {
+          title: 'Error',
+          message: err,
+          type: 'error',
+          buttonText: 'OK'
+        };
+        this.openAlertDialog(data);
+      }
 
     } else {
       const data = {
@@ -108,7 +105,7 @@ export class AdminComponent implements OnInit, OnDestroy {
     }
   }
 
-  addStudent(): void {
+  async addStudent() {
     if (this.addStudentForm.valid) {
       const payload = {
         username: this.addStudentForm.value.username?.trim(),
@@ -117,35 +114,29 @@ export class AdminComponent implements OnInit, OnDestroy {
         email: this.addStudentForm.value.email?.trim(),
         password: this.addStudentForm.value.password?.trim()
       };
-	  
-	  console.log(payload);
 
-      this.getAdminData.addInstructor(payload).subscribe({
-        next: (res) => {
-          if (res.success) {
-            const data = {
-              title: 'Notification',
-              message: res.message,
-              type: 'success',
-              buttonText: 'OK'
-            };
-            this.addStudentForm.reset();
-            this.openAlertDialog(data);
-          }
-        },
-        error: (err) => {
+      try {
+        const res: any = await this.getAdminData.addInstructor(payload);
+        if (res.success) {
           const data = {
-            title: 'Error',
-            message: err,
-            type: 'error',
+            title: 'Notification',
+            message: res.message,
+            type: 'success',
             buttonText: 'OK'
           };
+          this.addStudentForm.reset();
           this.openAlertDialog(data);
-        },
-        complete: () => {
-          this.getAdminData.fetchStudents();
+          await this.getAdminData.fetchStudents();
         }
-      });
+      } catch (err) {
+        const data = {
+          title: 'Error',
+          message: err,
+          type: 'error',
+          buttonText: 'OK'
+        };
+        this.openAlertDialog(data);
+      }
     } else {
       const data = {
         title: 'Error',
@@ -169,15 +160,15 @@ export class AdminComponent implements OnInit, OnDestroy {
     this.updateStudentForm.controls.updateUid.setValue(this.chosenUser.id ?? '');
   }
 
-  deleteStudent(e: Event): void {
+  async deleteStudent(e: Event) {
     const clickedBtn = e.target as HTMLButtonElement;
     const str = clickedBtn.id;
     const splitArray = str.split(".");
     const id = parseInt(splitArray[1]);
     const studentToDelete = this.usersList().find(student => student.id === id);
     if (studentToDelete) {
-      this.getAdminData.deleteStudent(studentToDelete).subscribe({
-        next: (res) => {
+      try {
+        const res: any = await this.getAdminData.deleteStudent(studentToDelete.id);
         if (res.success) {
           const data = {
             title: 'Notification',
@@ -186,9 +177,9 @@ export class AdminComponent implements OnInit, OnDestroy {
             buttonText: 'OK'
           };;
           this.openAlertDialog(data);
+          await this.getAdminData.fetchStudents();
         }
-      },
-      error: (err) => {
+      } catch (err) {
         const data = {
           title: 'Error',
           message: err,
@@ -196,15 +187,11 @@ export class AdminComponent implements OnInit, OnDestroy {
           buttonText: 'OK'
         };
         this.openAlertDialog(data);
-      },
-      complete: () => {
-        this.getAdminData.fetchStudents();
       }
-    });
     }
   }
 
-  updateStudent(): void {
+  async updateStudent() {
     if (this.updateStudentForm.valid) {
       const payload = {
         id: this.updateStudentForm.value.updateUid,
@@ -215,28 +202,27 @@ export class AdminComponent implements OnInit, OnDestroy {
         password: this.updateStudentForm.value.updatePassword
       };
 
-      this.getAdminData.updateStudent(payload).subscribe({
-        next: (res) => {
-          if (res.success) {
-            const data = {
-              title: 'Notification',
-              message: res.message,
-              type: 'success',
-              buttonText: 'OK'
-            };
-            this.openAlertDialog(data);
-          }
-        },
-        error: (err) => {
+      try {
+        const res: any = await this.getAdminData.updateStudent(payload);
+        if (res.success) {
           const data = {
-            title: 'Error',
-            message: err,
-            type: 'error',
+            title: 'Notification',
+            message: res.message,
+            type: 'success',
             buttonText: 'OK'
           };
           this.openAlertDialog(data);
+          await this.getAdminData.fetchStudents();
         }
-      });
+      } catch (err) {
+        const data = {
+          title: 'Error',
+          message: err,
+          type: 'error',
+          buttonText: 'OK'
+        };
+        this.openAlertDialog(data);
+      }
     } else {
       const data = {
         title: 'Error',
