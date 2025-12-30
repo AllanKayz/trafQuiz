@@ -40,11 +40,12 @@ export class DashboardComponent {
   }
 
   sidenavLink() {
-    this.router.events.subscribe(event => {
-      if(event instanceof NavigationEnd) {
-		if(event.url === '/dashboard/exam') {
-			this.router.navigate(['/exam']);
-		}
+    const subscription = this.router.events.subscribe(event => {
+      if (event instanceof NavigationEnd) {
+        if (event.url === '/dashboard/exam') {
+          this.router.navigate(['/exam']);
+        }
+        subscription.unsubscribe();
       }
     });
   }
