@@ -1,4 +1,4 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { of } from 'rxjs';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
