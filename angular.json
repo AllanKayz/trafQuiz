@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "trafQuiz": {
+    "trafquiz": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -74,10 +74,10 @@
           
           "configurations": {
             "production": {
-              "buildTarget": "trafQuiz:build:production"
+              "buildTarget": "trafquiz:build:production"
             },
             "development": {
-              "buildTarget": "trafQuiz:build:development"
+              "buildTarget": "trafquiz:build:development"
             }
           },
           "defaultConfiguration": "development"

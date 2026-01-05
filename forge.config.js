@@ -8,9 +8,9 @@ module.exports = {
     {
       name: '@electron-forge/maker-squirrel',
       config: {
-        name: 'TrafQuiz App',
+        name: 'trafquiz App',
         setupIcon: 'public/logo.ico',
-        iconUrl: 'https://raw.githubusercontent.com/jules-mind-aramco/trafQuiz/main/public/logo.ico'
+        iconUrl: 'https://raw.githubusercontent.com/jules-mind-aramco/trafquiz/main/public/logo.ico'
       },
     },
     {
@@ -39,7 +39,7 @@ module.exports = {
       config: {
         repository: {
           owner: 'jules-mind-aramco',
-          name: 'trafQuiz',
+          name: 'trafquiz',
         },
         prerelease: false,
         draft: true,
