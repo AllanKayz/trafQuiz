@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "canova": {
+    "trafQuiz": {
       "projectType": "application",
       "schematics": {},
       "root": "",
@@ -74,10 +74,10 @@
           
           "configurations": {
             "production": {
-              "buildTarget": "canova:build:production"
+              "buildTarget": "trafQuiz:build:production"
             },
             "development": {
-              "buildTarget": "canova:build:development"
+              "buildTarget": "trafQuiz:build:development"
             }
           },
           "defaultConfiguration": "development"

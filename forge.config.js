@@ -10,7 +10,7 @@ module.exports = {
       config: {
         name: 'TrafQuiz App',
         setupIcon: 'public/logo.ico',
-        iconUrl: 'https://raw.githubusercontent.com/jules-mind-aramco/canova/main/public/logo.ico'
+        iconUrl: 'https://raw.githubusercontent.com/jules-mind-aramco/trafQuiz/main/public/logo.ico'
       },
     },
     {
@@ -39,7 +39,7 @@ module.exports = {
       config: {
         repository: {
           owner: 'jules-mind-aramco',
-          name: 'canova',
+          name: 'trafQuiz',
         },
         prerelease: false,
         draft: true,
