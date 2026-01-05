@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { ApiResponse, Question, studentApiResponse, Student, Instructor, instructorApiResponse } from './traffiquizInteface';
+import {  ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse } from './trafquiz';
 
 /**
  * Service responsible for managing the application's data and state.

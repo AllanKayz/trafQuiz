@@ -1,3 +1,10 @@
+export interface Trafquiz {
+    appname: string;
+    version: string;
+    description: string;
+    distribitor: string;
+}
+
 /**
  * Interface representing a single quiz question.
  */
