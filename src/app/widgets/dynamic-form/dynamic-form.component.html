@@ -118,7 +118,7 @@
               }
               <!-- File Input -->
               @case ('file') {
-                <div class="file-inpu input-group mb-3">
+                <div class="file-input input-group mb-3">
                   <input type="file" class="form-control" id="inputGroupFile" [formControlName]="field.key" (change)="onFileChange($event, field.key)">
                   <label class="input-group-text" for="inputGroupFile">{{ field.label }}</label>
                 </div>
