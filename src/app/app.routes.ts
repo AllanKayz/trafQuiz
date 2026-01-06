@@ -10,6 +10,7 @@ import { VehiclesComponent } from './components/vehicles/vehicles.component';
 import { ExamsComponent } from './components/exams/exams.component';
 import { InstructorsComponent } from './components/instructors/instructors.component';
 import { LessonsComponent } from './components/lessons/lessons.component';
+import { AdminToolsComponent } from './components/admin/admin-tools.component';
 import { QuestionsComponent } from './components/questions/questions.component';
 import { StudentsComponent } from './components/students/students.component';
 import { FinancesComponent } from './components/finances/finances.component';
@@ -61,6 +62,10 @@ export const routes: Routes = [
         component: LessonsComponent
       },
       {
+        path: 'lessons-admin',
+        component: AdminToolsComponent
+      },
+      {
         path: 'vehicles',
         component: VehiclesComponent
       },
@@ -75,6 +80,10 @@ export const routes: Routes = [
       {
         path: 'settings',
         component: SettingsComponent
+      },
+      {
+        path: 'admin-tools',
+        component: AdminToolsComponent
       },
       {
         path: 'useraccess',

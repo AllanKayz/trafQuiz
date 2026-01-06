@@ -1,10 +1,13 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { UpcomingLessonsComponent } from './upcoming-lessons.component';
 
 @Component({
   selector: 'app-lessons',
-  imports: [],
+  standalone: true,
+  imports: [CommonModule, UpcomingLessonsComponent],
   templateUrl: './lessons.component.html',
-  styleUrl: './lessons.component.css'
+  styleUrls: ['./lessons.component.css']
 })
 export class LessonsComponent {
 

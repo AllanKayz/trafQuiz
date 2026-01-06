@@ -1,0 +1,39 @@
+[
+  {
+    "id": 1,
+    "title": "Road Safety Basics",
+    "subject": "Traffic Rules",
+    "startTime": "2026-01-05T10:00:00+00:00",
+    "durationMinutes": 60,
+    "instructor": { "id": 10, "name": "John Doe" },
+    "location": "Room 101",
+    "status": "upcoming",
+    "studentCount": 12,
+    "notes": "Bring your learner permit."
+  },
+  {
+    "id": 2,
+    "title": "Practical Driving - Car",
+    "subject": "Practical",
+    "startTime": "2026-01-05T13:00:00+00:00",
+    "durationMinutes": 90,
+    "instructor": { "id": 11, "name": "Jane Smith" },
+    "location": "Parking Lot B",
+    "status": "upcoming",
+    "studentCount": 3,
+    "notes": "Meet in the parking lot 10 mins before start."
+  },
+  {
+    "id": 3,
+    "title": "Theory Refresher",
+    "subject": "Theory",
+    "startTime": "2026-01-04T09:00:00+00:00",
+    "durationMinutes": 45,
+    "instructor": { "id": 12, "name": "Peter Lee" },
+    "location": "Online (Zoom)",
+    "onlineLink": "https://meet.example.com/abc",
+    "status": "completed",
+    "studentCount": 18,
+    "notes": "Recording available."
+  }
+]

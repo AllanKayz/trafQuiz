@@ -1,0 +1,18 @@
+export interface Lesson {
+  id: number;
+  title: string;
+  subject?: string;
+  startTime: string; // ISO string
+  endTime?: string; // ISO string
+  durationMinutes?: number;
+  instructor: { id: number; name: string; avatarUrl?: string };
+  location?: string;
+  onlineLink?: string;
+  status: 'upcoming' | 'cancelled' | 'completed' | 'rescheduled';
+  studentCount: number;
+  capacity?: number;
+  notes?: string;
+  resources?: Array<{ title: string; url: string }>;
+  createdAt?: string;
+  updatedAt?: string;
+}

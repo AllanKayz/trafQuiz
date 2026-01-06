@@ -77,12 +77,12 @@
               {{ currentQuestion().question }}
             </div>
           </div>
-          <div class="question-image" id="questionImage" *ngIf="currentQuestion()?.hasImage">
+          <div class="question-image" id="questionImage" *ngIf="currentQuestion().hasImage">
             <img id="questionImg" class="img-fluid py-2 px-2" [src]="currentQuestion().image" alt="Question diagram">
           </div>
         </div>
         <div class="options-container" id="optionsContainer">
-          <div *ngFor="let option of currentQuestion()?.options; let i = index" class="option"
+          <div *ngFor="let option of currentQuestion().options; let i = index" class="option"
             [class.selected]="userAnswers()[currentQuestionIndex()] === i" (click)="selectOption(i)">
             <div class="option-letter">{{ getOptionLetter(i) }}</div>
             <div class="option-text">{{ option }}</div>

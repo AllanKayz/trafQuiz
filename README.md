@@ -32,3 +32,12 @@ The project is an Angular application with a standard structure. The main applic
 ## Build
 
 Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+
+## Admin utilities
+
+New admin endpoints are available for development convenience:
+
+- POST `/trafQuiz/public/api/admin/seed-lessons` — seeds sample lessons; accepts JSON `{ "count": <number> }` to seed multiple items.
+- GET `/trafQuiz/public/api/admin/check-lessons` — quick health check, returns `{ count: number, db: boolean }`.
+
+These endpoints require a `token` query parameter for minimal access control (e.g., `?token=YOUR_TOKEN`), consistent with other admin routes.

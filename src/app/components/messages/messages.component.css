@@ -1,0 +1,53 @@
+.messages-container {
+  display: flex;
+  gap: 16px;
+  height: calc(100vh - 120px);
+}
+
+.conversations {
+  width: 280px;
+  border-right: 1px solid rgba(0,0,0,0.08);
+  padding-right: 8px;
+  overflow-y: auto;
+}
+
+.conversations h3 {
+  margin: 8px 8px;
+  font-weight: 600;
+}
+
+mat-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+mat-list-item.selected {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.conv-name { font-weight: 600; }
+.conv-last { color: rgba(0,0,0,0.6); font-size: 0.9rem; }
+.conv-right { text-align: right; min-width: 70px; }
+.time { font-size: 0.75rem; color: rgba(0,0,0,0.45); }
+.unread { background: #d32f2f; color: white; border-radius: 12px; padding: 2px 8px; font-size: 0.75rem; display: inline-block; margin-top: 6px; }
+
+.thread { flex: 1; display: flex; flex-direction: column; }
+.thread-header { padding: 12px; margin-bottom: 8px; }
+.thread-title { font-size: 1.1rem; font-weight: 600; }
+.thread-sub { font-size: 0.8rem; color: rgba(0,0,0,0.6); }
+
+.messages-list { flex: 1; overflow-y: auto; padding: 8px; display: flex; flex-direction: column; gap: 12px; }
+.message { max-width: 70%; background: #f3f3f3; padding: 8px 12px; border-radius: 8px; align-self: flex-start; }
+.message.outgoing { background: #cfe9ff; align-self: flex-end; }
+.message .author { font-size: 0.8rem; color: rgba(0,0,0,0.6); margin-bottom: 4px; }
+.message .body { white-space: pre-wrap; }
+.message .ts { font-size: 0.75rem; color: rgba(0,0,0,0.5); margin-top: 6px; text-align: right; }
+
+.reply-box { display: flex; gap: 8px; align-items: flex-end; padding: 8px; border-top: 1px solid rgba(0,0,0,0.06); }
+.reply-box textarea { flex: 1; resize: vertical; padding: 8px; font-family: inherit; font-size: 0.95rem; }
+.reply-box button { height: 40px; }
+
+.placeholder { color: rgba(0,0,0,0.5); display:flex; align-items:center; justify-content:center; width:100%; font-size:1rem; }

@@ -5,6 +5,7 @@ namespace TrafQuiz\Controllers;
 use TrafQuiz\Models\Dashboard;
 use TrafQuiz\Core\TokenHandler;
 use TrafQuiz\Models\Exam;
+use TrafQuiz\Models\LessonModel;
 
 class AdminController
 {
@@ -318,5 +319,96 @@ class AdminController
 	{
 		$certification = Dashboard::getCertifications();
 		echo json_encode($certification);
+	}
+
+	/**
+	 * Seed lessons into storage (DB or fallback JSON). Accepts optional {count:int}
+	 */
+	public function seedLessons()
+	{
+		$token = $_GET['token'] ?? null;
+		if (!$token) {
+			http_response_code(401);
+			echo json_encode(["message" => "Missing Authorisation header"]);
+			return;
+		}
+
+		$input = json_decode(file_get_contents('php://input'), true) ?: [];
+		$count = isset($input['count']) ? intval($input['count']) : null;
+
+		// Default seed data (will use LessonModel::add which writes to DB if available)
+		$sample = [
+			[
+				'title' => 'Seeded: Traffic Signs',
+				'subject' => 'Theory',
+				'startTime' => date('c', strtotime('+1 day 09:00')),
+				'durationMinutes' => 60,
+				'instructor' => ['id' => 101, 'name' => 'Auto Seeder'],
+				'location' => 'Room A',
+				'status' => 'upcoming',
+				'studentCount' => 0
+			],
+			[
+				'title' => 'Seeded: Night Driving',
+				'subject' => 'Practical',
+				'startTime' => date('c', strtotime('+2 days 18:00')),
+				'durationMinutes' => 90,
+				'instructor' => ['id' => 102, 'name' => 'Auto Seeder'],
+				'location' => 'Simulator',
+				'status' => 'upcoming',
+				'studentCount' => 0
+			]
+		];
+
+		$added = [];
+		$toAdd = $sample;
+		if ($count && $count > 0) {
+			// replicate sample to reach count
+			$toAdd = [];
+			for ($i = 0; $i < $count; $i++) {
+				$base = $sample[$i % count($sample)];
+				$item = $base;
+				$item['title'] = $base['title'] . ' #' . ($i + 1);
+				$item['startTime'] = date('c', strtotime('+' . ($i + 1) . ' days 09:00'));
+				$toAdd[] = $item;
+			}
+		}
+
+		foreach ($toAdd as $it) {
+			$created = LessonModel::add($it);
+			$added[] = $created;
+		}
+
+		echo json_encode(['seeded' => count($added), 'items' => $added]);
+	}
+
+	/**
+	 * Quick health check for lessons storage
+	 */
+	public function checkLessons()
+	{
+		$token = $_GET['token'] ?? null;
+		if (!$token) {
+			http_response_code(401);
+			echo json_encode(["message" => "Missing Authorisation header"]);
+			return;
+		}
+
+		// Check DB availability and count
+		$rows = LessonModel::all();
+		$count = is_array($rows) ? count($rows) : 0;
+		$hasDb = false;
+		// detect DB presence by trying to get connection
+		try {
+			$reflect = new \ReflectionClass('TrafQuiz\\Models\\LessonModel');
+			$method = $reflect->getMethod('getConnection');
+			$method->setAccessible(true);
+			$conn = $method->invoke(null);
+			$hasDb = $conn !== null;
+		} catch (\Exception $e) {
+			$hasDb = false;
+		}
+
+		echo json_encode(['count' => $count, 'db' => $hasDb]);
 	}
 }

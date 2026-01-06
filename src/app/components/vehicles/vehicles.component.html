@@ -1,1 +1,88 @@
-<p>vehicles works!</p>
+<div class="vehicles">
+  <h2>Vehicles</h2>
+
+  <div class="controls">
+    <button (click)="openAdd()">Add Vehicle</button>
+    <button (click)="load()">Refresh</button>
+  </div>
+
+  <div *ngIf="loading">Loading…</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <table *ngIf="vehicles.length">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Make</th>
+        <th>Model</th>
+        <th>Year</th>
+        <th>Registration</th>
+        <th>Type</th>
+        <th>Status</th>
+        <th>Notes</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let v of vehicles">
+        <td>{{ v.id }}</td>
+        <td>{{ v.make }}</td>
+        <td>{{ v.model }}</td>
+        <td>{{ v.year }}</td>
+        <td>{{ v.registration }}</td>
+        <td>{{ v.type }}</td>
+        <td>{{ v.status }}</td>
+        <td>{{ v.notes }}</td>
+        <td>
+          <button (click)="openEdit(v)">Edit</button>
+          <button (click)="confirmDelete(v.id)">Delete</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!vehicles.length && !loading">No vehicles found.</div>
+
+  <!-- Modal -->
+  <div class="modal" *ngIf="showModal" role="dialog" aria-modal="true">
+    <div class="modal-backdrop" (click)="closeModal()"></div>
+    <div class="modal-content" role="document">
+      <h3>{{ isEditing ? 'Edit Vehicle' : 'Add Vehicle' }}</h3>
+
+      <div class="form-row">
+        <label>Make<input [(ngModel)]="formVehicle.make" /></label>
+        <label>Model<input [(ngModel)]="formVehicle.model" /></label>
+      </div>
+      <div class="form-row">
+        <label>Year<input type="number" [(ngModel)]="formVehicle.year" /></label>
+        <label>Registration<input [(ngModel)]="formVehicle.registration" /></label>
+      </div>
+      <div class="form-row">
+        <label>Type
+          <select [(ngModel)]="formVehicle.type">
+            <option value="car">Car</option>
+            <option value="motorcycle">Motorcycle</option>
+            <option value="truck">Truck</option>
+          </select>
+        </label>
+        <label>Status
+          <select [(ngModel)]="formVehicle.status">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="maintenance">Maintenance</option>
+          </select>
+        </label>
+      </div>
+      <div class="form-row">
+        <label>Notes<textarea [(ngModel)]="formVehicle.notes"></textarea></label>
+      </div>
+
+      <div class="actions">
+        <button (click)="closeModal()">Cancel</button>
+        <button (click)="save()">{{ isEditing ? 'Save' : 'Create' }}</button>
+      </div>
+
+      <div *ngIf="error" class="error">{{ error }}</div>
+    </div>
+  </div>
+</div>

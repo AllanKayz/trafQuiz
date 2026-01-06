@@ -1,0 +1,47 @@
+<div class="upcoming-root">
+  <div class="header">
+    <h1>Upcoming Lessons</h1>
+    <div class="controls">
+      <select [(ngModel)]="range">
+        <option value="today">Today</option>
+        <option value="7days">Next 7 days</option>
+        <option value="week">This week</option>
+        <option value="month">This month</option>
+      </select>
+      <input type="text" placeholder="Search lessons..." [(ngModel)]="q" />
+    </div>
+  </div>
+
+  <div class="split">
+    <aside class="list">
+      <ul>
+        <li *ngFor="let l of filteredLessons()" (click)="selectLesson(l)" tabindex="0" (keyup.enter)="selectLesson(l)" [attr.aria-selected]="selectedLesson?.id === l.id">
+          <app-lesson-card [lesson]="l" [selected]="selectedLesson?.id === l.id"></app-lesson-card>
+        </li>
+      </ul>
+      <div *ngIf="lessons.length === 0" class="empty">No upcoming lessons</div>
+    </aside>
+
+    <section class="detail" *ngIf="selectedLesson">
+      <div class="detail-header">
+        <h2>{{ selectedLesson.title }}</h2>
+        <div class="meta">
+          <div><strong>When:</strong> <time [attr.datetime]="selectedLesson.startTime">{{ selectedLesson.startTime | date: 'fullDate' }} • {{ selectedLesson.startTime | date: 'shortTime' }}</time></div>
+          <div><strong>Instructor:</strong> {{ selectedLesson.instructor.name }}</div>
+          <div><strong>Location:</strong> {{ selectedLesson.location }}</div>
+          <div><strong>Students:</strong> {{ selectedLesson.studentCount }} / {{ selectedLesson.capacity || '—' }}</div>
+        </div>
+      </div>
+
+      <div class="detail-body">
+        <p class="notes">{{ selectedLesson.notes }}</p>
+        <div *ngIf="selectedLesson.onlineLink" class="meeting-link"><a [href]="selectedLesson.onlineLink" target="_blank" rel="noopener">Open meeting link</a></div>
+        <div class="actions">
+          <button (click)="join(selectedLesson)" [disabled]="selectedLesson.status !== 'upcoming'">Join</button>
+          <button (click)="message(selectedLesson)">Message Instructor</button>
+          <button (click)="cancel(selectedLesson)">Cancel</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

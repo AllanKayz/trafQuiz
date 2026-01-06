@@ -1,0 +1,40 @@
+.vehicles { padding: 24px; max-width: 1100px; margin: 12px auto; background: var(--mat-sys-surface, #fff8f8); border-radius: 8px; box-shadow: var(--bs-box-shadow-sm); }
+
+h2 { margin-top: 0; color: var(--mat-sys-primary, #ba005c); font-size: 1.25rem; margin-bottom: 12px; }
+
+.controls { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.controls button { padding: 8px 12px; border-radius: 6px; border: none; cursor: pointer; background: var(--mat-sys-primary, #ba005c); color: #fff; }
+.controls button[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 12px; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+thead th { padding: 12px 10px; background: linear-gradient(180deg, #fff8f8, #f7ebec); font-weight: 600; position: sticky; top: 0; z-index: 1; text-align: left; }
+tbody td { padding: 10px; vertical-align: middle; }
+tbody tr { border-bottom: 1px solid #f1e5e6; }
+tbody tr:nth-child(even) { background: #fffaf9; }
+tbody tr:hover { background: #fff2f4; }
+
+.actions button { padding: 6px 10px; border-radius: 6px; border: none; cursor: pointer; }
+.actions button.edit { background: #0d6efd; color: #fff; }
+.actions button.delete { background: #dc3545; color: #fff; }
+
+.error { color: var(--mat-sys-error, #c62828); margin: 8px 0; }
+
+/* Modal and form */
+.modal { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.35); }
+.modal-content { position: relative; background: #fff; padding: 20px; border-radius: 10px; width: min(720px, 96%); box-shadow: 0 12px 36px rgba(0,0,0,0.18); }
+.form-row { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.form-row label { display: flex; flex-direction: column; flex: 1; font-size: 0.9rem; }
+.form-row input, .form-row select, .form-row textarea { padding: 8px 10px; border: 1px solid #e0d6d8; border-radius: 6px; margin-top: 6px; }
+.form-row textarea { min-height: 70px; resize: vertical; }
+.actions { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
+
+.no-data { color: rgba(0,0,0,0.6); margin-top: 12px; }
+
+@media (max-width: 640px) {
+  .form-row { flex-direction: column; }
+  table th, table td { font-size: 0.92rem; padding: 8px; }
+}
+
+/* Small utility */
+.small-muted { color: rgba(0,0,0,0.6); font-size: 0.9rem; }

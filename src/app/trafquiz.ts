@@ -13,9 +13,9 @@ export interface Question {
   question: string;
   options: string[];
   correct: number;
-  hasImage: boolean;
+  hasImage?: boolean;
   image?: string;
-  flagged: boolean;
+  flagged?: boolean;
 }
 
 /**

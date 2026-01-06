@@ -1,0 +1,22 @@
+:host { display: block; }
+.lesson-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 120ms ease, transform 120ms ease;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.lesson-card:hover { background-color: rgba(0,0,0,0.02); transform: translateY(-1px); }
+.lesson-card.selected { box-shadow: 0 2px 6px rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.08); }
+.time { font-weight: 600; width: 64px; color: var(--mat-sys-on-surface); }
+.details { flex: 1; min-width: 0; }
+.title { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta { font-size: 0.82rem; color: rgba(0,0,0,0.6); }
+.status { font-size: 0.8rem; padding: 4px 8px; border-radius: 12px; text-transform: capitalize; }
+.status[data-status="upcoming"] { background: #e6f7ff; color: #005f99; }
+.status[data-status="cancelled"] { background: #fff0f0; color: #a00; }
+.status[data-status="completed"] { background: #f0fff4; color: #117a35; }
+.status[data-status="rescheduled"] { background: #fff7e6; color: #8a5c00; }

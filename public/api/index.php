@@ -86,6 +86,53 @@ $router->addRoute('POST', '/trafQuiz/public/api/addspecialization', function () 
        (new AdminController())->addSpecialization();
 });
 
+// Admin utilities: seed and check lessons
+$router->addRoute('POST', '/trafQuiz/public/api/admin/seed-lessons', function () {
+       (new AdminController())->seedLessons();
+});
+
+$router->addRoute('GET', '/trafQuiz/public/api/admin/check-lessons', function () {
+       (new AdminController())->checkLessons();
+});
+
+// Lessons API
+$router->addRoute('GET', '/trafQuiz/public/api/lessons', function () {
+       (new \TrafQuiz\Controllers\LessonsController())->getLessons();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/lessons/join', function () {
+       (new \TrafQuiz\Controllers\LessonsController())->join();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/lessons/cancel', function () {
+       (new \TrafQuiz\Controllers\LessonsController())->cancel();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/lessons/update', function () {
+       (new \TrafQuiz\Controllers\LessonsController())->update();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/lessons/add', function () {
+       (new \TrafQuiz\Controllers\LessonsController())->add();
+});
+
+// Vehicles API (simple JSON-backed for development)
+$router->addRoute('GET', '/trafQuiz/public/api/vehicles', function () {
+       (new \TrafQuiz\Controllers\VehiclesController())->getVehicles();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/add', function () {
+       (new \TrafQuiz\Controllers\VehiclesController())->add();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/update', function () {
+       (new \TrafQuiz\Controllers\VehiclesController())->update();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/delete', function () {
+       (new \TrafQuiz\Controllers\VehiclesController())->delete();
+});
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
        header("Access-Control-Allow-Origin: *"); // Allows all origins
