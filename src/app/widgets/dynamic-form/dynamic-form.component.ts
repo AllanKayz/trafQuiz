@@ -1,5 +1,5 @@
 import { Component, input, Output, EventEmitter, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ReactiveFormsModule, FormGroup, FormBuilder } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -30,7 +30,7 @@ export interface FormField {
 @Component({
   selector: 'app-dynamic-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, MatInputModule, MatButtonModule, MatSelectModule, MatCheckboxModule, MatRadioModule, MatDatepickerModule, MatIconModule, MatDialogModule, MatNativeDateModule],
+  imports: [ReactiveFormsModule, MatInputModule, MatButtonModule, MatSelectModule, MatCheckboxModule, MatRadioModule, MatDatepickerModule, MatIconModule, MatDialogModule, MatNativeDateModule],
   templateUrl: './dynamic-form.component.html',
   styleUrls: ['./dynamic-form.component.css']
 })

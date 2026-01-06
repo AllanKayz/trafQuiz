@@ -1,3 +1,5 @@
 <section class="widgets-grid">
-	<app-stat-card *ngFor="let widget of widgets()" [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
+  @for (widget of widgets(); track widget) {
+    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
+  }
 </section>

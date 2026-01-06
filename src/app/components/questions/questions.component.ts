@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { TraffiquizService } from '../../traffiquiz.service';
@@ -18,7 +18,7 @@ import { CATEGORY_FORM_FIELDS } from '../../widgets/dynamic-form/category.config
 @Component({
 	selector: 'app-questions',
 	standalone: true,
-	imports: [CommonModule, SectionheaderComponent, StatCardComponent, TableComponent, MatSnackBarModule, MatDialogModule],
+	imports: [SectionheaderComponent, StatCardComponent, TableComponent, MatSnackBarModule, MatDialogModule],
 	templateUrl: './questions.component.html',
 	styleUrl: './questions.component.css'
 })

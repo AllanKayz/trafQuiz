@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-question-form',
-  imports: [CommonModule, FormsModule, MatInputModule, MatButtonModule, MatSelectModule, MatCheckboxModule, MatDialogModule, MatRadioModule, MatIconModule],
+  imports: [FormsModule, MatInputModule, MatButtonModule, MatSelectModule, MatCheckboxModule, MatDialogModule, MatRadioModule, MatIconModule],
   templateUrl: './question-form.component.html',
   styleUrl: './question-form.component.css'
 })

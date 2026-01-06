@@ -1,10 +1,12 @@
 <div class="admin-tools">
   <h1>Admin Tools — Lessons</h1>
 
-  <div class="toast" *ngIf="successMessage" role="status" aria-live="polite">
-    <div class="toast-message">{{ successMessage }}</div>
-    <button class="toast-close" (click)="closeToast()" aria-label="Close notification">✕</button>
-  </div>
+  @if (successMessage) {
+    <div class="toast" role="status" aria-live="polite">
+      <div class="toast-message">{{ successMessage }}</div>
+      <button class="toast-close" (click)="closeToast()" aria-label="Close notification">✕</button>
+    </div>
+  }
 
   <div class="controls">
     <label>Token <input [(ngModel)]="token" /></label>
@@ -16,65 +18,77 @@
   </div>
 
   <!-- Confirmation modal -->
-  <div class="confirm-modal" *ngIf="showConfirm" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-    <div class="confirm-backdrop" (click)="cancelConfirm()"></div>
-    <div class="confirm-content" role="document">
-      <h3 id="confirmTitle">Confirm seeding</h3>
-      <p>You are about to seed <strong>{{ count }}</strong> lesson(s). This will add new lessons to the system. Are you sure you want to continue?</p>
-      <div class="confirm-actions">
-        <button class="btn btn-secondary" (click)="cancelConfirm()">Cancel</button>
-        <button class="btn btn-primary" (click)="confirmSeed()">Confirm Seed</button>
+  @if (showConfirm) {
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <div class="confirm-backdrop" (click)="cancelConfirm()"></div>
+      <div class="confirm-content" role="document">
+        <h3 id="confirmTitle">Confirm seeding</h3>
+        <p>You are about to seed <strong>{{ count }}</strong> lesson(s). This will add new lessons to the system. Are you sure you want to continue?</p>
+        <div class="confirm-actions">
+          <button class="btn btn-secondary" (click)="cancelConfirm()">Cancel</button>
+          <button class="btn btn-primary" (click)="confirmSeed()">Confirm Seed</button>
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <div class="controls-row">
     <button class="btn btn-outline-primary" (click)="showCreate = true">Create Lesson</button>
   </div>
 
   <div class="status">
-    <div *ngIf="loading" class="loading">Loading…</div>
-    <div *ngIf="error" class="error">{{ error }}</div>
-    <pre *ngIf="result">{{ result | json }}</pre>
+    @if (loading) {
+      <div class="loading">Loading…</div>
+    }
+    @if (error) {
+      <div class="error">{{ error }}</div>
+    }
+    @if (result) {
+      <pre>{{ result | json }}</pre>
+    }
   </div>
 
   <!-- Create Lesson Modal -->
-  <div class="confirm-modal" *ngIf="showCreate" role="dialog" aria-modal="true" aria-labelledby="createTitle">
-    <div class="confirm-backdrop" (click)="showCreate=false"></div>
-    <div class="confirm-content" role="document">
-      <h3 id="createTitle">Create Lesson</h3>
-      <form (submit)="createLesson(); $event.preventDefault();">
-        <div class="form-row">
-          <label>Title<input [(ngModel)]="newLesson.title" name="title" required /></label>
-          <label>Subject<input [(ngModel)]="newLesson.subject" name="subject" /></label>
-        </div>
-        <div class="form-row">
-          <label>Start Time<input type="datetime-local" [(ngModel)]="newLesson.startTimeLocal" name="startTimeLocal" required /></label>
-          <label>Duration (min)<input type="number" [(ngModel)]="newLesson.durationMinutes" name="durationMinutes" min="15" /></label>
-        </div>
-        <div class="form-row">
-          <label>Instructor
-            <select [(ngModel)]="newLesson.instructorId" name="instructorId">
-              <option [value]="null">-- Select --</option>
-              <option *ngFor="let i of instructors" [value]="i.id">{{ i.firstName }} {{ i.lastName }}</option>
-            </select>
-          </label>
-          <label>Location<input [(ngModel)]="newLesson.location" name="location" /></label>
-        </div>
-        <div class="form-row">
-          <label>Online Link<input [(ngModel)]="newLesson.onlineLink" name="onlineLink" /></label>
-          <label>Capacity<input type="number" [(ngModel)]="newLesson.capacity" name="capacity" min="1" /></label>
-        </div>
-        <div class="form-row">
-          <label>Notes<textarea [(ngModel)]="newLesson.notes" name="notes"></textarea></label>
-        </div>
-        <div class="confirm-actions">
-          <button type="button" class="btn btn-secondary" (click)="showCreate=false">Cancel</button>
-          <button type="submit" class="btn btn-primary">Create</button>
-        </div>
-      </form>
+  @if (showCreate) {
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="createTitle">
+      <div class="confirm-backdrop" (click)="showCreate=false"></div>
+      <div class="confirm-content" role="document">
+        <h3 id="createTitle">Create Lesson</h3>
+        <form (submit)="createLesson(); $event.preventDefault();">
+          <div class="form-row">
+            <label>Title<input [(ngModel)]="newLesson.title" name="title" required /></label>
+            <label>Subject<input [(ngModel)]="newLesson.subject" name="subject" /></label>
+          </div>
+          <div class="form-row">
+            <label>Start Time<input type="datetime-local" [(ngModel)]="newLesson.startTimeLocal" name="startTimeLocal" required /></label>
+            <label>Duration (min)<input type="number" [(ngModel)]="newLesson.durationMinutes" name="durationMinutes" min="15" /></label>
+          </div>
+          <div class="form-row">
+            <label>Instructor
+              <select [(ngModel)]="newLesson.instructorId" name="instructorId">
+                <option [value]="null">-- Select --</option>
+                @for (i of instructors; track i) {
+                  <option [value]="i.id">{{ i.firstName }} {{ i.lastName }}</option>
+                }
+              </select>
+            </label>
+            <label>Location<input [(ngModel)]="newLesson.location" name="location" /></label>
+          </div>
+          <div class="form-row">
+            <label>Online Link<input [(ngModel)]="newLesson.onlineLink" name="onlineLink" /></label>
+            <label>Capacity<input type="number" [(ngModel)]="newLesson.capacity" name="capacity" min="1" /></label>
+          </div>
+          <div class="form-row">
+            <label>Notes<textarea [(ngModel)]="newLesson.notes" name="notes"></textarea></label>
+          </div>
+          <div class="confirm-actions">
+            <button type="button" class="btn btn-secondary" (click)="showCreate=false">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create</button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  }
 
   <p class="note">Tip: token is required as a simple gate for admin endpoints (use a dev token for local testing).</p>
 </div>

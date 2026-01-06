@@ -1,35 +1,39 @@
 <section class="login">
-    <div class="license_check">
+  <div class="license_check">
 
-    </div>
-    <div class="login_form_flex">
-        <mat-card class="card">
-            <img mat-card-image class="mx-auto" src="assets/logo.png" width="200" height="200" alt="LOGIN">
-            <mat-card-content>
-                <form [formGroup]="loginForm" (submit)="login()">
-                    <mat-form-field appearance="outline" class="full-width pb-3">
-                        <label>Username</label>
-                        <input matInput formControlName="username" type="text" required>
-                    </mat-form-field>
+  </div>
+  <div class="login_form_flex">
+    <mat-card class="card">
+      <img mat-card-image class="mx-auto" src="assets/logo.png" width="200" height="200" alt="LOGIN">
+      <mat-card-content>
+        <form [formGroup]="loginForm" (submit)="login()">
+          <mat-form-field appearance="outline" class="full-width pb-3">
+            <label>Username</label>
+            <input matInput formControlName="username" type="text" required>
+          </mat-form-field>
 
-                    <mat-form-field appearance="outline" class="full-width pb-3">
-                        <label>Password</label>
-                        <input matInput formControlName="password" [type]="hide ? 'password' : 'text'" required>
-                        <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button">
-                            <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
-                        </button>
-                    </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width pb-3">
+            <label>Password</label>
+            <input matInput formControlName="password" [type]="hide ? 'password' : 'text'" required>
+            <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button">
+              <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+            </button>
+          </mat-form-field>
 
-                    <div class="button-flex-container">
-                        <button mat-raised-button type="submit" class="half-width text-uppercase fw-bold"
-                            color="primary" [disabled]="isLoading()">
-                            <span *ngIf="!isLoading()">Login</span>
-                            <mat-progress-spinner *ngIf="isLoading()" mode="indeterminate" diameter="20" color="accent"
-                                class="button-spinner"></mat-progress-spinner>
-                        </button>
-                    </div>
-                </form>
-            </mat-card-content>
-        </mat-card>
-    </div>
+          <div class="button-flex-container">
+            <button mat-raised-button type="submit" class="half-width text-uppercase fw-bold"
+              color="primary" [disabled]="isLoading()">
+              @if (!isLoading()) {
+                <span>Login</span>
+              }
+              @if (isLoading()) {
+                <mat-progress-spinner mode="indeterminate" diameter="20" color="accent"
+                class="button-spinner"></mat-progress-spinner>
+              }
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
 </section>

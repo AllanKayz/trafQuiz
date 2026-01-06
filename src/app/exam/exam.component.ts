@@ -1,5 +1,5 @@
 import { Component, inject, OnDestroy, computed, signal, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TraffiquizService } from '../traffiquiz.service';
 import { Router, NavigationEnd } from '@angular/router';
@@ -13,7 +13,7 @@ import { AlertComponent } from '../alert/alert.component';
 @Component({
   selector: 'app-exam',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, MatProgressSpinnerModule, MatProgressBarModule, MatSelectModule, MatDialogModule],
+  imports: [ReactiveFormsModule, FormsModule, MatProgressSpinnerModule, MatProgressBarModule, MatSelectModule, MatDialogModule],
   templateUrl: './exam.component.html',
   styleUrl: './exam.component.css'
 })

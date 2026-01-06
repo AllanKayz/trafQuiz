@@ -1,5 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -16,7 +16,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 @Component({
 	selector: 'app-students',
 	standalone: true,
-	imports: [CommonModule, MatDialogModule, MatSnackBarModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
+	imports: [MatDialogModule, MatSnackBarModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
 	templateUrl: './students.component.html',
 	styleUrls: ['./students.component.css']
 })

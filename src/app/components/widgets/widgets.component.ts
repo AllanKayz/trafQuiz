@@ -1,11 +1,11 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, input } from '@angular/core';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { TraffiquizService } from '../../traffiquiz.service';
 
 @Component({
   selector: 'app-widgets',
-  imports: [CommonModule, StatCardComponent],
+  imports: [StatCardComponent],
   templateUrl: './widgets.component.html',
   styleUrl: './widgets.component.css'
 })

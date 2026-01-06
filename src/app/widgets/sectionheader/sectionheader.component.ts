@@ -1,5 +1,5 @@
 import { Component, input, output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -12,20 +12,24 @@ export interface SectionButton {
 
 @Component({
   selector: 'app-sectionheader',
-  imports: [CommonModule, MatButtonModule, MatIconModule],
-  template: `	
+  imports: [MatButtonModule, MatIconModule],
+  template: `
 	<div class="header">
-    <h2>{{header()}}</h2>
-    <p>{{content()}}</p>
-		
-    <div class="buttons">
-      <button *ngFor="let btn of buttons()" mat-stroked-button (click)="buttonClicked.emit(btn.action)" [disabled]="btn.disabled">
-        <mat-icon *ngIf="btn.icon">{{btn.icon}}</mat-icon>
-        {{btn.name}}
-      </button>
-    </div>    
-  </div>
-  `,
+	  <h2>{{header()}}</h2>
+	  <p>{{content()}}</p>
+	
+	  <div class="buttons">
+	    @for (btn of buttons(); track btn) {
+	      <button mat-stroked-button (click)="buttonClicked.emit(btn.action)" [disabled]="btn.disabled">
+	        @if (btn.icon) {
+	          <mat-icon>{{btn.icon}}</mat-icon>
+	        }
+	        {{btn.name}}
+	      </button>
+	    }
+	  </div>
+	</div>
+	`,
   styles: `
 	.header {
     background: rgba(255, 255, 255, 0.95);

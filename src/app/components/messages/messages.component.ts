@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatListModule } from '@angular/material/list';
@@ -10,7 +10,7 @@ import { MessagesService, Conversation, Message } from './messages.service';
 
 @Component({
     selector: 'app-messages',
-    imports: [CommonModule, FormsModule, MatListModule, MatIconModule, MatButtonModule, MatInputModule, MatCardModule],
+    imports: [FormsModule, MatListModule, MatIconModule, MatButtonModule, MatInputModule, MatCardModule],
     templateUrl: './messages.component.html',
     styleUrl: './messages.component.css'
 })

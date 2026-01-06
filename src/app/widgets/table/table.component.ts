@@ -25,41 +25,47 @@ export interface TableColumn  {
         <input matInput (keyup)="applyFilter($event)" [placeholder]="filterPlaceholder()">
         <mat-icon matSuffix>search</mat-icon>
       </mat-form-field>
-
+    
       <table mat-table [dataSource]="dataSource()" matSort>
         <!-- Dynamic Columns -->
-        <ng-container *ngFor="let column of columns()" [matColumnDef]="column.key">
-          <th mat-header-cell *matHeaderCellDef mat-sort-header [style.width]="column.width">
-            {{ column.header }}
-          </th>
-          <td mat-cell *matCellDef="let row">
-            {{ getCellValue(row, column) }}
-          </td>
-        </ng-container>
-
+        @for (column of columns(); track column) {
+          <ng-container [matColumnDef]="column.key">
+            <th mat-header-cell *matHeaderCellDef mat-sort-header [style.width]="column.width">
+              {{ column.header }}
+            </th>
+            <td mat-cell *matCellDef="let row">
+              {{ getCellValue(row, column) }}
+            </td>
+          </ng-container>
+        }
+    
         <!-- Action Column -->
-        <ng-container matColumnDef="actions" *ngIf="actions().length > 0">
-          <th mat-header-cell *matHeaderCellDef>Actions</th>
-          <td mat-cell *matCellDef="let row">
-            <button mat-icon-button [matMenuTriggerFor]="menu">
-              <mat-icon>more_vert</mat-icon>
-            </button>
-            <mat-menu #menu="matMenu">
-              <button *ngFor="let action of actions()" mat-menu-item (click)="onAction(action, row)">
-                <mat-icon>{{getActionIcon(action)}}</mat-icon>
-                <span>{{ action | titlecase }}</span>
+        @if (actions().length > 0) {
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <td mat-cell *matCellDef="let row">
+              <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>more_vert</mat-icon>
               </button>
-            </mat-menu>
-          </td>
-        </ng-container>
-
+              <mat-menu #menu="matMenu">
+                @for (action of actions(); track action) {
+                  <button mat-menu-item (click)="onAction(action, row)">
+                    <mat-icon>{{getActionIcon(action)}}</mat-icon>
+                    <span>{{ action | titlecase }}</span>
+                  </button>
+                }
+              </mat-menu>
+            </td>
+          </ng-container>
+        }
+    
         <tr mat-header-row *matHeaderRowDef="columnKeys()"></tr>
         <tr mat-row *matRowDef="let row; columns: columnKeys();"></tr>
       </table>
-
+    
       <mat-paginator [pageSizeOptions]="pageSizeOptions()" showFirstLastButtons></mat-paginator>
     </div>
-  `,
+    `,
   styles: `
     .table-container {
       width: 100%;

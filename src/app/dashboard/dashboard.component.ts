@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
@@ -13,7 +13,7 @@ import { TraffiquizService } from '../traffiquiz.service';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterModule, MatToolbarModule, MatIconModule, MatInputModule, MatSidenavModule, MatListModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule],
+  imports: [RouterModule, MatToolbarModule, MatIconModule, MatInputModule, MatSidenavModule, MatListModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })

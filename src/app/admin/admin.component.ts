@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { TraffiquizService } from '../traffiquiz.service';
@@ -11,7 +11,7 @@ import { AlertComponent } from '../alert/alert.component';
 
 @Component({
     selector: 'app-admin',
-    imports: [CommonModule, RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, MatDialogModule],
+    imports: [RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, MatDialogModule],
     templateUrl: './admin.component.html',
     styleUrl: './admin.component.css'
 })

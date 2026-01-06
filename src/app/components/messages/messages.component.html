@@ -2,40 +2,45 @@
   <aside class="conversations">
     <h3>Messages</h3>
     <mat-list>
-      <mat-list-item *ngFor="let c of conversations()" (click)="openConversation(c)" [class.selected]="selectedConversation()?.id === c.id">
-        <div class="conv-left">
-          <div class="conv-name">{{c.name}}</div>
-          <div class="conv-last">{{c.lastMessage}}</div>
-        </div>
-        <div class="conv-right">
-          <div class="time">{{ formatTime(c.lastTime || '') }}</div>
-          <div class="unread" *ngIf="c.unread && c.unread > 0">{{ c.unread }}</div>
-        </div>
-      </mat-list-item>
+      @for (c of conversations(); track c) {
+        <mat-list-item (click)="openConversation(c)" [class.selected]="selectedConversation()?.id === c.id">
+          <div class="conv-left">
+            <div class="conv-name">{{c.name}}</div>
+            <div class="conv-last">{{c.lastMessage}}</div>
+          </div>
+          <div class="conv-right">
+            <div class="time">{{ formatTime(c.lastTime || '') }}</div>
+            @if (c.unread && c.unread > 0) {
+              <div class="unread">{{ c.unread }}</div>
+            }
+          </div>
+        </mat-list-item>
+      }
     </mat-list>
   </aside>
 
-  <section class="thread" *ngIf="selectedConversation(); else placeholder">
-    <mat-card class="thread-header">
-      <div class="thread-title">{{selectedConversation()?.name}}</div>
-      <div class="thread-sub">Last: {{formatTime(selectedConversation()?.lastTime || '')}}</div>
-    </mat-card>
-
-    <div class="messages-list">
-      <div *ngFor="let m of messages()" class="message" [class.outgoing]="m.outgoing">
-        <div class="author">{{m.from}}</div>
-        <div class="body">{{m.body}}</div>
-        <div class="ts">{{formatTime(m.timestamp)}}</div>
+  @if (selectedConversation()) {
+    <section class="thread">
+      <mat-card class="thread-header">
+        <div class="thread-title">{{selectedConversation()?.name}}</div>
+        <div class="thread-sub">Last: {{formatTime(selectedConversation()?.lastTime || '')}}</div>
+      </mat-card>
+      <div class="messages-list">
+        @for (m of messages(); track m) {
+          <div class="message" [class.outgoing]="m.outgoing">
+            <div class="author">{{m.from}}</div>
+            <div class="body">{{m.body}}</div>
+            <div class="ts">{{formatTime(m.timestamp)}}</div>
+          </div>
+        }
       </div>
-    </div>
-
-    <div class="reply-box">
-      <textarea [(ngModel)]="reply" rows="3" placeholder="Type your message"></textarea>
-      <button mat-raised-button color="primary" (click)="sendReply()">Send</button>
-    </div>
-  </section>
-
-  <ng-template #placeholder>
+      <div class="reply-box">
+        <textarea [(ngModel)]="reply" rows="3" placeholder="Type your message"></textarea>
+        <button mat-raised-button color="primary" (click)="sendReply()">Send</button>
+      </div>
+    </section>
+  } @else {
     <div class="placeholder">Select a conversation to view messages.</div>
-  </ng-template>
+  }
+
 </div>

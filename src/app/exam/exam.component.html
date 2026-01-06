@@ -4,123 +4,139 @@
     <div class="logo">
       <div class="logo-icon mx-auto"><img class="mx-auto" src="assets/logo.png" width="100" height="100" alt="Logo">
       </div>
-      <!--div class="logo-text">TrafQuiz</div-->
-    </div>
+    <!--div class="logo-text">TrafQuiz</div-->
+  </div>
 
-    <div class="timer">
-      <div class="timer-label">Time Remaining</div>
-      <div class="timer-value" id="timer">
-        <span>{{ formattedTime() }}</span>
-      </div>
-    </div>
-
-    <div class="exam-info">
-      <div class="exam-title">Driving Theory Test</div>
-      <div class="exam-details">
-        Pass Mark: 88% (22/{{ totalQuestions() }})<br>
-        Duration: {{baseDuration() / 60}} minutes<br>
-        Total Questions: {{ totalQuestions() }}
-      </div>
-    </div>
-
-    <div class="progress-section">
-      <div class="progress-header">
-        <div class="progress-title">Progress</div>
-        <div class="progress-stats" id="progressStats">
-          {{ currentQuestionIndex() + 1 }} of {{ totalQuestions() }}
-        </div>
-      </div>
-      <div class="progress-bar">
-        <div class="progress-fill" id="progressFill" [style.width.%]="progressPercentage()"></div>
-      </div>
-    </div>
-
-    <!-- Question Navigation Dots -->
-    <div class="navigation-dots" *ngIf="!isPaused">
-      <div *ngFor="let q of questions(); let i = index" class="dot" [class.active]="i === currentQuestionIndex()"
-        [class.answered]="userAnswers()[i] !== undefined" [class.flagged]="flaggedQuestions().has(i)"
-        (click)="currentQuestionIndex.set(i)">
-        {{i+1}}
-      </div>
+  <div class="timer">
+    <div class="timer-label">Time Remaining</div>
+    <div class="timer-value" id="timer">
+      <span>{{ formattedTime() }}</span>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <div class="main-content">
-    <div class="header">
-      <div class="question-counter" id="questionCounter">
-        Question {{ currentQuestionIndex() + 1 }} of {{ totalQuestions() }}
-      </div>
-      <div class="action-buttons">
-        <button *ngIf="!isPaused" class="btn btn-secondary" (click)="startNewExam()">New Exam</button>
-        <button class="btn btn-secondary" (click)="pauseTimer()">{{pauseState}}</button>
-        <button class="btn btn-secondary" (click)="closeExam()">Close</button>
+  <div class="exam-info">
+    <div class="exam-title">Driving Theory Test</div>
+    <div class="exam-details">
+      Pass Mark: 88% (22/{{ totalQuestions() }})<br>
+      Duration: {{baseDuration() / 60}} minutes<br>
+      Total Questions: {{ totalQuestions() }}
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <div class="progress-header">
+      <div class="progress-title">Progress</div>
+      <div class="progress-stats" id="progressStats">
+        {{ currentQuestionIndex() + 1 }} of {{ totalQuestions() }}
       </div>
     </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" [style.width.%]="progressPercentage()"></div>
+    </div>
+  </div>
 
-    <!--Pause Window-->
-    <div class="pausedState" *ngIf="isPaused">
+  <!-- Question Navigation Dots -->
+  @if (!isPaused) {
+    <div class="navigation-dots">
+      @for (q of questions(); track q; let i = $index) {
+        <div class="dot" [class.active]="i === currentQuestionIndex()"
+          [class.answered]="userAnswers()[i] !== undefined" [class.flagged]="flaggedQuestions().has(i)"
+          (click)="currentQuestionIndex.set(i)">
+          {{i+1}}
+        </div>
+      }
+    </div>
+  }
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+  <div class="header">
+    <div class="question-counter" id="questionCounter">
+      Question {{ currentQuestionIndex() + 1 }} of {{ totalQuestions() }}
+    </div>
+    <div class="action-buttons">
+      @if (!isPaused) {
+        <button class="btn btn-secondary" (click)="startNewExam()">New Exam</button>
+      }
+      <button class="btn btn-secondary" (click)="pauseTimer()">{{pauseState}}</button>
+      <button class="btn btn-secondary" (click)="closeExam()">Close</button>
+    </div>
+  </div>
+
+  <!--Pause Window-->
+  @if (isPaused) {
+    <div class="pausedState">
       <img src="assets/logo.png" class="rounded mx-auto d-block" alt="Logo">
     </div>
+  }
 
-    <ng-container *ngIf="!isPaused">
-      <!-- Loading indicator -->
-      <div *ngIf="loading()" class="loading-overlay">
+  @if (!isPaused) {
+    <!-- Loading indicator -->
+    @if (loading()) {
+      <div class="loading-overlay">
         <mat-progress-bar mode="indeterminate"></mat-progress-bar>
         <p>Loading exam questions...</p>
       </div>
-
-      <div class="question-section my-auto" *ngIf="!loading()">
+    }
+    @if (!loading()) {
+      <div class="question-section my-auto">
         <div class="question-content">
           <div class="question-text-area">
             <div class="question-text" id="questionText">
               {{ currentQuestion().question }}
             </div>
           </div>
-          <div class="question-image" id="questionImage" *ngIf="currentQuestion().hasImage">
-            <img id="questionImg" class="img-fluid py-2 px-2" [src]="currentQuestion().image" alt="Question diagram">
-          </div>
+          @if (currentQuestion().hasImage) {
+            <div class="question-image" id="questionImage">
+              <img id="questionImg" class="img-fluid py-2 px-2" [src]="currentQuestion().image" alt="Question diagram">
+            </div>
+          }
         </div>
         <div class="options-container" id="optionsContainer">
-          <div *ngFor="let option of currentQuestion().options; let i = index" class="option"
-            [class.selected]="userAnswers()[currentQuestionIndex()] === i" (click)="selectOption(i)">
-            <div class="option-letter">{{ getOptionLetter(i) }}</div>
-            <div class="option-text">{{ option }}</div>
-          </div>
+          @for (option of currentQuestion().options; track option; let i = $index) {
+            <div class="option"
+              [class.selected]="userAnswers()[currentQuestionIndex()] === i" (click)="selectOption(i)">
+              <div class="option-letter">{{ getOptionLetter(i) }}</div>
+              <div class="option-text">{{ option }}</div>
+            </div>
+          }
         </div>
       </div>
-
-      <!-- Navigation -->
-      <div class="bottom-actions" *ngIf="!showResults()">
-        <ng-container *ngIf="!loading()">
+    }
+    <!-- Navigation -->
+    @if (!showResults()) {
+      <div class="bottom-actions">
+        @if (!loading()) {
           <button class="btn-nav btn-previous" [disabled]="currentQuestionIndex() === 0" (click)="previousQuestion()">
             ← Previous
           </button>
-
           <div class="question-nav">
             <button class="btn-nav flag-btn" id="flagBtn"
               [class.flagged]="flaggedQuestions().has(currentQuestionIndex())" (click)="toggleFlag()">
               {{ flaggedQuestions().has(currentQuestionIndex()) ? '🏁 Unflag' : '🏁 Flag Question' }}
             </button>
-
             <button class="btn btn-nav review-button" (click)="jumpToNextFlagged()">
               Jump to Next Flagged →
             </button>
           </div>
-
-          <button *ngIf="currentQuestionIndex() < totalQuestions() - 1" class="btn-nav btn-next"
-            (click)="nextQuestion()">
-            Next →
-          </button>
-
-          <button *ngIf="currentQuestionIndex() === totalQuestions() - 1" class="btn btn-nav finish-btn"
-            (click)="submitExam()">
-            Submit Exam
-          </button>
-        </ng-container>
+          @if (currentQuestionIndex() < totalQuestions() - 1) {
+            <button class="btn-nav btn-next"
+              (click)="nextQuestion()">
+              Next →
+            </button>
+          }
+          @if (currentQuestionIndex() === totalQuestions() - 1) {
+            <button class="btn btn-nav finish-btn"
+              (click)="submitExam()">
+              Submit Exam
+            </button>
+          }
+        }
       </div>
-    </ng-container>
-  </div>
+    }
+  }
+</div>
 </section>
 
 <!-- Modal-->
@@ -128,7 +144,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <button type="button" class="btn-close float-end mr-auto" data-bs-dismiss="modal" aria-label="Close"
-        (click)="closeModal()"></button>
+      (click)="closeModal()"></button>
       <div class="modal-title" [style.color]="examResults()?.passed ? '#28a745' : '#dc3545'">
         {{ examResults()?.passed ? 'Congratulations!' : 'Better luck next time' }}
       </div>
