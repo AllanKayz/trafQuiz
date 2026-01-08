@@ -1,0 +1,133 @@
+.user-access-container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: var(--text-main);
+}
+
+.header-content p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 1rem;
+}
+
+.users-table {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--bg-card);
+}
+
+.users-table mat-header-cell {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.users-table mat-cell {
+    padding: 16px 24px;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.user-id {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.role-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.role-badge.student {
+    background: rgba(79, 70, 229, 0.1);
+    color: #4f46e5;
+}
+
+.role-badge.instructor {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.role-badge.admin {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.active {
+    background-color: #10b981;
+}
+
+.suspended {
+    background-color: #ef4444;
+}
+
+/* Dialog Styles */
+.dialog-container {
+    padding: 24px;
+}
+
+.dialog-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.full-width {
+    width: 100%;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -54,7 +54,7 @@ export class SettingsComponent {
 
     const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
     this.prefsForm = this.fb.group({
-      theme: [settings.theme || 'light'],
+      theme: [settings.theme || 'system'],
       notifications: [settings.notifications ?? true],
       compactMode: [settings.compactMode ?? false]
     });

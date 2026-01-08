@@ -1,1 +1,114 @@
-<p>reports works!</p>
+<div class="reports-container fade-in">
+
+    <!-- Header -->
+    <header class="page-header">
+        <div class="header-content">
+            <h1>Progress Reports</h1>
+            <p>Track performance, test history, and learning milestones.</p>
+        </div>
+
+        <!-- Admin Controls -->
+        @if (isAdminOrInstructor()) {
+        <div class="admin-controls">
+            <mat-form-field appearance="outline">
+                <mat-label>Select Student</mat-label>
+                <mat-select (selectionChange)="onStudentSelect($event.value)">
+                    @for (student of students(); track student.id) {
+                    <mat-option [value]="student.id">{{student.name}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </div>
+        }
+    </header>
+
+    @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    }
+
+    @if (progressData(); as data) {
+    <!-- Key Metrics Grid -->
+    <section class="metrics-grid">
+        <mat-card class="metric-card">
+            <div class="metric-icon primary">
+                <mat-icon>assignment_turned_in</mat-icon>
+            </div>
+            <div class="metric-info">
+                <span class="label">Total Tests</span>
+                <span class="value">{{data.totalTests}}</span>
+            </div>
+        </mat-card>
+
+        <mat-card class="metric-card">
+            <div class="metric-icon accent">
+                <mat-icon>score</mat-icon>
+            </div>
+            <div class="metric-info">
+                <span class="label">Average Score</span>
+                <span class="value">{{data.averageScore}}%</span>
+                <mat-progress-bar mode="determinate" [value]="data.averageScore"
+                    [color]="getStatusColor(data.averageScore >= 75 ? 'pass' : 'fail')">
+                </mat-progress-bar>
+            </div>
+        </mat-card>
+
+        <mat-card class="metric-card">
+            <div class="metric-icon success">
+                <mat-icon>verified</mat-icon>
+            </div>
+            <div class="metric-info">
+                <span class="label">Completion</span>
+                <span class="value">{{data.completionRate}}%</span>
+            </div>
+        </mat-card>
+    </section>
+
+    <!-- Visualizations & History -->
+    <div class="dashboard-split">
+
+        <!-- Performance Chart (CSS only) -->
+        <mat-card class="chart-section">
+            <h3>Monthly Performance</h3>
+            <div class="bar-chart">
+                @for (item of data.monthlyPerformance; track item.month) {
+                <div class="bar-group">
+                    <div class="bar" [style.height.%]="item.score" [title]="item.score + '%'">
+                        <span class="bar-value">{{item.score}}%</span>
+                    </div>
+                    <span class="bar-label">{{item.month}}</span>
+                </div>
+                }
+            </div>
+        </mat-card>
+
+        <!-- Recent Activity -->
+        <mat-card class="activity-section">
+            <h3>Recent Activity</h3>
+            <div class="activity-list">
+                @for (activity of data.recentActivity; track activity.quizTitle) {
+                <div class="activity-item">
+                    <div class="activity-icon" [class.pass]="activity.status === 'pass'"
+                        [class.fail]="activity.status === 'fail'">
+                        <mat-icon>{{activity.status === 'pass' ? 'check_circle' : 'cancel'}}</mat-icon>
+                    </div>
+                    <div class="activity-details">
+                        <span class="quiz-title">{{activity.quizTitle}}</span>
+                        <span class="activity-date">{{activity.date | date:'mediumDate'}}</span>
+                    </div>
+                    <div class="activity-score" [class.pass]="activity.status === 'pass'">
+                        {{activity.score}}%
+                    </div>
+                </div>
+                }
+            </div>
+        </mat-card>
+    </div>
+
+    } @else if (!isLoading() && !isStudent() && !selectedStudentId()) {
+    <div class="empty-state">
+        <mat-icon>people_outline</mat-icon>
+        <h3>Select a student to view their progress</h3>
+        <p>Use the dropdown above to filter by student.</p>
+    </div>
+    }
+</div>

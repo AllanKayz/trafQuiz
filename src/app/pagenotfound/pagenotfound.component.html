@@ -1,6 +1,15 @@
-<section class="container pt-5">
-    <div class="pt-5 d-flex flex-column align-items-center justify-content-center" style="height:70vh">
-        <h1 class="h1 fw-bold">Error 404</h1><br/>
-        <p class="lead">Page Not Found, return to <a [routerLink]="['/login']" >Home</a></p>
+<div class="not-found-container">
+    <div class="bg-circle one"></div>
+    <div class="bg-circle two"></div>
+
+    <div class="content">
+        <h1 class="error-code">404</h1>
+        <h2>Page not found</h2>
+        <p>Return to the dashboard or try searching again.</p>
+
+        <a routerLink="/dashboard" class="home-btn">
+            <mat-icon>arrow_back</mat-icon>
+            Back to Dashboard
+        </a>
     </div>
-</section>
+</div>

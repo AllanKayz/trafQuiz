@@ -8,7 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatInputModule } from '@angular/material/input';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 
-export interface TableColumn  {
+export interface TableColumn {
   key: string;
   header: string;
   type?: 'text' | 'number' | 'date' | 'action' | 'boolean';
@@ -20,11 +20,13 @@ export interface TableColumn  {
   imports: [CommonModule, MatTableModule, MatPaginatorModule, MatSortModule, MatButtonModule, MatIconModule, MatMenuModule, MatInputModule],
   template: `
     <div class="table-container">
-      <mat-form-field appearance="outline" class="filter-field">
-        <mat-label>{{ filterPlaceholder() }}</mat-label>
-        <input matInput (keyup)="applyFilter($event)" [placeholder]="filterPlaceholder()">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
+      <div class="filter-section">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>{{ filterPlaceholder() }}</mat-label>
+          <input matInput (keyup)="applyFilter($event)" [placeholder]="filterPlaceholder()">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+      </div>
     
       <table mat-table [dataSource]="dataSource()" matSort>
         <!-- Dynamic Columns -->
@@ -42,9 +44,9 @@ export interface TableColumn  {
         <!-- Action Column -->
         @if (actions().length > 0) {
           <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef>Actions</th>
+            <th mat-header-cell *matHeaderCellDef></th>
             <td mat-cell *matCellDef="let row">
-              <button mat-icon-button [matMenuTriggerFor]="menu">
+              <button mat-icon-button [matMenuTriggerFor]="menu" class="action-btn">
                 <mat-icon>more_vert</mat-icon>
               </button>
               <mat-menu #menu="matMenu">
@@ -67,43 +69,103 @@ export interface TableColumn  {
     </div>
     `,
   styles: `
+    :host {
+        display: block;
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
     .table-container {
       width: 100%;
-      overflow: auto;
-	  padding-top: 20px;
+      overflow: hidden;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      border: 1px solid #f1f5f9;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-section {
+        padding: 16px 24px;
+        border-bottom: 1px solid #f1f5f9;
+        background: #ffffff;
     }
 
     .filter-field {
       width: 100%;
-      margin-bottom: 16px;
+      max-width: 400px;
     }
 
+    /* Table Styles */
     table {
       width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
     }
 
-    .mat-row:hover {
-      background-color: #f5f5f5;
-      cursor: pointer;
+    th.mat-header-cell {
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 16px 24px;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: nowrap;
     }
 
+    td.mat-cell {
+      padding: 16px 24px;
+      color: #334155;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.2s;
+    }
+
+    tr.mat-row:hover td {
+      background-color: #f8fafc;
+    }
+    
+    tr.mat-row:last-child td {
+        border-bottom: none;
+    }
+
+    /* Actions Column */
     .mat-column-actions {
-      width: 80px;
-      text-align: center;
+      width: 60px;
+      padding-right: 16px !important;
+      text-align: right;
+    }
+    
+    .action-btn {
+        color: #94a3b8;
+    }
+    
+    .action-btn:hover {
+        color: #4f46e5;
+        background: #eef2ff;
+    }
+
+    /* Paginator */
+    mat-paginator {
+        border-top: 1px solid #f1f5f9;
+        font-size: 0.875rem;
+        color: #64748b;
     }
   `
 })
 export class TableComponent implements OnChanges, AfterViewInit {
   getActionIcon(action: string): string {
-		const icons: Record<string, string> = {
-			edit: 'edit',
-			delete: 'delete',
-			flag: 'flag',
-			view: 'visibility'
-		};
-		return icons[action] || 'more_vert';
-	}
-  
+    const icons: Record<string, string> = {
+      edit: 'edit',
+      delete: 'delete',
+      flag: 'flag',
+      view: 'visibility'
+    };
+    return icons[action] || 'more_vert';
+  }
+
   // Input Signals
   columns = input<TableColumn[]>([]);
   data = input<any[]>([]);
@@ -127,7 +189,7 @@ export class TableComponent implements OnChanges, AfterViewInit {
   @ViewChild(MatSort) sort!: MatSort;
 
   // Output events
-  @Output() rowAction = new EventEmitter<{action: string, item: any}>();
+  @Output() rowAction = new EventEmitter<{ action: string, item: any }>();
   @Output() filterChanged = new EventEmitter<string>();
 
   ngAfterViewInit() {
@@ -162,19 +224,19 @@ export class TableComponent implements OnChanges, AfterViewInit {
     this.dataSource().filter = filterValue.trim().toLocaleLowerCase();
     this.filterChanged.emit(filterValue);
 
-    if(this.dataSource().paginator) {
+    if (this.dataSource().paginator) {
       this.dataSource().paginator?.firstPage();
     }
   }
 
   onAction(action: string, item: any) {
-    this.rowAction.emit({action, item});
+    this.rowAction.emit({ action, item });
   }
 
   getCellValue(item: any, column: TableColumn): any {
     const value = item[column.key];
 
-    switch(column.type) {
+    switch (column.type) {
       case 'date':
         return new Date(value).toLocaleDateString();
       case 'boolean':

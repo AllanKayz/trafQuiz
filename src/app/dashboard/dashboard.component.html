@@ -1,43 +1,62 @@
-<mat-sidenav-container class="sidenav-container">
-  <mat-sidenav #sidenav mode="side" opened class="bg-secondary-subtle sidenav p-3 shadow-sm" [fixedInViewport]="true"
-    [class.collapsed]="isSidenavCollapsed()">
-    <div class="menu-header">
-      <button mat-icon-button (click)="toggleSidenav()">
-        <mat-icon>{{isSidenavCollapsed() ? 'menu' : 'close'}}</mat-icon>
-      </button>
-    </div>
-    @if (isLoggedIn()) {
-      <mat-nav-list>
-        @for (item of menuItems(); track item) {
-          <div>
-            <a mat-list-item [routerLink]="[item.toLowerCase()]" (click)="sidenavLink()">
-              <mat-icon class="">{{icons()[item.toLowerCase()] || ''}}</mat-icon>
-              @if (!isSidenavCollapsed()) {
-                <span class="text-uppercase fw-bold menu-label"> {{item}}</span>
-              }
-            </a>
-          </div>
-        }
-      </mat-nav-list>
-    }
-    @if (!isLoggedIn()) {
-      <p>Log in to see menu</p>
-    }
-  </mat-sidenav>
+<div class="sidenav-container">
 
-  <mat-sidenav-content class="content" [class.collapsed-content]="isSidenavCollapsed()">
-    @if (isLoggedIn()) {
-      <ng-container class="content">
-        <mat-toolbar class="floating-toolbar shadow-sm" color="primary">
-          <span class="spacer"></span>
-          <button mat-stroked-button class="mx-auto" (click)="onLogout()">
-            Logout
-          </button>
-        </mat-toolbar>
-        <div class="content-wrapper">
-          <router-outlet />
+  <!-- Sidebar -->
+  <aside class="sidenav" [class.collapsed]="isSidenavCollapsed()">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <mat-icon>school</mat-icon>
         </div>
-      </ng-container>
+        @if (!isSidenavCollapsed()) {
+        <span class="logo-text">TrafQuiz</span>
+        }
+      </div>
+    </div>
+
+    @if (isLoggedIn()) {
+    <nav class="nav-list">
+      @for (item of menuItems(); track item) {
+      <a class="nav-item" [routerLink]="[item.toLowerCase()]" routerLinkActive="active-link"
+        [routerLinkActiveOptions]="{exact: false}" (click)="sidenavLink()">
+        <mat-icon>{{icons()[item.toLowerCase()] || 'circle'}}</mat-icon>
+        @if (!isSidenavCollapsed()) {
+        <span>{{item}}</span>
+        }
+      </a>
+      }
+    </nav>
+
+    <div class="user-profile">
+      <div class="avatar">{{ user()?.firstname?.charAt(0) || 'U' }}</div>
+      @if (!isSidenavCollapsed()) {
+      <div class="user-info">
+        <span class="user-name">{{ user()?.firstname }} {{ user()?.lastname }}</span>
+        <span class="user-role">{{ user()?.role }}</span>
+      </div>
+      }
+    </div>
     }
-  </mat-sidenav-content>
-</mat-sidenav-container>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <header class="top-bar">
+      <div class="actions">
+        <button class="toggle-btn" (click)="toggleSidenav()">
+          <mat-icon>{{isSidenavCollapsed() ? 'menu' : 'menu_open'}}</mat-icon>
+        </button>
+        <h1 class="page-title">Dashboard</h1>
+      </div>
+
+      <div class="actions">
+        <button mat-icon-button (click)="onLogout()" matTooltip="Logout">
+          <mat-icon>logout</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <div class="content-scroll">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

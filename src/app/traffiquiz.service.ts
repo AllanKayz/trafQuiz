@@ -4,7 +4,24 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import {  ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse } from './trafquiz';
+import { ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse } from './trafquiz';
+
+export interface StudentProgress {
+  studentId: string;
+  totalTests: number;
+  averageScore: number;
+  completionRate: number;
+  recentActivity: {
+    quizTitle: string;
+    score: number;
+    date: Date;
+    status: 'pass' | 'fail';
+  }[];
+  monthlyPerformance: {
+    month: string;
+    score: number;
+  }[];
+}
 
 /**
  * Service responsible for managing the application's data and state.
@@ -42,6 +59,12 @@ export class TraffiquizService {
   /** A signal for the exam duration in seconds. */
   examDuration = signal<number>(300); //default 10 minutes
 
+  /** Signal for user's theme preference. */
+  public themePreference = signal<'light' | 'dark' | 'system'>('system');
+
+  /** Signal for the effectively active theme (true for dark, false for light). */
+  public darkMode = signal<boolean>(false);
+
   // Computed signals for derived state from the main data signals.
   /** A computed signal that returns the total number of questions. */
   public totalQuestions = computed(() => this.questionsSignal().length);
@@ -54,30 +77,54 @@ export class TraffiquizService {
 
   /** Defines the menu items for different user roles. */
   private menus = {
-    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Vehicles', 'Finances', 'Reports', 'Messages', 'User Access', 'Settings'],
+    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Settings'],
     instructor: ['Dashboard', 'Schedule', 'Students', 'Feedbacks', 'Vehicle Status', 'Messages', 'Settings'],
-    student: ['Dashboard', 'Exam', 'Lessons', 'Progress Reports', 'Messages', 'Payments', 'Settings'],
+    student: ['Dashboard', 'Exam', 'Lessons', 'Reports', 'Messages', 'Payments', 'Settings'],
     icons: { dashboard: '📊', questions: '❓', instructors: '👨‍🏫', exams: '📝', students: '👥', vehicles: '🚗', reports: '📈', settings: '⚙️' }
   }
 
   /** Configuration for the widgets displayed on the dashboard for different user roles. */
   private widgetsConfig = {
     admin: [
-      { title: 'Total Students', data: 0, footer: 'Since last month' },
-      { title: 'Revenue', data: '$2,450', footer: 'Current month' },
-      { title: 'Exams Today', data: 12, footer: 'Scheduled' },
-      { title: 'Pass Rate', data: 72, footer: 'A High Success Record' },
-      { title: 'Total Instructors', data: 15, footer: 'Since last month' }
+      { title: 'Total Students', data: Math.floor(Math.random() * 50) + 100, footer: 'Active' },
+      { title: 'Monthly Revenue', data: '$' + (Math.floor(Math.random() * 1000) + 2000), footer: 'Current month' },
+      { title: 'Exams Today', data: Math.floor(Math.random() * 5) + 2, footer: 'Scheduled' },
+      { title: 'Pass Rate', data: '78%', footer: 'Overall' },
+      { title: 'System Alerts', data: 2, footer: 'Requires Attention', type: 'warn' }
     ],
     instructor: [
-      { title: 'Next Lesson', data: 24, footer: 'June' },
-      { title: 'Students Today', data: 3, footer: 'Scheduled' },
-      { title: 'Messages', data: 5, footer: 'Unread' }
+      { title: 'Next Lesson', data: '14:00', footer: 'Today' },
+      { title: 'Pending Reports', data: 3, footer: 'To Review' },
+      { title: 'Vehicle Status', data: 'OK', footer: 'Assigned Car' },
+      { title: 'Students', data: 12, footer: 'Active' }
     ],
     student: [
-      { title: 'Next Lesson', data: 24, footer: 'June' },
-      { title: 'Progress', data: '75%', footer: 'Overall' },
-      { title: 'Days Left', data: 15, footer: 'Until Exam' }
+      { title: 'Next Lesson', data: 'Wed, 10:00 AM', footer: 'With John Doe' },
+      { title: 'Days to Exam', data: 14, footer: 'Countdown' },
+      { title: 'Recent Score', data: '85%', footer: 'Road Signs Quiz' },
+      { title: 'Completed', data: '6/10', footer: 'Lessons' }
+    ]
+  }
+
+  /** Configuration for Quick Actions. */
+  private quickActionsConfig = {
+    admin: [
+      { label: 'Add User', icon: 'person_add', route: '/dashboard/useraccess' },
+      { label: 'View Finances', icon: 'payments', route: '/dashboard/finances' },
+      { label: 'Manage Fleet', icon: 'directions_car', route: '/dashboard/vehicles' },
+      { label: 'System Settings', icon: 'settings', route: '/dashboard/settings' }
+    ],
+    instructor: [
+      { label: 'My Schedule', icon: 'calendar_today', route: '/dashboard' },
+      { label: 'Grade Student', icon: 'fact_check', route: '/dashboard/students' },
+      { label: 'Log Issue', icon: 'report_problem', route: '/dashboard/vehicles' },
+      { label: 'Message Admin', icon: 'mail', route: '/dashboard/messages' }
+    ],
+    student: [
+      { label: 'Start Exam', icon: 'play_circle', route: '/exam' },
+      { label: 'Book Lesson', icon: 'schedule', route: '/dashboard/lessons' },
+      { label: 'My Progress', icon: 'bar_chart', route: '/dashboard/reports' },
+      { label: 'Make Payment', icon: 'credit_card', route: '/dashboard/payments' }
     ]
   }
 
@@ -111,7 +158,14 @@ export class TraffiquizService {
   /** A computed signal that returns the widgets for the current user's role. */
   public userWidgets = computed(() => {
     const user = this.userSignal();
-    return user ? this.widgetsConfig[user.role as keyof typeof this.widgetsConfig] : [];
+    const role: 'admin' | 'instructor' | 'student' = user?.role || 'student';
+    return this.widgetsConfig[role] || [];
+  });
+
+  public userQuickActions = computed(() => {
+    const user = this.userSignal();
+    const role: 'admin' | 'instructor' | 'student' = user?.role || 'student';
+    return this.quickActionsConfig[role] || [];
   });
 
   /** A computed signal that returns the question widgets for the current user's role. */
@@ -201,6 +255,7 @@ export class TraffiquizService {
 
   constructor() {
     this.initializeUser();
+    this.initializeTheme();
   }
 
   /**
@@ -218,17 +273,13 @@ export class TraffiquizService {
 
   /**
    * Updates the user's profile locally and emits the new state.
-   * Attempts to call backend update endpoint if available; otherwise updates local storage.
    */
   public updateProfile(payload: any): Observable<any> {
-    // Update local copy immediately
     const raw = this.getRawUser() || {};
     const updated = { ...raw, ...payload };
     localStorage.setItem('user', JSON.stringify(updated));
-    // Update the formatted signal as well
     this.userSignal.set(this.formatUser(updated));
 
-    // Attempt backend sync; endpoint may not exist yet. Return observable that resolves even if request fails.
     return this.http.post(this.url + 'updateuser', updated).pipe(
       tap((res) => res),
       catchError((err) => {
@@ -238,14 +289,42 @@ export class TraffiquizService {
     );
   }
 
-  /**
-   * Persist user preferences locally.
-   */
   public updatePreferences(prefs: any) {
     const stored = JSON.parse(localStorage.getItem('appSettings') || '{}');
     const merged = { ...stored, ...prefs };
     localStorage.setItem('appSettings', JSON.stringify(merged));
+
+    if (merged.theme) {
+      this.themePreference.set(merged.theme);
+      this.syncTheme();
+    }
+
     return merged;
+  }
+
+  private initializeTheme() {
+    const settings = JSON.parse(localStorage.getItem('appSettings') || '{}');
+    if (settings.theme) {
+      this.themePreference.set(settings.theme);
+    }
+
+    this.syncTheme();
+
+    // Listen for system changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+      if (this.themePreference() === 'system') {
+        this.darkMode.set(e.matches);
+      }
+    });
+  }
+
+  private syncTheme() {
+    const pref = this.themePreference();
+    if (pref === 'system') {
+      this.darkMode.set(window.matchMedia('(prefers-color-scheme: dark)').matches);
+    } else {
+      this.darkMode.set(pref === 'dark');
+    }
   }
 
   /**
@@ -748,7 +827,7 @@ export class TraffiquizService {
       error: (error) => {
         const data = {
           title: `Error: ${error.status} (${error.statusText})`,
-        message: `Error fetching certifications: ${error.error.message}`,
+          message: `Error fetching certifications: ${error.error.message}`,
           type: 'error',
           buttons: [
             { text: 'Close', value: 'close', color: 'warn' }
@@ -799,12 +878,138 @@ export class TraffiquizService {
     return this.alert.open(AlertComponent, {
       data: data
     });
-
-    /*
-    this.alert.afterClosed().subscribe(result => {
-      console.log('Dialog closed', result);
-    });
-    */
   }
 
+  /**
+   * Fetches the progress data for a student.
+   * If studentId is not provided, fetches for the current user.
+   * returning MOCKED data for demonstration purposes as per plan.
+   */
+  fetchStudentProgress(studentId?: string): Observable<StudentProgress> {
+    // In a real app, this would hit an API endpoint like /api/students/{id}/progress
+    const mockData: StudentProgress = {
+      studentId: studentId || this.currentUser()?.username || 'current-user',
+      totalTests: Math.floor(Math.random() * 20) + 5,
+      averageScore: Math.floor(Math.random() * 30) + 70, // 70-100
+      completionRate: Math.floor(Math.random() * 40) + 60, // 60-100%
+      recentActivity: [
+        { quizTitle: 'Road Signs & Signals', score: 85, date: new Date(Date.now() - 86400000 * 2), status: 'pass' },
+        { quizTitle: 'Vehicle Maintenance', score: 92, date: new Date(Date.now() - 86400000 * 5), status: 'pass' },
+        { quizTitle: 'Traffic Laws', score: 65, date: new Date(Date.now() - 86400000 * 10), status: 'fail' },
+        { quizTitle: 'Safety Precautions', score: 78, date: new Date(Date.now() - 86400000 * 15), status: 'pass' },
+        { quizTitle: 'Highway Code', score: 88, date: new Date(Date.now() - 86400000 * 20), status: 'pass' }
+      ],
+      monthlyPerformance: [
+        { month: 'Jan', score: 65 },
+        { month: 'Feb', score: 70 },
+        { month: 'Mar', score: 75 },
+        { month: 'Apr', score: 82 },
+        { month: 'May', score: 78 },
+        { month: 'Jun', score: 88 }
+      ]
+    };
+
+    return of(mockData);
+  }
+
+  // --- Financial & Payments Mocks ---
+
+  fetchTransactions(role: string, userId: string): Observable<any[]> {
+    // Generate mock transactions
+    const count = role === 'student' ? 5 : 20;
+    const transactions = Array.from({ length: count }, (_, i) => ({
+      id: `TRX-${1000 + i}`,
+      studentName: role === 'student' ? 'You' : `Student ${i + 1}`,
+      description: role === 'student' ? 'Lesson Payment' : (i % 3 === 0 ? 'Exam Fee' : 'Lesson Package'),
+      amount: role === 'student' ? ((i + 1) * 20) : (Math.floor(Math.random() * 200) + 50),
+      type: 'credit',
+      date: new Date(Date.now() - 86400000 * i * 2),
+      status: Math.random() > 0.1 ? 'completed' : 'pending' // 90% success rate
+    }));
+
+    return of(transactions);
+  }
+
+  fetchFinancialStats(): Observable<any> {
+    const revenue = [1200, 1500, 1100, 1800, 2100, 2400]; // Last 6 months
+    const expenses = [800, 900, 850, 950, 1100, 1000];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+
+    return of({
+      totalRevenue: revenue.reduce((a, b) => a + b, 0),
+      totalExpenses: expenses.reduce((a, b) => a + b, 0),
+      netProfit: revenue.reduce((a, b) => a + b, 0) - expenses.reduce((a, b) => a + b, 0),
+      projectedRevenue: 3000, // Next month projection
+      chartData: {
+        labels: months,
+        revenue: revenue,
+        expenses: expenses,
+        profit: revenue.map((r, i) => r - expenses[i])
+      }
+    });
+  }
+
+  // --- User Access Management (Mocked) ---
+
+  /** Fetches all users (students and instructors). */
+  fetchAllUsers(): Observable<any[]> {
+    const students = this.studentsSignal() || [];
+    const instructors = this.instructorsSignal() || [];
+
+    // Normalize data structures
+    const allUsers = [
+      ...students.map(s => ({ ...s, role: 'student', name: s.firstName + ' ' + s.lastName })),
+      ...instructors.map(i => ({ ...i, role: 'instructor', name: i.firstName + ' ' + i.lastName }))
+    ];
+
+    // If empty (e.g. before initial fetch), mock some data
+    if (allUsers.length === 0) {
+      return of([
+        { id: '1', name: 'John Doe', email: 'john@example.com', role: 'student', status: 'active' },
+        { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'instructor', status: 'active' },
+        { id: '3', name: 'Bob Wilson', email: 'bob@example.com', role: 'student', status: 'suspended' }
+      ]);
+    }
+
+    return of(allUsers);
+  }
+
+  addUser(user: any): Observable<any> {
+    // Determine target mock endpoint
+    // In real app: POST /api/users
+    console.log('Mock Adding User:', user);
+
+    // Simulate updating local signal
+    const newId = Date.now();
+    if (user.role === 'student') {
+      const current = this.studentsSignal();
+      this.studentsSignal.set([...current, { ...user, id: newId }]);
+    } else {
+      const current = this.instructorsSignal();
+      this.instructorsSignal.set([...current, { ...user, id: newId }]);
+    }
+
+    return of({ success: true, message: 'User added successfully' });
+  }
+
+  updateUserPassword(userId: string, newPass: string): Observable<any> {
+    // In real app: PUT /api/users/{id}/password
+    console.log(`Mock Password Update for ${userId}: ${newPass}`);
+    return of({ success: true, message: 'Password updated successfully' });
+  }
+
+  deleteUser(userId: string, role: string): Observable<any> {
+    // In real app: DELETE /api/users/{id}
+    console.log(`Mock Delete User: ${userId}`);
+
+    const uid = Number(userId);
+
+    if (role === 'student') {
+      this.studentsSignal.set(this.studentsSignal().filter(s => s.id !== uid));
+    } else {
+      this.instructorsSignal.set(this.instructorsSignal().filter(i => i.id !== uid));
+    }
+
+    return of({ success: true, message: 'User deleted successfully' });
+  }
 }

@@ -1,1 +1,148 @@
-<p>finances works!</p>
+<div class="finances-container fade-in">
+
+    <header class="page-header">
+        <div class="header-content">
+            <h1>{{ isAdmin() ? 'System Finances' : 'My Payments' }}</h1>
+            <p>{{ isAdmin() ? 'Track revenue, expenses, and system health.' : 'View your transaction history and
+                upcoming dues.' }}</p>
+        </div>
+        @if (!isAdmin()) {
+        <button mat-flat-button color="primary">Make Payment</button>
+        }
+    </header>
+
+    <!-- Admin: Financial Overview -->
+    @if (isAdmin() && stats(); as data) {
+    <section class="stats-overview">
+        <mat-card class="stat-card revenue">
+            <div class="stat-icon">
+                <mat-icon>monetization_on</mat-icon>
+            </div>
+            <div class="stat-content">
+                <span class="label">Total Revenue</span>
+                <span class="value">${{data.totalRevenue | number}}</span>
+            </div>
+        </mat-card>
+
+        <mat-card class="stat-card expense">
+            <div class="stat-icon">
+                <mat-icon>trending_down</mat-icon>
+            </div>
+            <div class="stat-content">
+                <span class="label">Total Expenses</span>
+                <span class="value">${{data.totalExpenses | number}}</span>
+            </div>
+        </mat-card>
+
+        <mat-card class="stat-card profit">
+            <div class="stat-icon">
+                <mat-icon>trending_up</mat-icon>
+            </div>
+            <div class="stat-content">
+                <span class="label">Net Profit</span>
+                <span class="value">${{data.netProfit | number}}</span>
+            </div>
+        </mat-card>
+
+        <mat-card class="stat-card projection">
+            <div class="stat-icon">
+                <mat-icon>insights</mat-icon>
+            </div>
+            <div class="stat-content">
+                <span class="label">Next Month Proj.</span>
+                <span class="value">${{data.projectedRevenue | number}}</span>
+            </div>
+        </mat-card>
+    </section>
+
+    <!-- Projections Chart -->
+    <mat-card class="chart-container">
+        <div class="chart-header">
+            <h3>Revenue vs Expenses</h3>
+            <span class="badge">6 Month Trend</span>
+        </div>
+        <div class="projections-chart">
+            @for (label of data.chartData.labels; track label; let i = $index) {
+            <div class="chart-column">
+                <div class="bars-wrapper">
+                    <!-- Revenue Bar -->
+                    <div class="bar revenue-bar" [style.height.px]="(data.chartData.revenue[i] / 30)"
+                        [title]="'Rev: $' + data.chartData.revenue[i]">
+                    </div>
+                    <!-- Expense Bar -->
+                    <div class="bar expense-bar" [style.height.px]="(data.chartData.expenses[i] / 30)"
+                        [title]="'Exp: $' + data.chartData.expenses[i]">
+                    </div>
+                </div>
+                <span class="x-label">{{label}}</span>
+            </div>
+            }
+        </div>
+    </mat-card>
+    }
+
+    <!-- Transaction History (Shared) -->
+    <mat-card class="table-card">
+        <div class="card-header">
+            <h3>Transaction History</h3>
+            <!-- <button mat-stroked-button>Download Report</button> -->
+        </div>
+
+        @if (isLoading()) {
+        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+        }
+
+        <table mat-table [dataSource]="transactions()" class="transactions-table">
+
+            <!-- ID Column -->
+            <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef> ID </th>
+                <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+            </ng-container>
+
+            <!-- Student Column (Admin Only) -->
+            <ng-container matColumnDef="studentName">
+                <th mat-header-cell *matHeaderCellDef> Student </th>
+                <td mat-cell *matCellDef="let element"> {{element.studentName}} </td>
+            </ng-container>
+
+            <!-- Date Column -->
+            <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef> Date </th>
+                <td mat-cell *matCellDef="let element"> {{element.date | date:'mediumDate'}} </td>
+            </ng-container>
+
+            <!-- Description Column -->
+            <ng-container matColumnDef="description">
+                <th mat-header-cell *matHeaderCellDef> Description </th>
+                <td mat-cell *matCellDef="let element"> {{element.description}} </td>
+            </ng-container>
+
+            <!-- Amount Column -->
+            <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef> Amount </th>
+                <td mat-cell *matCellDef="let element" class="amount-cell">
+                    ${{element.amount | number:'1.2-2'}}
+                </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+                <th mat-header-cell *matHeaderCellDef> Status </th>
+                <td mat-cell *matCellDef="let element">
+                    <span class="status-badge" [class]="element.status">{{element.status | titlecase}}</span>
+                </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: tableColumns;"></tr>
+        </table>
+
+        @if (!isLoading() && transactions().length === 0) {
+        <div class="empty-state">
+            <p>No transactions found.</p>
+        </div>
+        }
+    </mat-card>
+
+</div>

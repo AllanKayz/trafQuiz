@@ -1,19 +1,15 @@
 
 import { Component, inject, signal, computed } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
-import { MatInputModule } from '@angular/material/input';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { TraffiquizService } from '../traffiquiz.service';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterModule, MatToolbarModule, MatIconModule, MatInputModule, MatSidenavModule, MatListModule, ReactiveFormsModule, MatButtonModule, MatFormFieldModule],
+  imports: [RouterModule, MatIconModule, ReactiveFormsModule, MatButtonModule, MatTooltipModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -54,5 +50,5 @@ export class DashboardComponent {
     this.trafQuizService.logout();
     this.router.navigate(['/login']);
   }
-  
+
 }

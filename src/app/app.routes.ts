@@ -16,6 +16,7 @@ import { StudentsComponent } from './components/students/students.component';
 import { FinancesComponent } from './components/finances/finances.component';
 import { ReportsComponent } from './components/reports/reports.component';
 import { SettingsComponent } from './components/settings/settings.component';
+import { UserAccessComponent } from './components/user-access/user-access.component';
 
 /**
  * Defines the routes for the application.
@@ -74,6 +75,10 @@ export const routes: Routes = [
         component: FinancesComponent
       },
       {
+        path: 'payments',
+        component: FinancesComponent
+      },
+      {
         path: 'reports',
         component: ReportsComponent
       },
@@ -87,7 +92,7 @@ export const routes: Routes = [
       },
       {
         path: 'useraccess',
-        component: MessagesComponent
+        component: UserAccessComponent
       },
       {
         path: 'dashboard', redirectTo: '', pathMatch: 'full'

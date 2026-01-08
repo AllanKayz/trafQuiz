@@ -1,5 +1,35 @@
-<section class="widgets-grid">
-  @for (widget of widgets(); track widget) {
-    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
-  }
-</section>
+<div class="widgets-container fade-in">
+
+  <!-- Welcome Section -->
+  <div class="welcome-header">
+    <h2>Welcome back, <span class="highlight">{{ userName() }}</span>!</h2>
+    <p>Here's what's happening today.</p>
+  </div>
+
+  <!-- Quick Actions Grid -->
+  <section class="quick-actions">
+    <div class="section-title">Quick Actions</div>
+    <div class="actions-grid">
+      @for (action of quickActions(); track action.label) {
+      <a [routerLink]="action.route" matRipple class="action-card">
+        <div class="action-icon">
+          <mat-icon>{{ action.icon }}</mat-icon>
+        </div>
+        <span class="action-label">{{ action.label }}</span>
+      </a>
+      }
+    </div>
+  </section>
+
+  <!-- Key Stats Grid -->
+  <section class="stats-section">
+    <div class="section-title">Overview</div>
+    <div class="stats-grid">
+      @for (widget of widgets(); track widget.title) {
+      <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer">
+      </app-stat-card>
+      }
+    </div>
+  </section>
+
+</div>
