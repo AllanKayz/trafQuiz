@@ -1,22 +1,89 @@
-:host { display: block; }
+:host {
+  display: block;
+}
+
 .lesson-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 120ms ease, transform 120ms ease;
-  border: 1px solid rgba(0,0,0,0.04);
+  gap: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.lesson-card:hover { background-color: rgba(0,0,0,0.02); transform: translateY(-1px); }
-.lesson-card.selected { box-shadow: 0 2px 6px rgba(0,0,0,0.06); border-color: rgba(0,0,0,0.08); }
-.time { font-weight: 600; width: 64px; color: var(--mat-sys-on-surface); }
-.details { flex: 1; min-width: 0; }
-.title { font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.meta { font-size: 0.82rem; color: rgba(0,0,0,0.6); }
-.status { font-size: 0.8rem; padding: 4px 8px; border-radius: 12px; text-transform: capitalize; }
-.status[data-status="upcoming"] { background: #e6f7ff; color: #005f99; }
-.status[data-status="cancelled"] { background: #fff0f0; color: #a00; }
-.status[data-status="completed"] { background: #f0fff4; color: #117a35; }
-.status[data-status="rescheduled"] { background: #fff7e6; color: #8a5c00; }
+
+.lesson-card:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  transform: translateX(4px);
+}
+
+.lesson-card.selected {
+  background: #f1f5f9;
+  border-color: #6366f1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.time-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 50px;
+}
+
+.time-box .hour {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.time-box .ampm {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.details {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.meta {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot[data-status="upcoming"] {
+  background: #22c55e;
+}
+
+.status-dot[data-status="cancelled"] {
+  background: #ef4444;
+}
+
+.status-dot[data-status="completed"] {
+  background: #64748b;
+}
+
+.status-dot[data-status="rescheduled"] {
+  background: #f59e0b;
+}

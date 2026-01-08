@@ -8,6 +8,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatSelectModule } from '@angular/material/select';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { TraffiquizService } from '../../traffiquiz.service';
 
 @Component({
@@ -22,7 +23,8 @@ import { TraffiquizService } from '../../traffiquiz.service';
     MatTabsModule,
     MatIconModule,
     MatSlideToggleModule,
-    MatSelectModule
+    MatSelectModule,
+    MatProgressBarModule
   ],
   templateUrl: './settings.component.html',
   styleUrl: './settings.component.css'
@@ -34,6 +36,7 @@ export class SettingsComponent {
   profileForm: FormGroup;
   prefsForm: FormGroup;
   saving = false;
+  activeTab = 'profile';
 
   constructor() {
     const raw = this.service.getRawUser() || {};
@@ -103,6 +106,20 @@ export class SettingsComponent {
     const prefs = this.prefsForm.value;
     this.service.updatePreferences(prefs);
     const data = { title: 'Saved', message: 'Preferences updated', type: 'success', buttons: [{ text: 'Close', value: 'close' }] };
+    this.service.openAlertDialog(data);
+  }
+
+  deleteAccount() {
+    const data = {
+      title: 'Delete Account?',
+      message: 'This action cannot be undone. Are you sure you want to permanently delete your account?',
+      type: 'warning',
+      buttons: [
+        { text: 'Cancel', value: 'cancel' },
+        { text: 'Delete', value: 'confirm' }
+      ]
+    };
+    // Mock confirmation for now
     this.service.openAlertDialog(data);
   }
 }

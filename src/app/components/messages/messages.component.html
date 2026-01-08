@@ -1,46 +1,102 @@
-<div class="messages-container">
-  <aside class="conversations">
-    <h3>Messages</h3>
-    <mat-list>
-      @for (c of conversations(); track c) {
-        <mat-list-item class="pt-5 pb-5" (click)="openConversation(c)" [class.selected]="selectedConversation()?.id === c.id">
-          <div class="conv-left">
-            <div class="conv-name">{{c.name}}</div>
-            <div class="conv-last">{{c.lastMessage}}</div>
-          </div>
-          <div class="conv-right">
-            <div class="time">{{ formatTime(c.lastTime || '') }}</div>
-            @if (c.unread && c.unread > 0) {
-              <div class="unread">{{ c.unread }}</div>
-            }
-          </div>
-        </mat-list-item>
+<div class="messages-layout">
+  <!-- Sidebar -->
+  <aside class="conversations-sidebar">
+    <div class="sidebar-header">
+      <h2>Messages</h2>
+      <button mat-icon-button>
+        <mat-icon>edit_square</mat-icon>
+      </button>
+    </div>
+
+    <div class="sidebar-search">
+      <div class="search-inner">
+        <mat-icon>search</mat-icon>
+        <input type="text" placeholder="Search messages..." (input)="searchText.set($any($event.target).value)">
+      </div>
+    </div>
+
+    <mat-list class="conv-list">
+      @for (c of filteredConversations(); track c.id) {
+      <mat-list-item (click)="openConversation(c)" [class.active-item]="selectedConversation()?.id === c.id">
+        <div matListItemAvatar class="avatar">
+          {{ getInitials(c.name) }}
+        </div>
+        <div matListItemTitle class="conv-title-row">
+          <span class="conv-name">{{ c.name }}</span>
+          <span class="conv-time">{{ formatTime(c.lastTime || '') }}</span>
+        </div>
+        <div matListItemLine class="conv-last-msg">
+          {{ c.lastMessage }}
+        </div>
+        @if (c.unread && c.unread > 0) {
+        <div class="unread-badge">{{ c.unread }}</div>
+        }
+      </mat-list-item>
       }
     </mat-list>
   </aside>
 
-  @if (selectedConversation()) {
-    <section class="thread">
-      <mat-card class="thread-header">
-        <div class="thread-title">{{selectedConversation()?.name}}</div>
-        <div class="thread-sub">Last: {{formatTime(selectedConversation()?.lastTime || '')}}</div>
-      </mat-card>
-      <div class="messages-list">
-        @for (m of messages(); track m) {
-          <div class="message" [class.outgoing]="m.outgoing">
-            <div class="author">{{m.from}}</div>
-            <div class="body">{{m.body}}</div>
-            <div class="ts">{{formatTime(m.timestamp)}}</div>
-          </div>
-        }
-      </div>
-      <div class="reply-box">
-        <textarea [(ngModel)]="reply" rows="3" placeholder="Type your message"></textarea>
-        <button mat-raised-button color="primary" (click)="sendReply()">Send</button>
-      </div>
-    </section>
-  } @else {
-    <div class="placeholder">Select a conversation to view messages.</div>
-  }
+  <!-- Main Content -->
+  <main class="chat-main">
+    @if (loading() && selectedConversation()) {
+    <div class="loading-overlay">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+    }
 
+    @if (selectedConversation()) {
+    <header class="chat-header">
+      <div class="header-avatar">{{ getInitials(selectedConversation()?.name || '') }}</div>
+      <div class="header-info">
+        <div class="header-name">{{ selectedConversation()?.name }}</div>
+        <div class="header-status">Online</div>
+      </div>
+      <div class="header-actions">
+        <button mat-icon-button><mat-icon>phone</mat-icon></button>
+        <button mat-icon-button><mat-icon>videocam</mat-icon></button>
+        <button mat-icon-button><mat-icon>info</mat-icon></button>
+      </div>
+    </header>
+
+    <div class="chat-messages" #scrollContainer>
+      @for (m of messages(); track m.id) {
+      <div class="msg-wrapper" [class.sent]="m.outgoing" [class.received]="!m.outgoing">
+        @if (!m.outgoing) {
+        <div class="msg-avatar-small">{{ getInitials(m.from) }}</div>
+        }
+        <div class="msg-content">
+          <div class="msg-bubble">
+            <div class="msg-text">{{ m.body }}</div>
+          </div>
+          <div class="msg-meta">
+            {{ formatTime(m.timestamp) }}
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+
+    <footer class="chat-footer">
+      <div class="reply-container">
+        <button mat-icon-button class="attach-btn">
+          <mat-icon>add_circle_outline</mat-icon>
+        </button>
+        <div class="input-area">
+          <textarea [(ngModel)]="reply" placeholder="Write a message..."
+            (keydown.enter)="$event.preventDefault(); sendReply()" rows="1">
+            </textarea>
+        </div>
+        <button mat-fab color="primary" class="send-btn" [disabled]="!reply.trim()" (click)="sendReply()">
+          <mat-icon>send</mat-icon>
+        </button>
+      </div>
+    </footer>
+    } @else {
+    <div class="chat-placeholder">
+      <mat-icon class="placeholder-icon">forum</mat-icon>
+      <h3>Your messages</h3>
+      <p>Select a person from the list to start a conversation.</p>
+    </div>
+    }
+  </main>
 </div>

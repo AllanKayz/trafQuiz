@@ -1,8 +1,11 @@
 <div class="lesson-card" [class.selected]="selected" role="button" tabindex="0">
-  <div class="time">{{ lesson.startTime | date: 'shortTime' }}</div>
+  <div class="time-box">
+    <span class="hour">{{ lesson.startTime | date: 'h:mm' }}</span>
+    <span class="ampm">{{ lesson.startTime | date: 'a' }}</span>
+  </div>
   <div class="details">
     <div class="title">{{ lesson.title }}</div>
-    <div class="meta">{{ lesson.instructor.name }} • {{ lesson.studentCount }} students</div>
+    <div class="meta">{{ lesson.instructor.name }}</div>
   </div>
-  <div class="status" [attr.data-status]="lesson.status">{{ statusLabel(lesson.status) }}</div>
+  <div class="status-dot" [attr.data-status]="lesson.status" [title]="lesson.status"></div>
 </div>

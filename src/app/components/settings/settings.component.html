@@ -1,94 +1,189 @@
-<div class="settings-page">
-  <mat-card class="profile-card">
-    <div class="avatar">
-      <mat-icon class="avatar-icon">account_circle</mat-icon>
+<div class="settings-container">
+
+  <!-- Sidebar Navigation -->
+  <aside class="settings-sidebar">
+    <div class="user-profile-summary">
+      <div class="avatar-large">
+        <mat-icon>account_circle</mat-icon>
+      </div>
+      <h3>{{ profileForm.value.username }}</h3>
+      <span class="role-badge">{{ service.currentUser()?.role || 'User' }}</span>
     </div>
-    <div class="meta">
-      <h2 class="username">{{ profileForm.value.username }}</h2>
-      <p class="muted">{{ service.currentUser()?.role || 'User' }}</p>
-    </div>
-  </mat-card>
 
-  <mat-card class="content-card">
-    <mat-tab-group class="p-4">
-      <mat-tab label="Profile">
-        <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="p-3">
-          <div class="form-grid">
-            <mat-form-field appearance="outline" class="full">
-              <mat-label>Username</mat-label>
-              <input matInput formControlName="username" />
-            </mat-form-field>
+    <nav class="settings-nav">
+      <div class="nav-item" [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'">
+        <mat-icon>person_outline</mat-icon>
+        <span>Profile</span>
+      </div>
+      <div class="nav-item" [class.active]="activeTab === 'preferences'" (click)="activeTab = 'preferences'">
+        <mat-icon>tune</mat-icon>
+        <span>Preferences</span>
+      </div>
+      <div class="nav-item" [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">
+        <mat-icon>lock_outline</mat-icon>
+        <span>Security</span>
+      </div>
+      <div class="nav-item danger" [class.active]="activeTab === 'account'" (click)="activeTab = 'account'">
+        <mat-icon>warning</mat-icon>
+        <span>Account Zone</span>
+      </div>
+    </nav>
+  </aside>
 
-            <mat-form-field appearance="outline">
-              <mat-label>First name</mat-label>
-              <input matInput formControlName="firstName" />
-            </mat-form-field>
+  <!-- Main Content Area -->
+  <main class="settings-content">
 
-            <mat-form-field appearance="outline">
-              <mat-label>Last name</mat-label>
-              <input matInput formControlName="lastName" />
-            </mat-form-field>
+    @if (activeTab === 'profile') {
+    <section class="settings-section fade-in">
+      <div class="section-header">
+        <h2>Personal Information</h2>
+        <p>Update your personal details and public profile info.</p>
+      </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput type="email" formControlName="email" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline">
-              <mat-label>Phone</mat-label>
-              <input matInput formControlName="phone" />
-            </mat-form-field>
-
-            <mat-slide-toggle formControlName="changePassword">Change password</mat-slide-toggle>
-
-            @if (profileForm.value.changePassword) {
-              <div class="passwords">
-                <mat-form-field appearance="outline" class="full">
-                  <mat-label>New password</mat-label>
-                  <input matInput type="password" formControlName="password" />
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="full">
-                  <mat-label>Confirm password</mat-label>
-                  <input matInput type="password" formControlName="confirmPassword" />
-                </mat-form-field>
-              </div>
-            }
-          </div>
-
-          <div class="actions">
-            <button mat-flat-button color="primary" type="button" (click)="saveProfile()" [disabled]="saving">Save profile</button>
-          </div>
-        </form>
-      </mat-tab>
-
-      <mat-tab label="Preferences">
-        <form [formGroup]="prefsForm" (ngSubmit)="savePreferences()" class="p-3">
-          <div class="prefs-grid">
-            <mat-form-field appearance="outline">
-              <mat-label>Theme</mat-label>
-              <mat-select formControlName="theme">
-                <mat-option value="light">Light</mat-option>
-                <mat-option value="dark">Dark</mat-option>
-              </mat-select>
-            </mat-form-field>
-
-            <mat-slide-toggle formControlName="notifications">Enable notifications</mat-slide-toggle>
-            <mat-slide-toggle formControlName="compactMode">Compact UI</mat-slide-toggle>
-          </div>
-
-          <div class="actions">
-            <button mat-flat-button color="primary" type="button" (click)="savePreferences()">Save preferences</button>
-          </div>
-        </form>
-      </mat-tab>
-
-      <mat-tab label="Account">
-        <div class="account p-3">
-          <p>Account management options (password, delete account) will appear here.</p>
-          <button mat-stroked-button color="warn">Request Account Deletion</button>
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half">
+            <mat-label>First Name</mat-label>
+            <input matInput formControlName="firstName">
+            <mat-icon matSuffix>badge</mat-icon>
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="half">
+            <mat-label>Last Name</mat-label>
+            <input matInput formControlName="lastName">
+          </mat-form-field>
         </div>
-      </mat-tab>
-    </mat-tab-group>
-  </mat-card>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Email Address</mat-label>
+            <input matInput type="email" formControlName="email">
+            <mat-icon matSuffix>mail</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Phone Number</mat-label>
+            <input matInput formControlName="phone">
+            <mat-icon matSuffix>phone</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          @if (saving) {
+          <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+          }
+          <button mat-flat-button color="primary" [disabled]="saving || profileForm.invalid">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </section>
+    }
+
+    @if (activeTab === 'preferences') {
+    <section class="settings-section fade-in">
+      <div class="section-header">
+        <h2>App Preferences</h2>
+        <p>Customize your experience and notification settings.</p>
+      </div>
+
+      <form [formGroup]="prefsForm" (ngSubmit)="savePreferences()">
+        <div class="card-option">
+          <div class="option-info">
+            <h4>Theme Preference</h4>
+            <p>Choose between light and dark mode.</p>
+          </div>
+          <mat-form-field appearance="outline" class="option-control">
+            <mat-select formControlName="theme">
+              <mat-option value="light">
+                <mat-icon>light_mode</mat-icon> Light
+              </mat-option>
+              <mat-option value="dark">
+                <mat-icon>dark_mode</mat-icon> Dark
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="card-option">
+          <div class="option-info">
+            <h4>Push Notifications</h4>
+            <p>Receive updates about lessons and system alerts.</p>
+          </div>
+          <mat-slide-toggle formControlName="notifications" color="primary"></mat-slide-toggle>
+        </div>
+
+        <div class="card-option">
+          <div class="option-info">
+            <h4>Compact Mode</h4>
+            <p>Reduce whitespace for higher information density.</p>
+          </div>
+          <mat-slide-toggle formControlName="compactMode" color="primary"></mat-slide-toggle>
+        </div>
+
+        <div class="form-actions">
+          <button mat-flat-button color="primary">Save Preferences</button>
+        </div>
+      </form>
+    </section>
+    }
+
+    @if (activeTab === 'security') {
+    <section class="settings-section fade-in">
+      <div class="section-header">
+        <h2>Security Settings</h2>
+        <p>Manage your password and authentication methods.</p>
+      </div>
+
+      <form [formGroup]="profileForm" (ngSubmit)="saveProfile()">
+        <!-- Hidden field to act as a flag/trigger for backend if needed, or we just rely on fields being filled -->
+        <input type="hidden" formControlName="changePassword" [value]="true">
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>New Password</mat-label>
+            <input matInput type="password" formControlName="password">
+            <mat-icon matSuffix>lock</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Confirm New Password</mat-label>
+            <input matInput type="password" formControlName="confirmPassword">
+            <mat-icon matSuffix>lock_reset</mat-icon>
+          </mat-form-field>
+        </div>
+
+        <div class="form-actions">
+          <button mat-flat-button color="primary" [disabled]="!profileForm.value.password">
+            Update Password
+          </button>
+        </div>
+      </form>
+    </section>
+    }
+
+    @if (activeTab === 'account') {
+    <section class="settings-section fade-in">
+      <div class="section-header danger">
+        <h2>Delete Account</h2>
+        <p>Permanently remove your data and access.</p>
+      </div>
+
+      <div class="danger-zone">
+        <mat-icon class="warning-icon">report_problem</mat-icon>
+        <div class="danger-content">
+          <h4>This action is irreversible</h4>
+          <p>All your data, lessons, and history will be permanently erased. Please be certain.</p>
+          <button mat-stroked-button color="warn" (click)="deleteAccount()">
+            Unknown Consequences: Delete Account
+          </button>
+        </div>
+      </div>
+    </section>
+    }
+
+  </main>
 </div>

@@ -1,14 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Lesson } from '../../models/lesson';
 import { LessonService } from '../../services/lesson.service';
 import { LessonCardComponent } from './lesson-card.component';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-upcoming-lessons',
   standalone: true,
-  imports: [CommonModule, FormsModule, LessonCardComponent],
+  imports: [CommonModule, FormsModule, LessonCardComponent, MatIconModule],
   templateUrl: './upcoming-lessons.component.html',
   styleUrls: ['./upcoming-lessons.component.css']
 })
@@ -18,17 +19,32 @@ export class UpcomingLessonsComponent implements OnInit {
   range: 'today' | '7days' | 'week' | 'month' = '7days';
   q = '';
 
-  constructor(private lessonService: LessonService) {}
+  constructor(private lessonService: LessonService) { }
 
   ngOnInit(): void {
-    this.lessonService.getLessons().subscribe((ls) => {
+    this.loadLessons();
+  }
+
+  loadLessons() {
+    this.lessonService.getLessons(this.range).subscribe((ls) => {
       // sort ascending by startTime
       this.lessons = ls.slice().sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-      if (!this.selectedLesson && this.lessons.length > 0) {
-        // select first upcoming by default
-        this.selectedLesson = this.lessons.find((l) => l.status === 'upcoming') || this.lessons[0];
+
+      // Auto-select first lesson if none selected or if previously selected lesson is no longer in list
+      if (this.lessons.length > 0) {
+        const stillExists = this.lessons.find(l => l.id === this.selectedLesson?.id);
+        if (!stillExists) {
+          this.selectedLesson = this.lessons.find((l) => l.status === 'upcoming') || this.lessons[0];
+        }
+      } else {
+        this.selectedLesson = null;
       }
     });
+  }
+
+  // Called when range select changes
+  onRangeChange() {
+    this.loadLessons();
   }
 
   filteredLessons(): Lesson[] {
