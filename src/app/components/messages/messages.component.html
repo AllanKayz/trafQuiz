@@ -3,7 +3,7 @@
     <h3>Messages</h3>
     <mat-list>
       @for (c of conversations(); track c) {
-        <mat-list-item (click)="openConversation(c)" [class.selected]="selectedConversation()?.id === c.id">
+        <mat-list-item class="pt-5 pb-5" (click)="openConversation(c)" [class.selected]="selectedConversation()?.id === c.id">
           <div class="conv-left">
             <div class="conv-name">{{c.name}}</div>
             <div class="conv-last">{{c.lastMessage}}</div>

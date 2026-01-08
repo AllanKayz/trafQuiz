@@ -204,6 +204,51 @@ export class TraffiquizService {
   }
 
   /**
+   * Returns the raw user object as stored in localStorage (if any).
+   */
+  public getRawUser(): any {
+    const userJson = localStorage.getItem('user');
+    if (!userJson) return null;
+    try {
+      return JSON.parse(userJson);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Updates the user's profile locally and emits the new state.
+   * Attempts to call backend update endpoint if available; otherwise updates local storage.
+   */
+  public updateProfile(payload: any): Observable<any> {
+    // Update local copy immediately
+    const raw = this.getRawUser() || {};
+    const updated = { ...raw, ...payload };
+    localStorage.setItem('user', JSON.stringify(updated));
+    // Update the formatted signal as well
+    this.userSignal.set(this.formatUser(updated));
+
+    // Attempt backend sync; endpoint may not exist yet. Return observable that resolves even if request fails.
+    return this.http.post(this.url + 'updateuser', updated).pipe(
+      tap((res) => res),
+      catchError((err) => {
+        console.warn('Profile update failed; saved locally', err);
+        return of(updated);
+      })
+    );
+  }
+
+  /**
+   * Persist user preferences locally.
+   */
+  public updatePreferences(prefs: any) {
+    const stored = JSON.parse(localStorage.getItem('appSettings') || '{}');
+    const merged = { ...stored, ...prefs };
+    localStorage.setItem('appSettings', JSON.stringify(merged));
+    return merged;
+  }
+
+  /**
    * Initializes the user state by reading user data from local storage.
    */
   private initializeUser() {
