@@ -126,6 +126,7 @@ export class InstructorsComponent {
 	}
 
 	private saveInstructor(data: any, id?: number) {
+		console.log('clicked');
 		
 		const newInstructorData = {
 			name: data.firstName + ' ' + data.lastName,
@@ -159,23 +160,23 @@ export class InstructorsComponent {
 		action.subscribe({
 			next: (res) => {
 				console.log(res);
-				if(res.success) {
+				if (res.success) {
 					this.snackBar.open(`Instructor ${id ? 'updated' : 'added'} successfully`, 'Close', { verticalPosition: 'top', duration: 4000 });
-					this.trafQuizService.fetchStudents();
+					this.trafQuizService.fetchInstructors();
 				} else {
 					this.snackBar.open(res.message, 'Close', { verticalPosition: 'top', duration: 4000 });
 				}
-				
+
 			},
 			error: (err) => {
 				console.log(err);
-				this.snackBar.open('Error saving instructor', 'Close', { verticalPosition: 'top',  duration: 4000 });
+				this.snackBar.open('Error saving instructor', 'Close', { verticalPosition: 'top', duration: 4000 });
 			}
 		});
 	}
 
 	deleteStudent(studentID: number) { }
-	
+
 	openCertificationForm(certification?: any) {
 		const dialogRef = this.dialog.open(DynamicFormComponent, {
 			width: '800px',
@@ -192,14 +193,14 @@ export class InstructorsComponent {
 			dialogRef.close();
 		});
 	}
-	
+
 	private saveCertification(data: any, id: any) {
 		const certification = {
 			id: data.id || 0,
 			certification: data.certification,
 			description: data.description
 		}
-		
+
 		const action = id ? this.trafQuizService.updateCertification(certification) : this.trafQuizService.addCertification(certification);
 
 		action.subscribe({
@@ -211,9 +212,9 @@ export class InstructorsComponent {
 				console.log(err);
 				this.snackBar.open('Error saving certification', 'Close', { duration: 3000 });
 			}
-		});		
+		});
 	}
-	
+
 	openSpecializationForm(specialization?: any) {
 		const dialogRef = this.dialog.open(DynamicFormComponent, {
 			width: '800px',
@@ -230,15 +231,15 @@ export class InstructorsComponent {
 			dialogRef.close();
 		});
 	}
-	
+
 	private saveSpecialization(data: any, id: any) {
-	
+
 		const specialization = {
 			id: data.id || 0,
 			specialization: data.specialization,
 			description: data.description
 		}
-		
+
 		const action = id ? this.trafQuizService.updateSpecialization(specialization) : this.trafQuizService.addSpecialization(specialization);
 
 		action.subscribe({

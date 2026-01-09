@@ -8,7 +8,7 @@ import { VehicleService } from './vehicle.service';
 @Injectable({ providedIn: 'root' })
 export class LessonService {
   private lessons$ = new BehaviorSubject<Lesson[]>([]);
-  private base = '/trafQuiz/public/api/lessons';
+  private base = 'http://localhost:84/trafQuiz/public/api/lessons';
 
   private trafQuiz = inject(TraffiquizService);
   private vehicleService = inject(VehicleService);

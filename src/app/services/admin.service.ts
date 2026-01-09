@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
-  private base = '/trafQuiz/public/api/admin';
+  private base = 'http://localhost:84/trafQuiz/public/api/admin';
 
   constructor(private http: HttpClient) {}
 
@@ -19,6 +19,6 @@ export class AdminService {
   }
 
   getInstructors(): Observable<any> {
-    return this.http.get('/trafQuiz/public/api/instructors');
+    return this.http.get('http://localhost:84/trafQuiz/public/api/instructors');
   }
 }

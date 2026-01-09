@@ -217,7 +217,42 @@ class Dashboard
     public static function updateInstructor($id, $data)
     {
         $db = new Database();
+        $conn = $db->getConnection();
 
+        // 1. Get userid
+        $stmt0 = $conn->prepare('SELECT userid FROM instructors WHERE id = :id');
+        $stmt0->execute([':id' => $id]);
+        $row = $stmt0->fetch(PDO::FETCH_ASSOC);
+        $userid = $row ? $row['userid'] : null;
+
+        // 2. Update Users table (username/password)
+        if ($userid) {
+            $userUpdates = [];
+            $userParams = [':uid' => $userid];
+            if (!empty($data['username'])) {
+                $userUpdates[] = "username = :username";
+                $userParams[':username'] = $data['username'];
+            }
+            if (!empty($data['password'])) {
+                $userUpdates[] = "password = :password";
+                $userParams[':password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            }
+            if (!empty($data['name'])) {
+                $parts = explode(' ', $data['name'], 2);
+                $userUpdates[] = "firstname = :firstname";
+                $userUpdates[] = "lastname = :lastname";
+                $userParams[':firstname'] = $parts[0] ?? '';
+                $userParams[':lastname'] = $parts[1] ?? '';
+            }
+
+            if (!empty($userUpdates)) {
+                $uSql = 'UPDATE users SET ' . implode(', ', $userUpdates) . ' WHERE id = :uid';
+                $uStmt = $conn->prepare($uSql);
+                $uStmt->execute($userParams);
+            }
+        }
+
+        // 3. Update Instructors table
         $allowedFields = ['name', 'email', 'phone', 'license_number', 'specialization', 'certification', 'experience', 'availability'];
         $setParts = [];
         $params = [':id' => $id];
@@ -225,9 +260,7 @@ class Dashboard
         foreach ($allowedFields as $field) {
             if (isset($data[$field])) {
                 $setParts[] = "$field = :$field";
-                // specific casting or handling if needed, but standard binding usually works for basic types
-                // availability is boolean in addInstructor logic
-                if ($field === 'availability' && isset($data[$field])) {
+                if ($field === 'availability') {
                     $params[":$field"] = $data[$field] ? 1 : 0;
                 } else {
                     $params[":$field"] = $data[$field];
@@ -237,17 +270,17 @@ class Dashboard
 
         if (empty($setParts)) {
             return [
-                'success' => false,
-                'message' => 'No valid fields to update'
+                'success' => true,
+                'message' => 'Update successful (User details)'
             ];
         }
 
         $sql = 'UPDATE instructors SET ' . implode(', ', $setParts) . ' WHERE id = :id';
-        $stmt = $db->getConnection()->prepare($sql);
+        $stmt = $conn->prepare($sql);
         $stmt->execute($params);
         return [
-            'success' => $stmt->rowCount() > 0,
-            'message' => $stmt->rowCount() > 0 ? 'Update successful' : 'No rows updated'
+            'success' => true,
+            'message' => 'Update successful'
         ];
     }
 

@@ -71,11 +71,12 @@
 /* Right Side - Form Area */
 .form-section {
     flex: 1;
-    background: #ffffff;
+    background: var(--bg-body);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px;
+    transition: background-color 0.3s ease;
 }
 
 .login-card {
@@ -83,10 +84,18 @@
     max-width: 420px;
     padding: 40px;
     border-radius: 24px;
-    background: white;
+    background: var(--bg-card);
+    transition: background-color 0.3s ease;
     /* Optional: Subtle shadow if the background isn't white, 
        but here it blends. We can add a border or shadow for definition specifically 
        if the background changes. For now, we keep it clean. */
+}
+
+/* Glassmorphism support in dark mode manually if not using mat-card class directly */
+:host-context(.dark-theme) .login-card {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
 }
 
 .login-header {
@@ -105,12 +114,12 @@
 .login-header h2 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #1e293b;
+    color: var(--text-main);
     margin: 0 0 8px 0;
 }
 
 .login-header p {
-    color: #64748b;
+    color: var(--text-muted);
     margin: 0;
 }
 

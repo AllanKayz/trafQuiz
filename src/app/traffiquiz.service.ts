@@ -550,7 +550,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   deleteQuestion(questionId: number): Observable<any> {
-    return this.http.delete(this.url + `questions/${questionId}`);
+    return this.http.post(this.url + 'questions/delete', { id: questionId });
   }
 
   /**
@@ -568,7 +568,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   updateQuestion(question: any): Observable<any> {
-    return this.http.put(this.url + `questions/${question.id}`, question);
+    return this.http.post(this.url + 'questions/update', question);
   }
 
   // Students CRUD
@@ -613,7 +613,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   updateStudent(student: any): Observable<any> {
-    return this.http.put(this.url + `students/${student.id}`, student);
+    return this.http.post(this.url + 'students/update', student);
   }
 
   /**
@@ -622,7 +622,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   deleteStudent(student: Student): Observable<any> {
-    return this.http.delete(this.url + `deletestudent/${student.id}`);
+    return this.http.post(this.url + 'deletestudent', { id: student.id });
   }
 
   // Instructors CRUD
@@ -667,7 +667,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   updateInstructor(instructor: any): Observable<any> {
-    return this.http.put(this.url + `instructors/${instructor.id}`, instructor);
+    return this.http.post(this.url + 'instructors/update', instructor);
   }
 
   /**
@@ -676,7 +676,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   deleteInstructor(instructor: Instructor): Observable<any> {
-    return this.http.delete<Instructor[]>(this.url + `deleteinstructor/${instructor.id}`);
+    return this.http.post<Instructor[]>(this.url + 'instructors/delete', { id: instructor.id });
   }
 
   /**
@@ -745,16 +745,14 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   updatePackage(pkg: any): Observable<any> {
-    // In a real app, this would be a PUT request to the API
-    // return this.http.put(this.url + `packages/${pkg.id}`, pkg);
-
-    // For now, we'll mock the success and update the signal
-    console.log('Mock Updating Package:', pkg);
-    const updatedPackages = this.packagesSignal().map(p => p.id === pkg.id ? { ...p, ...pkg } : p);
-    this.packagesSignal.set(updatedPackages);
-    localStorage.setItem('packages', JSON.stringify(this.transformPackagesJson(updatedPackages)));
-
-    return of({ status: 200, message: 'Package updated successfully' });
+    return this.http.post(this.url + 'packages/update', pkg).pipe(
+      tap(() => {
+        // Update local state to reflect changes immediately
+        const updatedPackages = this.packagesSignal().map(p => p.id === pkg.id ? { ...p, ...pkg } : p);
+        this.packagesSignal.set(updatedPackages);
+        localStorage.setItem('packages', JSON.stringify(this.transformPackagesJson(updatedPackages)));
+      })
+    );
   }
 
   /**
@@ -778,16 +776,8 @@ export class TraffiquizService {
         localStorage.setItem('questioncategories', JSON.stringify(this.transformQuestionCategoriesJson(qctgy)));
       },
       error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching categories: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
+        // Suppress error for now as endpoint might not exist
+        // or handle gracefully
       }
     });
   }
@@ -844,7 +834,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   updateSpecialization(specialization: any): Observable<any> {
-    return this.http.put(this.url + `specializations/${specialization.id}`, specialization);
+    return this.http.post(this.url + 'specializations/update', specialization);
   }
 
   /**
@@ -889,7 +879,7 @@ export class TraffiquizService {
    * @returns An observable that emits the API response.
    */
   updateCertification(certification: any): Observable<any> {
-    return this.http.put(this.url + `certifications/${certification.id}`, certification);
+    return this.http.post(this.url + 'certifications/update', certification);
   }
 
   /**

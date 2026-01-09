@@ -6,7 +6,8 @@ import { Vehicle } from '../models/vehicle';
 @Injectable({ providedIn: 'root' })
 export class VehicleService {
   private vehicles$ = new BehaviorSubject<Vehicle[]>([]);
-  private base = '/trafQuiz/public/api/vehicles';
+  private base = 'http://localhost:84/trafQuiz/public/api/vehicles';
+  //private base = '/trafQuiz/public/api/vehicles';
 
   constructor(private http: HttpClient) {
     // Try to load from API, fallback to mock data on error
