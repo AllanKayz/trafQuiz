@@ -214,7 +214,42 @@ class Dashboard
         ];
     }
 
-    public static function updateInstructor() {}
+    public static function updateInstructor($id, $data)
+    {
+        $db = new Database();
+
+        $allowedFields = ['name', 'email', 'phone', 'license_number', 'specialization', 'certification', 'experience', 'availability'];
+        $setParts = [];
+        $params = [':id' => $id];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $setParts[] = "$field = :$field";
+                // specific casting or handling if needed, but standard binding usually works for basic types
+                // availability is boolean in addInstructor logic
+                if ($field === 'availability' && isset($data[$field])) {
+                    $params[":$field"] = $data[$field] ? 1 : 0;
+                } else {
+                    $params[":$field"] = $data[$field];
+                }
+            }
+        }
+
+        if (empty($setParts)) {
+            return [
+                'success' => false,
+                'message' => 'No valid fields to update'
+            ];
+        }
+
+        $sql = 'UPDATE instructors SET ' . implode(', ', $setParts) . ' WHERE id = :id';
+        $stmt = $db->getConnection()->prepare($sql);
+        $stmt->execute($params);
+        return [
+            'success' => $stmt->rowCount() > 0,
+            'message' => $stmt->rowCount() > 0 ? 'Update successful' : 'No rows updated'
+        ];
+    }
 
     public static function deleteInstructor() {}
 
@@ -254,15 +289,31 @@ class Dashboard
         ];
     }
 
-    public static function updateCertification($id, $certification, $description)
+    public static function updateCertification($id, $data)
     {
         $db = new Database();
-        $sql = 'UPDATE certification SET certification = :certification, description = :description WHERE id = :id';
+
+        $allowedFields = ['certification', 'description'];
+        $setParts = [];
+        $params = [':id' => $id];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $setParts[] = "$field = :$field";
+                $params[":$field"] = $data[$field];
+            }
+        }
+
+        if (empty($setParts)) {
+            return [
+                'success' => false,
+                'message' => 'No valid fields to update'
+            ];
+        }
+
+        $sql = 'UPDATE certification SET ' . implode(', ', $setParts) . ' WHERE id = :id';
         $stmt = $db->getConnection()->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':certification', $certification);
-        $stmt->bindParam(':description', $description);
-        $stmt->execute();
+        $stmt->execute($params);
         return [
             'success' => $stmt->rowCount() > 0,
             'message' => $stmt->rowCount() > 0 ? 'Update successful' : 'No rows updated'
@@ -305,15 +356,31 @@ class Dashboard
         ];
     }
 
-    public static function updateSpecialization($id, $specialization, $description)
+    public static function updateSpecialization($id, $data)
     {
         $db = new Database();
-        $sql = 'UPDATE specialization SET specialization = :specialization, description = :description WHERE id = :id';
+
+        $allowedFields = ['specialization', 'description'];
+        $setParts = [];
+        $params = [':id' => $id];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $setParts[] = "$field = :$field";
+                $params[":$field"] = $data[$field];
+            }
+        }
+
+        if (empty($setParts)) {
+            return [
+                'success' => false,
+                'message' => 'No valid fields to update'
+            ];
+        }
+
+        $sql = 'UPDATE specialization SET ' . implode(', ', $setParts) . ' WHERE id = :id';
         $stmt = $db->getConnection()->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':specialization', $specialization);
-        $stmt->bindParam(':description', $description);
-        $stmt->execute();
+        $stmt->execute($params);
         return [
             'success' => $stmt->rowCount() > 0,
             'message' => $stmt->rowCount() > 0 ? 'Update successful' : 'No rows updated'

@@ -663,7 +663,6 @@ class AdminController
 		try {
 			$reflect = new \ReflectionClass('TrafQuiz\\Models\\LessonModel');
 			$method = $reflect->getMethod('getConnection');
-			$method->setAccessible(true);
 			$conn = $method->invoke(null);
 			$hasDb = $conn !== null;
 		} catch (\Exception $e) {

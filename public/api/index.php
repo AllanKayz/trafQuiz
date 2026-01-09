@@ -8,6 +8,13 @@ use TrafQuiz\Controllers\LoginController;
 use TrafQuiz\Controllers\ExamController;
 use TrafQuiz\Middleware\CorsMiddleware;
 use TrafQuiz\Controllers\AdminController;
+use TrafQuiz\Controllers\LessonsController;
+use TrafQuiz\Controllers\UserController;
+use TrafQuiz\Controllers\PaymentsController;
+use TrafQuiz\Controllers\QuestionController;
+use TrafQuiz\Controllers\VehiclesController;
+use TrafQuiz\Controllers\MessagesController;
+use TrafQuiz\Controllers\NotificationsController;
 
 header("Access-Control-Allow-Origin: *"); //Allows all origins
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS"); //Allow specific HTTP methods
@@ -96,20 +103,20 @@ $router->addRoute('POST', '/trafQuiz/public/api/addspecialization', function () 
 
 // User profile update
 $router->addRoute('POST', '/trafQuiz/public/api/updateuser', function () {
-       (new \TrafQuiz\Controllers\UserController())->updateProfile();
+       (new UserController())->updateProfile();
 });
 
 // Questions CRUD
 $router->addRoute('POST', '/trafQuiz/public/api/questions', function () {
-       (new \TrafQuiz\Controllers\QuestionController())->create();
+       (new QuestionController())->create();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/questions/update', function () {
-       (new \TrafQuiz\Controllers\QuestionController())->update();
+       (new QuestionController())->update();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/questions/delete', function () {
-       (new \TrafQuiz\Controllers\QuestionController())->delete();
+       (new QuestionController())->delete();
 });
 
 // Student updates
@@ -152,62 +159,62 @@ $router->addRoute('GET', '/trafQuiz/public/api/admin/check-lessons', function ()
 
 // Lessons API
 $router->addRoute('GET', '/trafQuiz/public/api/lessons', function () {
-       (new \TrafQuiz\Controllers\LessonsController())->getLessons();
+       (new LessonsController())->getLessons();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/lessons/join', function () {
-       (new \TrafQuiz\Controllers\LessonsController())->join();
+       (new LessonsController())->join();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/lessons/cancel', function () {
-       (new \TrafQuiz\Controllers\LessonsController())->cancel();
+       (new LessonsController())->cancel();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/lessons/update', function () {
-       (new \TrafQuiz\Controllers\LessonsController())->update();
+       (new LessonsController())->update();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/lessons/add', function () {
-       (new \TrafQuiz\Controllers\LessonsController())->add();
+       (new LessonsController())->add();
 });
 
 // Vehicles API (simple JSON-backed for development)
 $router->addRoute('GET', '/trafQuiz/public/api/vehicles', function () {
-       (new \TrafQuiz\Controllers\VehiclesController())->getVehicles();
+       (new VehiclesController())->getVehicles();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/vehicles/add', function () {
-       (new \TrafQuiz\Controllers\VehiclesController())->add();
+       (new VehiclesController())->add();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/vehicles/update', function () {
-       (new \TrafQuiz\Controllers\VehiclesController())->update();
+       (new VehiclesController())->update();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/vehicles/delete', function () {
-       (new \TrafQuiz\Controllers\VehiclesController())->delete();
+       (new VehiclesController())->delete();
 });
 
 // Payments API
 $router->addRoute('POST', '/trafQuiz/public/api/payments/process', function () {
-       (new \TrafQuiz\Controllers\PaymentsController())->process();
+       (new PaymentsController())->process();
 });
 
 // Messaging API
 $router->addRoute('GET', '/trafQuiz/public/api/conversations', function () {
-       (new \TrafQuiz\Controllers\MessagesController())->getConversations();
+       (new MessagesController())->getConversations();
 });
 
 $router->addRoute('GET', '/trafQuiz/public/api/messages', function () {
-       (new \TrafQuiz\Controllers\MessagesController())->getMessages();
+       (new MessagesController())->getMessages();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/messages/send', function () {
-       (new \TrafQuiz\Controllers\MessagesController())->sendMessage();
+       (new MessagesController())->sendMessage();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/admin/auto-allocate', function () {
-       (new \TrafQuiz\Controllers\AdminController())->autoAllocateSchedules();
+       (new AdminController())->autoAllocateSchedules();
 });
 
 
