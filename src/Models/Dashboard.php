@@ -91,6 +91,39 @@ class Dashboard
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public static function updatePackage($id, $data)
+    {
+        $db = new Database();
+
+        // Build the SET clause dynamically based on provided data
+        $allowedFields = ['package', 'amount', 'description'];
+        $setParts = [];
+        $params = [':id' => $id];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $setParts[] = "$field = :$field";
+                $params[":$field"] = $data[$field];
+            }
+        }
+
+        if (empty($setParts)) {
+            return [
+                'success' => false,
+                'message' => 'No valid fields to update'
+            ];
+        }
+
+        $sql = 'UPDATE packages SET ' . implode(', ', $setParts) . ' WHERE id = :id';
+        $stmt = $db->getConnection()->prepare($sql);
+        $stmt->execute($params);
+
+        return [
+            'success' => $stmt->rowCount() > 0,
+            'message' => $stmt->rowCount() > 0 ? 'Update successful' : 'No rows updated'
+        ];
+    }
+
     // Manage Student Data
     public static function getStudents()
     {
@@ -174,7 +207,7 @@ class Dashboard
         $stmt->bindParam(':certification', $certification, PDO::PARAM_INT);
         $stmt->bindParam(':experience', $experience, PDO::PARAM_INT);
         $stmt->bindParam(':availability', $availability, PDO::PARAM_BOOL);
-		$stmt->execute();
+        $stmt->execute();
         return [
             'success' => $stmt->rowCount() > 0,
             'message' => $stmt->rowCount() > 0 ? 'Added Instructor successfully' : 'Failed to add Instructor'
