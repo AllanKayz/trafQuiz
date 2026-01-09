@@ -1,99 +1,164 @@
-<div class="vehicles">
-  <h2>Vehicles</h2>
-
-  <div class="controls">
-    <button (click)="openAdd()">Add Vehicle</button>
-    <button (click)="load()">Refresh</button>
-  </div>
-
-  @if (loading) {
-    <div>Loading…</div>
-  }
-  @if (error) {
-    <div class="error">{{ error }}</div>
-  }
-
-  @if (vehicles.length) {
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Make</th>
-          <th>Model</th>
-          <th>Year</th>
-          <th>Registration</th>
-          <th>Type</th>
-          <th>Status</th>
-          <th>Notes</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (v of vehicles; track v) {
-          <tr>
-            <td>{{ v.id }}</td>
-            <td>{{ v.make }}</td>
-            <td>{{ v.model }}</td>
-            <td>{{ v.year }}</td>
-            <td>{{ v.registration }}</td>
-            <td>{{ v.type }}</td>
-            <td>{{ v.status }}</td>
-            <td>{{ v.notes }}</td>
-            <td>
-              <button (click)="openEdit(v)">Edit</button>
-              <button (click)="confirmDelete(v.id)">Delete</button>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  }
-
-  @if (!vehicles.length && !loading) {
-    <div>No vehicles found.</div>
-  }
-
-  <!-- Modal -->
-  @if (showModal) {
-    <div class="modal" role="dialog" aria-modal="true">
-      <div class="modal-backdrop" (click)="closeModal()"></div>
-      <div class="modal-content" role="document">
-        <h3>{{ isEditing ? 'Edit Vehicle' : 'Add Vehicle' }}</h3>
-        <div class="form-row">
-          <label>Make<input [(ngModel)]="formVehicle.make" /></label>
-          <label>Model<input [(ngModel)]="formVehicle.model" /></label>
-        </div>
-        <div class="form-row">
-          <label>Year<input type="number" [(ngModel)]="formVehicle.year" /></label>
-          <label>Registration<input [(ngModel)]="formVehicle.registration" /></label>
-        </div>
-        <div class="form-row">
-          <label>Type
-            <select [(ngModel)]="formVehicle.type">
-              <option value="car">Car</option>
-              <option value="motorcycle">Motorcycle</option>
-              <option value="truck">Truck</option>
-            </select>
-          </label>
-          <label>Status
-            <select [(ngModel)]="formVehicle.status">
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="maintenance">Maintenance</option>
-            </select>
-          </label>
-        </div>
-        <div class="form-row">
-          <label>Notes<textarea [(ngModel)]="formVehicle.notes"></textarea></label>
-        </div>
-        <div class="actions">
-          <button (click)="closeModal()">Cancel</button>
-          <button (click)="save()">{{ isEditing ? 'Save' : 'Create' }}</button>
-        </div>
-        @if (error) {
-          <div class="error">{{ error }}</div>
-        }
-      </div>
+<div class="vehicles-container fade-in">
+  <header class="page-header">
+    <div class="header-content">
+      <h1>Vehicle Fleet Management</h1>
+      <p>Monitor and manage company vehicles and maintenance status.</p>
     </div>
+    <div class="header-actions">
+      <button mat-flat-button color="primary" (click)="openAdd(vehicleTemplate)">
+        <mat-icon>add_directions_car</mat-icon>
+        Add Vehicle
+      </button>
+      <button mat-icon-button (click)="load()" [disabled]="loading" matTooltip="Refresh Data">
+        <mat-icon [class.rotating]="loading">refresh</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  @if (error) {
+  <div class="error-banner">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error }}</span>
+  </div>
   }
+
+  <div class="table-container mat-elevation-z1">
+    <mat-table [dataSource]="dataSource" class="vehicles-table">
+
+      <!-- Registration Column -->
+      <ng-container matColumnDef="registration">
+        <mat-header-cell *matHeaderCellDef> Reg. Number </mat-header-cell>
+        <mat-cell *matCellDef="let v">
+          <span class="reg-badge">{{v.registration}}</span>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Make/Model Column -->
+      <ng-container matColumnDef="make">
+        <mat-header-cell *matHeaderCellDef> Make </mat-header-cell>
+        <mat-cell *matCellDef="let v"> {{v.make}} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="model">
+        <mat-header-cell *matHeaderCellDef> Model </mat-header-cell>
+        <mat-cell *matCellDef="let v"> {{v.model}} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="year">
+        <mat-header-cell *matHeaderCellDef> Year </mat-header-cell>
+        <mat-cell *matCellDef="let v"> {{v.year}} </mat-cell>
+      </ng-container>
+
+      <!-- Type Column -->
+      <ng-container matColumnDef="type">
+        <mat-header-cell *matHeaderCellDef> Type </mat-header-cell>
+        <mat-cell *matCellDef="let v">
+          <mat-icon class="type-icon" [matTooltip]="v.type">{{ v.type === 'motorcycle' ? 'motorcycle' : (v.type ===
+            'truck' ? 'local_shipping' : 'directions_car') }}</mat-icon>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <mat-header-cell *matHeaderCellDef> Status </mat-header-cell>
+        <mat-cell *matCellDef="let v">
+          <span class="status-chip" [class]="v.status || 'active'">
+            {{(v.status || 'active') | titlecase}}
+          </span>
+        </mat-cell>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+        <mat-cell *matCellDef="let v">
+          <button mat-icon-button color="primary" (click)="openEdit(v, vehicleTemplate)" matTooltip="Edit Vehicle">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button color="warn" (click)="confirmDelete(v.id)" matTooltip="Delete Vehicle">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    </mat-table>
+
+    @if (!loading && dataSource.data.length === 0) {
+    <div class="no-data">
+      <mat-icon>directions_car_filled</mat-icon>
+      <p>No vehicles found in the fleet.</p>
+    </div>
+    }
+  </div>
 </div>
+
+<!-- Add/Edit Vehicle Dialog Template -->
+<ng-template #vehicleTemplate let-dialogRef>
+  <div class="dialog-container">
+    <header class="dialog-header">
+      <mat-icon class="header-icon">{{ isEditing ? 'edit' : 'add_circle' }}</mat-icon>
+      <h2 mat-dialog-title>{{ isEditing ? 'Update Vehicle' : 'Register Vehicle' }}</h2>
+    </header>
+
+    <mat-dialog-content class="dialog-content">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Registration Number</mat-label>
+          <input matInput [(ngModel)]="formVehicle.registration" placeholder="e.g. ABC-123" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Year</mat-label>
+          <input matInput type="number" [(ngModel)]="formVehicle.year" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Make</mat-label>
+          <input matInput [(ngModel)]="formVehicle.make" placeholder="e.g. Toyota" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Model</mat-label>
+          <input matInput [(ngModel)]="formVehicle.model" placeholder="e.g. Corolla" required>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Vehicle Type</mat-label>
+          <mat-select [(ngModel)]="formVehicle.type" required>
+            <mat-option value="car">Car</mat-option>
+            <mat-option value="motorcycle">Motorcycle</mat-option>
+            <mat-option value="truck">Truck</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Current Status</mat-label>
+          <mat-select [(ngModel)]="formVehicle.status" required>
+            <mat-option value="active">Active</mat-option>
+            <mat-option value="maintenance">Maintenance</mat-option>
+            <mat-option value="inactive">Inactive</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Maintenance Notes</mat-label>
+        <textarea matInput [(ngModel)]="formVehicle.notes" rows="3"
+          placeholder="Add any specific details..."></textarea>
+      </mat-form-field>
+
+      @if (error) {
+      <p class="error-text">{{ error }}</p>
+      }
+    </mat-dialog-content>
+
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-flat-button color="primary" (click)="save(dialogRef)">
+        {{ isEditing ? 'Save Changes' : 'Register' }}
+      </button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>

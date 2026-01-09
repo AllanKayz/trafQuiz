@@ -22,6 +22,7 @@
     color: var(--text-main);
     background: linear-gradient(135deg, var(--text-main) 0%, var(--primary-color) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -40,11 +41,16 @@
 }
 
 .metric-card {
+    background: var(--bg-card);
     padding: 24px;
     display: flex;
     align-items: center;
     gap: 20px;
     border-radius: 16px;
+    border: var(--glass-border);
+    -webkit-backdrop-filter: var(--glass-blur);
+    -moz-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -120,6 +126,11 @@
 /* Chart Section */
 .chart-section,
 .activity-section {
+    background: var(--bg-card);
+    border: var(--glass-border);
+    -webkit-backdrop-filter: var(--glass-blur);
+    -moz-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     padding: 24px;
     border-radius: 16px;
     height: 100%;
@@ -196,12 +207,12 @@
     gap: 16px;
     padding: 12px;
     border-radius: 12px;
-    background: var(--bg-body);
+    background: var(--hover-bg);
     transition: background 0.2s;
 }
 
 .activity-item:hover {
-    background: var(--hover-bg);
+    background: var(--border-color);
 }
 
 .activity-icon {

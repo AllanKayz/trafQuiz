@@ -2,68 +2,132 @@
 
 namespace TrafQuiz\Models;
 
-class VehicleModel {
-    private static $file = __DIR__ . '/../data/vehicles.json';
+use TrafQuiz\Core\Database;
 
-    private static function readData() {
-        if (!file_exists(self::$file)) return [];
-        $json = file_get_contents(self::$file);
-        $data = json_decode($json, true);
-        return is_array($data) ? $data : [];
+class VehicleModel
+{
+    public static function all()
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        $sql = "SELECT * FROM vehicles";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    private static function writeData(array $data) {
-        $dir = dirname(self::$file);
-        if (!is_dir($dir)) mkdir($dir, 0755, true);
-        file_put_contents(self::$file, json_encode(array_values($data), JSON_PRETTY_PRINT));
+    public static function find($id)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        $sql = "SELECT * FROM vehicles WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC);
     }
 
-    public static function all() {
-        return self::readData();
-    }
+    /**
+     * Create new vehicle
+     */
+    public static function create($data)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
 
-    public static function find($id) {
-        $items = self::readData();
-        foreach ($items as $it) {
-            if ((int)$it['id'] === (int)$id) return $it;
+        $sql = "INSERT INTO vehicles (make, model, year, registration, type, status, notes) 
+                VALUES (:make, :model, :year, :registration, :type, :status, :notes)";
+
+        $stmt = $conn->prepare($sql);
+        $result = $stmt->execute([
+            ':make' => $data['make'] ?? '',
+            ':model' => $data['model'] ?? '',
+            ':year' => $data['year'] ?? date('Y'),
+            ':registration' => $data['registration'] ?? '',
+            ':type' => $data['type'] ?? 'car',
+            ':status' => $data['status'] ?? 'active',
+            ':notes' => $data['notes'] ?? null
+        ]);
+
+        if ($result) {
+            return self::find($conn->lastInsertId());
         }
-        return null;
+
+        return false;
     }
 
-    public static function add(array $payload) {
-        $items = self::readData();
-        $max = 0;
-        foreach ($items as $it) $max = max($max, (int)$it['id']);
-        $payload['id'] = $max + 1;
-        $payload['createdAt'] = date('c');
-        $items[] = $payload;
-        self::writeData($items);
-        return $payload;
-    }
+    /**
+     * Update vehicle
+     */
+    public static function update($id, $data)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
 
-    public static function update($id, array $payload) {
-        $items = self::readData();
-        $found = false;
-        foreach ($items as &$it) {
-            if ((int)$it['id'] === (int)$id) {
-                $it = array_merge($it, $payload);
-                $it['updatedAt'] = date('c');
-                $found = true;
-                break;
+        $updates = [];
+        $params = [':id' => $id];
+
+        $allowedFields = ['make', 'model', 'year', 'registration', 'type', 'status', 'notes'];
+
+        foreach ($allowedFields as $field) {
+            if (isset($data[$field])) {
+                $updates[] = "$field = :$field";
+                $params[":$field"] = $data[$field];
             }
         }
-        if ($found) self::writeData($items);
-        return $found;
+
+        if (empty($updates)) {
+            return false;
+        }
+
+        $sql = "UPDATE vehicles SET " . implode(', ', $updates) . " WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+
+        return $stmt->execute($params);
     }
 
-    public static function delete($id) {
-        $items = self::readData();
-        $before = count($items);
-        $items = array_values(array_filter($items, function($it) use ($id) { return (int)$it['id'] !== (int)$id; }));
-        if (count($items) !== $before) {
-            self::writeData($items);
-            return true;
-        }
-        return false;
+    /**
+     * Delete vehicle
+     */
+    public static function delete($id)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        $sql = "DELETE FROM vehicles WHERE id = :id";
+        $stmt = $conn->prepare($sql);
+
+        return $stmt->execute([':id' => $id]);
+    }
+
+    /**
+     * Get vehicles by type
+     */
+    public static function getByType($type)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        $sql = "SELECT * FROM vehicles WHERE type = :type";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':type' => $type]);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Get vehicles by status
+     */
+    public static function getByStatus($status)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        $sql = "SELECT * FROM vehicles WHERE status = :status";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':status' => $status]);
+
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 }

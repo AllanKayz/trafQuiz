@@ -4,8 +4,10 @@
     <span class="ampm">{{ lesson.startTime | date: 'a' }}</span>
   </div>
   <div class="details">
-    <div class="title">{{ lesson.title }}</div>
+    <div class="title-row">
+      <div class="title">{{ lesson.title }}</div>
+      <span class="status-indicator" [class]="lesson.status"></span>
+    </div>
     <div class="meta">{{ lesson.instructor.name }}</div>
   </div>
-  <div class="status-dot" [attr.data-status]="lesson.status" [title]="lesson.status"></div>
 </div>

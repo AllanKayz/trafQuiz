@@ -7,18 +7,4 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
-    'TrafQuiz\\Controllers\\AdminController' => $baseDir . '/src/Controllers/AdminController.php',
-    'TrafQuiz\\Controllers\\ExamController' => $baseDir . '/src/Controllers/ExamController.php',
-    'TrafQuiz\\Controllers\\LicenseController' => $baseDir . '/src/Controllers/LicenseController.php',
-    'TrafQuiz\\Controllers\\LoginController' => $baseDir . '/src/Controllers/LoginController.php',
-    'TrafQuiz\\Controllers\\UserController' => $baseDir . '/src/Controllers/UserController.php',
-    'TrafQuiz\\Core\\Auth' => $baseDir . '/src/Core/Auth.php',
-    'TrafQuiz\\Core\\Database' => $baseDir . '/src/Core/Database.php',
-    'TrafQuiz\\Core\\License' => $baseDir . '/src/Core/License.php',
-    'TrafQuiz\\Core\\Router' => $baseDir . '/src/Core/Router.php',
-    'TrafQuiz\\Core\\TokenHandler' => $baseDir . '/src/Core/TokenHandler.php',
-    'TrafQuiz\\Middleware\\CorsMiddleware' => $baseDir . '/src/Middleware/CorsMiddleware.php',
-    'TrafQuiz\\Models\\Dashboard' => $baseDir . '/src/Models/Dashboard.php',
-    'TrafQuiz\\Models\\Exam' => $baseDir . '/src/Models/Exam.php',
-    'TrafQuiz\\Models\\User' => $baseDir . '/src/Models/User.php',
 );

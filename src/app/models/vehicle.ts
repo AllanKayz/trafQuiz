@@ -7,5 +7,6 @@ export interface Vehicle {
   type?: string;
   status?: string;
   notes?: string;
+  assignedInstructorId?: number;
   createdAt?: string;
 }

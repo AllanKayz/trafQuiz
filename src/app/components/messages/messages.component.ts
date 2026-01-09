@@ -82,10 +82,20 @@ export class MessagesComponent {
             this.messages.update(prev => [...prev, created]);
             this.reply = '';
 
+            // Reset textarea height after sending
+            const textarea = document.querySelector('.input-area textarea') as HTMLTextAreaElement;
+            if (textarea) textarea.style.height = '44px';
+
             // update conversation last message/time
             const updated = this.conversations().map(c => c.id === conv.id ? { ...c, lastMessage: created.body, lastTime: created.timestamp } : c);
             this.conversations.set(updated);
         });
+    }
+
+    onInput(event: any) {
+        const textarea = event.target;
+        textarea.style.height = 'auto';
+        textarea.style.height = (textarea.scrollHeight) + 'px';
     }
 
     getInitials(name: string) {

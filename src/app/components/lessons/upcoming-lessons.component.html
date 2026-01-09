@@ -1,6 +1,10 @@
 <div class="upcoming-root">
   <div class="header">
-    <h1>Upcoming Lessons</h1>
+    <div class="header-left">
+      <h1>Upcoming Lessons</h1>
+      <p class="subtitle">{{ isStudent() ? 'Plan your lessons and track your progress' : 'Manage scheduled sessions and
+        student requests' }}</p>
+    </div>
     <div class="controls">
       <div class="search-wrapper">
         <mat-icon>search</mat-icon>
@@ -12,6 +16,12 @@
         <option value="week">This week</option>
         <option value="month">This month</option>
       </select>
+      @if (isStudent()) {
+      <button class="book-btn" (click)="bookLesson()">
+        <mat-icon>add</mat-icon>
+        Book Private Lesson
+      </button>
+      }
     </div>
   </div>
 
@@ -35,7 +45,12 @@
     @if (selectedLesson) {
     <section class="detail">
       <div class="detail-header">
-        <h2>{{ selectedLesson.title }}</h2>
+        <div class="title-row">
+          <h2>{{ selectedLesson.title }}</h2>
+          <span class="status-badge" [class]="selectedLesson.status">
+            {{ selectedLesson.status | titlecase }}
+          </span>
+        </div>
         <div class="meta-grid">
           <div class="meta-item">
             <div class="meta-icon">
@@ -58,13 +73,25 @@
             </div>
           </div>
 
+          @if (selectedLesson.studentName) {
+          <div class="meta-item">
+            <div class="meta-icon">
+              <mat-icon>school</mat-icon>
+            </div>
+            <div class="meta-content">
+              <span class="meta-label">Student</span>
+              <span class="meta-value">{{ selectedLesson.studentName }}</span>
+            </div>
+          </div>
+          }
+
           <div class="meta-item">
             <div class="meta-icon">
               <mat-icon>location_on</mat-icon>
             </div>
             <div class="meta-content">
               <span class="meta-label">Location</span>
-              <span class="meta-value">{{ selectedLesson.location }}</span>
+              <span class="meta-value">{{ selectedLesson.location || 'Not specified' }}</span>
             </div>
           </div>
 
@@ -73,9 +100,11 @@
               <mat-icon>group</mat-icon>
             </div>
             <div class="meta-content">
-              <span class="meta-label">Attendance</span>
-              <span class="meta-value">{{ selectedLesson.studentCount }} / {{ selectedLesson.capacity || '—' }}
-                Students</span>
+              <span class="meta-label">Type & Attendance</span>
+              <span class="meta-value">
+                {{ selectedLesson.type | titlecase }} •
+                {{ selectedLesson.studentCount }} / {{ selectedLesson.capacity || '1' }}
+              </span>
             </div>
           </div>
         </div>
@@ -87,7 +116,7 @@
           <p class="notes">{{ selectedLesson.notes || 'No specific notes for this lesson.' }}</p>
         </div>
 
-        @if (selectedLesson.onlineLink) {
+        @if (selectedLesson.onlineLink && selectedLesson.status === 'confirmed') {
         <div class="meeting-card">
           <div class="meeting-info">
             <h4>Virtual Session Link</h4>
@@ -100,18 +129,43 @@
         }
 
         <div class="actions">
-          <button class="btn btn-primary" (click)="join(selectedLesson)"
-            [disabled]="selectedLesson.status !== 'upcoming'">
+          <!-- Student Actions -->
+          @if (isStudent()) {
+          @if (selectedLesson.status === 'confirmed' || selectedLesson.status === 'upcoming') {
+          <button class="btn btn-primary" (click)="join(selectedLesson)">
             <mat-icon>check_circle</mat-icon>
-            Enroll Now
+            Join Lesson
           </button>
-          <button class="btn btn-secondary" (click)="message(selectedLesson)">
-            <mat-icon>chat_bubble</mat-icon>
-            Contact Instructor
-          </button>
+          }
           <button class="btn btn-danger" (click)="cancel(selectedLesson)">
             <mat-icon>cancel</mat-icon>
-            Cancel Booking
+            Withdraw
+          </button>
+          }
+
+          <!-- Instructor/Admin Actions -->
+          @if (isInstructor() || isAdmin()) {
+          @if (selectedLesson.status === 'pending') {
+          <button class="btn btn-primary" (click)="approve(selectedLesson)">
+            <mat-icon>check</mat-icon>
+            Approve Request
+          </button>
+          <button class="btn btn-danger" (click)="decline(selectedLesson)">
+            <mat-icon>block</mat-icon>
+            Decline
+          </button>
+          }
+          @if (selectedLesson.status === 'confirmed' || selectedLesson.status === 'upcoming') {
+          <button class="btn btn-danger" (click)="cancel(selectedLesson)">
+            <mat-icon>cancel</mat-icon>
+            Cancel Lesson
+          </button>
+          }
+          }
+
+          <button class="btn btn-secondary" (click)="message(selectedLesson)">
+            <mat-icon>chat_bubble</mat-icon>
+            Contact {{ isStudent() ? 'Instructor' : 'Student' }}
           </button>
         </div>
       </div>

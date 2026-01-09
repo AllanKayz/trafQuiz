@@ -43,20 +43,21 @@ export interface SectionButton {
     }
 
     .header-container {
-      background: #ffffff;
+      background: var(--bg-card);
       padding: 24px 32px;
       border-radius: 16px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      box-shadow: 0 4px 6px -1px var(--shadow-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
       gap: 24px;
-      border: 1px solid #f1f5f9;
+      border: var(--glass-border);
+      backdrop-filter: var(--glass-blur);
       transition: box-shadow 0.3s ease;
     }
 
     .header-container:hover {
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
+      box-shadow: 0 10px 15px -3px var(--shadow-color);
     }
 
     .header-content {
@@ -65,7 +66,7 @@ export interface SectionButton {
 
     .header-content h2 {
       margin: 0 0 8px 0;
-      color: #1e293b;
+      color: var(--text-main);
       font-size: 1.5rem;
       font-weight: 700;
       letter-spacing: -0.025em;
@@ -74,7 +75,7 @@ export interface SectionButton {
 
     .header-content p {
       margin: 0;
-      color: #64748b;
+      color: var(--text-muted);
       font-size: 0.95rem;
       line-height: 1.5;
     }

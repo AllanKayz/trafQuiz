@@ -1,52 +1,88 @@
-::ng-deep .mat-mdc-dialog-surface {
-    border-radius: 10px !important;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    max-width: 450px;
+.alert_wrapper {
+    padding: 16px;
+    text-align: center;
+    min-width: 320px;
+    border-radius: 16px;
+}
+
+.alert_header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    border: none;
+}
+
+.alert_icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
 }
 
 .alert_title {
-    font-weight: bold;
-    font-size: 20px;
     margin: 0;
-    color: #fff;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
 }
 
 .alert_content {
-    font-size: 16px;
-    color: #fff;
-    line-height: 1.5;
-    padding-bottom: 20px;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 24px !important;
 }
 
 .alert_actions {
     display: flex;
-    justify-content: flex-start;
-    padding-top: 10px;
+    justify-content: center;
+    gap: 12px;
+    padding-bottom: 8px;
 }
 
-.close_button {
-    background-color: #f44336;
-    color: white;
-    font-weight: bold;
-    padding: 10px 20px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+.alert_btn {
+    min-width: 100px;
+    border-radius: 8px !important;
 }
 
-.close_button:hover {
-    background-color: #d32f2f;
+/* Variant-specific Icon Colors */
+.success-alert .alert_icon {
+    color: #10b981;
 }
 
-.success_alert {
-    background-color: var(--bs-success);
+.error-alert .alert_icon {
+    color: #ef4444;
 }
 
-.error_alert {
-    background-color: var(--bs-danger);
+.warning-alert .alert_icon {
+    color: #f59e0b;
 }
 
-.warning_alert {
-    background-color: var(--bs-warning);
+.info-alert .alert_icon {
+    color: var(--primary-color);
+}
+
+/* Animation */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.alert_wrapper {
+    animation: fadeInScale 0.2s cubic-bezier(0, 0, 0.2, 1);
+}
+
+::ng-deep .mat-mdc-dialog-surface {
+    border-radius: 20px !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: 0 20px 25px -5px var(--shadow-color), 0 10px 10px -5px var(--shadow-color) !important;
 }

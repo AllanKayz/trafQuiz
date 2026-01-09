@@ -1,12 +1,17 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of, tap, catchError } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { BehaviorSubject, Observable, of, tap, catchError, map } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Lesson } from '../models/lesson';
+import { TraffiquizService } from '../traffiquiz.service';
+import { VehicleService } from './vehicle.service';
 
 @Injectable({ providedIn: 'root' })
 export class LessonService {
   private lessons$ = new BehaviorSubject<Lesson[]>([]);
   private base = '/trafQuiz/public/api/lessons';
+
+  private trafQuiz = inject(TraffiquizService);
+  private vehicleService = inject(VehicleService);
 
   constructor(private http: HttpClient) {
     // Initialise from backend, fallback to mock data on error
@@ -129,8 +134,104 @@ export class LessonService {
       tap((newLesson) => {
         const updated = [...this.lessons$.getValue(), newLesson];
         this.lessons$.next(updated);
+      }),
+      catchError(() => {
+        // Mock success for demo
+        const newLesson = {
+          id: Date.now(),
+          status: 'pending',
+          studentCount: 1,
+          ...payload,
+          createdAt: new Date().toISOString()
+        } as Lesson;
+        this.lessons$.next([...this.lessons$.getValue(), newLesson]);
+        return of(newLesson);
       })
     );
   }
-}
 
+  approveLesson(id: number): Observable<any> {
+    return this.patchLesson(id, { status: 'confirmed' });
+  }
+
+  declineLesson(id: number, notes?: string): Observable<any> {
+    return this.patchLesson(id, { status: 'declined', notes });
+  }
+
+  autoAllocateSchedules(): Observable<any> {
+    const lessons = this.lessons$.getValue();
+    const instructors = this.trafQuiz.instructorsSignal();
+
+    return this.vehicleService.getVehicles().pipe(
+      tap((vehicles) => {
+        const unallocated = lessons.filter(l => (l.status === 'upcoming' || l.status === 'pending' || l.status === 'confirmed') && !l.assignedVehicleId);
+        const updatedLessons = [...lessons];
+
+        unallocated.forEach(lesson => {
+          const lessonDate = new Date(lesson.startTime).toDateString();
+          const lessonType = (lesson.vehicleType || 'car').toLowerCase();
+
+          // 1. Find suitable instructor if already assigned, validate capacity & specialization
+          let instructor = instructors.find(i => i.id === lesson.instructor.id);
+
+          if (instructor) {
+            // Check instructor capacity for the day (Limit 5)
+            const instructorDailyCount = updatedLessons.filter(l =>
+              l.instructor.id === instructor!.id &&
+              new Date(l.startTime).toDateString() === lessonDate &&
+              (l.status === 'confirmed' || l.status === 'upcoming')
+            ).length;
+
+            if (instructorDailyCount >= 5) {
+              console.warn(`Instructor ${instructor.firstName} reached max capacity (5) for ${lessonDate}`);
+              return;
+            }
+
+            // Check specialization/certification
+            const spec = (instructor.specialization || '').toLowerCase();
+            const cert = (instructor.certification || '').toLowerCase();
+            const canTeach = spec.includes(lessonType) || cert.includes(lessonType) ||
+              (lessonType === 'car' && (spec === '' || spec.includes('practical')));
+
+            if (!canTeach) {
+              console.warn(`Instructor ${instructor.firstName} not specialized for ${lessonType}`);
+              return;
+            }
+          }
+
+          // 2. Find available vehicle of matching type
+          const availableVehicle = vehicles.find(v => {
+            const vType = (v.type || 'car').toLowerCase();
+            if (vType !== lessonType || v.status !== 'active') return false;
+
+            // Simple overlap check
+            const isBooked = updatedLessons.some(l =>
+              l.assignedVehicleId === v.id &&
+              l.status !== 'cancelled' &&
+              Math.abs(new Date(l.startTime).getTime() - new Date(lesson.startTime).getTime()) < (l.durationMinutes || 60) * 60000
+            );
+
+            return !isBooked;
+          });
+
+          if (availableVehicle) {
+            const index = updatedLessons.findIndex(l => l.id === lesson.id);
+            if (index !== -1) {
+              updatedLessons[index] = {
+                ...updatedLessons[index],
+                assignedVehicleId: availableVehicle.id,
+                status: 'confirmed'
+              };
+            }
+          }
+        });
+
+        this.lessons$.next(updatedLessons);
+      }),
+      map(() => ({
+        success: true,
+        message: `Allocation complete. Enforced instructor limits and specializations.`
+      }))
+    );
+  }
+}

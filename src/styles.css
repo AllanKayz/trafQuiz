@@ -17,25 +17,30 @@
     --mat-select-trigger-text-color: var(--text-main);
 }
 
-/* Dark Theme Palette */
+/* Dark Theme Palette (Premium Night) */
 body.dark-theme {
-    --bg-body: #0f172a;
-    --bg-card: #1e293b;
-    --bg-sidebar: #1e293b;
-    --text-main: #f1f5f9;
+    --bg-body: #0a0f1d;
+    --bg-card: rgba(23, 31, 58, 0.8);
+    --bg-sidebar: #0f172a;
+    --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --border-color: #334155;
-    --primary-color: #818cf8;
-    --hover-bg: #334155;
-    --shadow-color: rgba(0, 0, 0, 0.3);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --primary-color: #6366f1;
+    --hover-bg: rgba(255, 255, 255, 0.05);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+
+    /* Glassmorphism Support */
+    --glass-bg: rgba(23, 31, 58, 0.7);
+    --glass-blur: blur(12px);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
 
     /* Material Overrides for Dark Mode */
-    --mdc-theme-surface: #1e293b;
-    --mdc-theme-text-primary-on-background: #f1f5f9;
+    --mdc-theme-surface: #0f172a;
+    --mdc-theme-text-primary-on-background: #f8fafc;
     --mdc-theme-text-secondary-on-background: #94a3b8;
-    --mat-menu-container-color: #1e293b;
-    --mat-dialog-container-color: #1e293b;
-    --mat-select-panel-background-color: #1e293b;
+    --mat-menu-container-color: #0f172a;
+    --mat-dialog-container-color: #0f172a;
+    --mat-select-panel-background-color: #0f172a;
     color: var(--text-main);
 }
 
@@ -57,10 +62,37 @@ body {
 .mat-mdc-dialog-container {
     background-color: var(--bg-card) !important;
     color: var(--text-main) !important;
+    border: var(--glass-border);
+    -webkit-backdrop-filter: var(--glass-blur);
+    -moz-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    box-shadow: 0 8px 32px 0 var(--shadow-color) !important;
 }
 
 .mat-mdc-form-field-input-control {
     color: var(--text-main) !important;
+}
+
+/* Global Material Table Theming Overrides */
+.mat-mdc-table {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+.mat-mdc-header-cell {
+    background-color: var(--hover-bg) !important;
+    color: var(--text-muted) !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.mat-mdc-cell {
+    color: var(--text-main) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.mat-mdc-row:hover .mat-mdc-cell {
+    background-color: var(--hover-bg) !important;
 }
 
 .widgets-grid {
@@ -68,4 +100,23 @@ body {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 20px;
     padding: 20px;
+}
+
+/* Custom Scrollbar for Dark Mode */
+body.dark-theme ::-webkit-scrollbar {
+    width: 10px;
+}
+
+body.dark-theme ::-webkit-scrollbar-track {
+    background: var(--bg-body);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 5px;
+    border: 2px solid var(--bg-body);
+}
+
+body.dark-theme ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
 }

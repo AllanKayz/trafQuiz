@@ -20,6 +20,7 @@
 .welcome-header .highlight {
 	background: linear-gradient(135deg, var(--primary-color) 0%, #7c3aed 100%);
 	-webkit-background-clip: text;
+	background-clip: text;
 	-webkit-text-fill-color: transparent;
 }
 
@@ -50,7 +51,8 @@
 
 .action-card {
 	background: var(--bg-card);
-	border: 1px solid var(--border-color);
+	border: var(--glass-border);
+	backdrop-filter: var(--glass-blur);
 	border-radius: 16px;
 	padding: 24px;
 	display: flex;
@@ -63,6 +65,7 @@
 	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	position: relative;
 	overflow: hidden;
+	box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .action-card:hover {

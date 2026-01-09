@@ -44,4 +44,41 @@ class LoginController {
         Auth::logout();
         header("Location: /trafQuiz/api/login");
     }
+
+    public function forgotPassword() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $username = $data['username'] ?? '';
+
+        $user = User::findByUsername($username);
+        if ($user) {
+            $token = bin2hex(random_bytes(16));
+            User::setResetToken($username, $token);
+            echo json_encode(["status" => "200", "message" => "Reset token generated", "token" => $token]);
+        } else {
+            http_response_code(404);
+            echo json_encode(["status" => "404", "message" => "User not found"]);
+        }
+    }
+
+    public function resetPassword() {
+        $data = json_decode(file_get_contents("php://input"), true);
+        $token = $data['token'] ?? '';
+        $newPassword = $data['newPassword'] ?? '';
+
+        if (!$token || !$newPassword) {
+            http_response_code(400);
+            echo json_encode(["status" => "400", "message" => "Token and New Password are required"]);
+            return;
+        }
+
+        $user = User::findByResetToken($token);
+        if ($user) {
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            User::updatePassword($user['id'], $hashedPassword);
+            echo json_encode(["status" => "200", "message" => "Password updated successfully"]);
+        } else {
+            http_response_code(401);
+            echo json_encode(["status" => "401", "message" => "Invalid or expired token"]);
+        }
+    }
 }

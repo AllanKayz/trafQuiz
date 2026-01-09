@@ -7,7 +7,7 @@
                 upcoming dues.' }}</p>
         </div>
         @if (!isAdmin()) {
-        <button mat-flat-button color="primary">Make Payment</button>
+        <button mat-flat-button color="primary" (click)="makePayment()">Make Payment</button>
         }
     </header>
 
@@ -85,7 +85,6 @@
     <mat-card class="table-card">
         <div class="card-header">
             <h3>Transaction History</h3>
-            <!-- <button mat-stroked-button>Download Report</button> -->
         </div>
 
         @if (isLoading()) {
@@ -93,7 +92,6 @@
         }
 
         <table mat-table [dataSource]="transactions()" class="transactions-table">
-
             <!-- ID Column -->
             <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef> ID </th>
@@ -144,5 +142,55 @@
         </div>
         }
     </mat-card>
+
+    <!-- Admin: Package Management -->
+    @if (isAdmin()) {
+    <section class="packages-management">
+        <div class="section-title">
+            <mat-icon>inventory_2</mat-icon>
+            <h2>Lesson Package Management</h2>
+        </div>
+
+        <div class="packages-grid">
+            @for (pkg of packages(); track pkg.id) {
+            <mat-card class="package-card" [class.editing]="editingPackageId() === pkg.id">
+                @if (editingPackageId() === pkg.id) {
+                <div class="edit-mode">
+                    <div class="package-header">
+                        <span class="edit-title">Edit {{pkg.package}}</span>
+                    </div>
+                    <div class="edit-fields">
+                        <mat-form-field appearance="outline">
+                            <mat-label>Package Name</mat-label>
+                            <input matInput [(ngModel)]="editBuffer().package">
+                        </mat-form-field>
+
+                        <mat-form-field appearance="outline">
+                            <mat-label>Price ($)</mat-label>
+                            <input matInput type="number" [(ngModel)]="editBuffer().amount">
+                            <span matPrefix>$&nbsp;</span>
+                        </mat-form-field>
+                    </div>
+                    <div class="edit-actions">
+                        <button mat-button (click)="cancelEdit()">Cancel</button>
+                        <button mat-flat-button color="primary" (click)="savePackage()">Save Changes</button>
+                    </div>
+                </div>
+                } @else {
+                <div class="view-mode">
+                    <div class="package-info">
+                        <span class="pkg-name">{{pkg.package}}</span>
+                        <span class="pkg-price">${{pkg.amount | number}}</span>
+                    </div>
+                    <button mat-icon-button (click)="startEdit(pkg)" matTooltip="Edit Pricing">
+                        <mat-icon>edit_calendar</mat-icon>
+                    </button>
+                </div>
+                }
+            </mat-card>
+            }
+        </div>
+    </section>
+    }
 
 </div>

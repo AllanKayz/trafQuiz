@@ -1,71 +1,119 @@
-import { Component } from '@angular/core';
-
-import { FormsModule } from '@angular/forms';
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Vehicle } from '../../models/vehicle';
 import { VehicleService } from '../../services/vehicle.service';
 
 @Component({
   selector: 'app-vehicles',
   standalone: true,
-  imports: [FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatTableModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDialogModule,
+    MatInputModule,
+    MatSelectModule,
+    MatFormFieldModule,
+    MatTooltipModule,
+    MatProgressSpinnerModule
+  ],
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
 })
 export class VehiclesComponent {
-  vehicles: Vehicle[] = [];
+  private vehicleService = inject(VehicleService);
+  private dialog = inject(MatDialog);
+
+  dataSource = new MatTableDataSource<Vehicle>([]);
+  displayedColumns: string[] = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
   loading = false;
   error = '';
 
-  // Modal / form state
-  showModal = false;
-  isEditing = false;
+  // Form state for dialogs
   formVehicle: Partial<Vehicle> = {};
+  isEditing = false;
 
-  constructor(private vehicleService: VehicleService) {
+  constructor() {
     this.load();
   }
 
   load() {
     this.loading = true;
     this.error = '';
-    this.vehicleService.getVehicles().subscribe({
-      next: (res) => { this.vehicles = res || []; this.loading = false; },
-      error: (err) => { this.error = 'Failed to load vehicles'; this.loading = false; }
+    this.vehicleService.fetchVehicles().subscribe({
+      next: (res) => {
+        this.dataSource.data = res || [];
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Failed to load vehicles';
+        this.loading = false;
+      }
     });
   }
 
-  openAdd() {
+  openAdd(template: any) {
     this.isEditing = false;
-    this.formVehicle = { make: '', model: '', year: new Date().getFullYear(), registration: '', type: 'car', status: 'active', notes: '' };
-    this.showModal = true;
+    this.formVehicle = {
+      make: '',
+      model: '',
+      year: new Date().getFullYear(),
+      registration: '',
+      type: 'car',
+      status: 'active',
+      notes: ''
+    };
+    this.dialog.open(template, { width: '500px' });
   }
 
-  openEdit(v: Vehicle) {
+  openEdit(v: Vehicle, template: any) {
     this.isEditing = true;
     this.formVehicle = { ...v };
-    this.showModal = true;
+    this.dialog.open(template, { width: '500px' });
   }
 
-  save() {
+  save(dialogRef: any) {
     this.error = '';
-    if (!this.formVehicle.make || !this.formVehicle.model) {
-      this.error = 'Make and model are required';
+    if (!this.formVehicle.make || !this.formVehicle.model || !this.formVehicle.registration) {
+      this.error = 'Make, model, and registration are required';
       return;
     }
 
-    if (this.isEditing && this.formVehicle.id) {
-      this.vehicleService.updateVehicle(this.formVehicle.id, this.formVehicle).subscribe({ next: () => { this.showModal = false; this.load(); }, error: () => { this.error = 'Update failed'; } });
-    } else {
-      this.vehicleService.addVehicle(this.formVehicle).subscribe({ next: () => { this.showModal = false; this.load(); }, error: () => { this.error = 'Create failed'; } });
-    }
+    const obs = (this.isEditing && this.formVehicle.id)
+      ? this.vehicleService.updateVehicle(this.formVehicle.id, this.formVehicle)
+      : this.vehicleService.addVehicle(this.formVehicle);
+
+    obs.subscribe({
+      next: () => {
+        dialogRef.close();
+        this.load();
+      },
+      error: () => {
+        this.error = this.isEditing ? 'Update failed' : 'Create failed';
+      }
+    });
   }
 
   confirmDelete(id?: number) {
     if (!id) return;
-    if (!confirm('Delete this vehicle?')) return;
-    this.vehicleService.deleteVehicle(id).subscribe({ next: () => this.load(), error: () => this.error = 'Delete failed' });
+    if (!confirm('Are you sure you want to delete this vehicle?')) return;
+    this.vehicleService.deleteVehicle(id).subscribe({
+      next: () => this.load(),
+      error: () => this.error = 'Delete failed'
+    });
   }
-
-  closeModal() { this.showModal = false; this.error = ''; }
 }
 

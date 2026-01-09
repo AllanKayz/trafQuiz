@@ -49,6 +49,10 @@
       </div>
 
       <div class="actions">
+        <button mat-icon-button (click)="themeService.toggleTheme()"
+          [matTooltip]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
+          <mat-icon>{{themeService.isDarkMode() ? 'light_mode' : 'dark_mode'}}</mat-icon>
+        </button>
         <button mat-icon-button (click)="onLogout()" matTooltip="Logout">
           <mat-icon>logout</mat-icon>
         </button>

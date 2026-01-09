@@ -67,6 +67,10 @@ export const routes: Routes = [
         component: AdminToolsComponent
       },
       {
+        path: 'scheduling',
+        loadComponent: () => import('./components/admin/scheduling/scheduling.component').then(m => m.SchedulingComponent)
+      },
+      {
         path: 'vehicles',
         component: VehiclesComponent
       },
@@ -93,6 +97,14 @@ export const routes: Routes = [
       {
         path: 'useraccess',
         component: UserAccessComponent
+      },
+      {
+        path: 'schedule',
+        loadComponent: () => import('./components/instructors/schedule/schedule.component').then(m => m.ScheduleComponent)
+      },
+      {
+        path: 'vehicle-status',
+        loadComponent: () => import('./components/instructors/vehicle-status/vehicle-status.component').then(m => m.VehicleStatusComponent)
       },
       {
         path: 'dashboard', redirectTo: '', pathMatch: 'full'

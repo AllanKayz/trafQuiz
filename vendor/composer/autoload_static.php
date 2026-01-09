@@ -22,20 +22,6 @@ class ComposerStaticInitaab37363d374f469264868d8b4a70fe6
 
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
-        'TrafQuiz\\Controllers\\AdminController' => __DIR__ . '/../..' . '/src/Controllers/AdminController.php',
-        'TrafQuiz\\Controllers\\ExamController' => __DIR__ . '/../..' . '/src/Controllers/ExamController.php',
-        'TrafQuiz\\Controllers\\LicenseController' => __DIR__ . '/../..' . '/src/Controllers/LicenseController.php',
-        'TrafQuiz\\Controllers\\LoginController' => __DIR__ . '/../..' . '/src/Controllers/LoginController.php',
-        'TrafQuiz\\Controllers\\UserController' => __DIR__ . '/../..' . '/src/Controllers/UserController.php',
-        'TrafQuiz\\Core\\Auth' => __DIR__ . '/../..' . '/src/Core/Auth.php',
-        'TrafQuiz\\Core\\Database' => __DIR__ . '/../..' . '/src/Core/Database.php',
-        'TrafQuiz\\Core\\License' => __DIR__ . '/../..' . '/src/Core/License.php',
-        'TrafQuiz\\Core\\Router' => __DIR__ . '/../..' . '/src/Core/Router.php',
-        'TrafQuiz\\Core\\TokenHandler' => __DIR__ . '/../..' . '/src/Core/TokenHandler.php',
-        'TrafQuiz\\Middleware\\CorsMiddleware' => __DIR__ . '/../..' . '/src/Middleware/CorsMiddleware.php',
-        'TrafQuiz\\Models\\Dashboard' => __DIR__ . '/../..' . '/src/Models/Dashboard.php',
-        'TrafQuiz\\Models\\Exam' => __DIR__ . '/../..' . '/src/Models/Exam.php',
-        'TrafQuiz\\Models\\User' => __DIR__ . '/../..' . '/src/Models/User.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

@@ -1,11 +1,18 @@
-<div mat-dialog-container [ngClass]="alertType.toLowerCase()+'_alert'">
-  <h2 mat-dialog-title class="alert_title text-uppercase border-bottom">{{data.title}}</h2>
-  <div mat-dialog-content class="alert_content pt-3">
-    <p>{{data.message}}</p>
+<div class="alert_wrapper" [ngClass]="alertType.toLowerCase() + '-alert'">
+  <div mat-dialog-title class="alert_header">
+    <mat-icon class="alert_icon">{{ getIcon() }}</mat-icon>
+    <h2 class="alert_title">{{ data.title }}</h2>
   </div>
-  <div mat-dialog-actions class="alert_action">
-    @for (btn of data.buttons; track btn) {
-      <button mat-raised-button [mat-dialog-close]="btn.value" [color]="btn.color">{{btn.text}}</button>
+
+  <div mat-dialog-content class="alert_content">
+    <p>{{ data.message }}</p>
+  </div>
+
+  <div mat-dialog-actions class="alert_actions" align="center">
+    @for (btn of data.buttons; track $index) {
+    <button mat-button class="alert_btn" [mat-dialog-close]="btn.value" [color]="btn.color || 'primary'">
+      {{ btn.text }}
+    </button>
     }
   </div>
 </div>

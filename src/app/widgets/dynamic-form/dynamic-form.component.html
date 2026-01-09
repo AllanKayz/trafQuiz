@@ -1,149 +1,147 @@
-<h2 mat-dialog-title class="p-3">{{ title() }}</h2>
-<div mat-dialog-content class="p-4">
-  <form [formGroup]="form()" (ngSubmit)="onSubmit()" class="dynamic-form">
-    @for (row of groupedFields(); track row) {
-      <div class="form-row">
-        @for (field of row; track field) {
-          <div [class]="'field-col-' + (field.colspan || 1)">
+<div class="form-container fade-in">
+  <header class="form-header">
+    <h2 mat-dialog-title>{{ title() }}</h2>
+    <button mat-icon-button (click)="onCancel()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </header>
+
+  <mat-dialog-content class="form-content">
+    <form [formGroup]="form()" (ngSubmit)="onSubmit()" class="modern-form">
+      <div class="fields-grid">
+        @for (row of groupedFields(); track row) {
+        <div class="form-row">
+          @for (field of row; track field) {
+          <div [class]="'field-col field-span-' + (field.colspan || 1)" [hidden]="field.hidden">
             @switch (field.type) {
-              <!-- Text Input -->
-              @case ('text') {
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>{{ field.label }}</mat-label>
-                  <input matInput [formControlName]="field.key" [placeholder]="field.placeholder || ''">
-                  @if (isFieldInvalid(field.key)) {
-                    <mat-error>
-                      {{ getErrorMessage(field.key) }}
-                    </mat-error>
-                  }
-                </mat-form-field>
-              }
-              <!-- Number Input -->
-              @case ('number') {
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>{{ field.label }}</mat-label>
-                  <input matInput type="number" [formControlName]="field.key" [placeholder]="field.placeholder || ''">
-                  @if (isFieldInvalid(field.key)) {
-                    <mat-error>
-                      {{ getErrorMessage(field.key) }}
-                    </mat-error>
-                  }
-                </mat-form-field>
-              }
-              <!-- Email Input -->
-              @case ('email') {
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>{{ field.label }}</mat-label>
-                  <input matInput type="email" [formControlName]="field.key" [placeholder]="field.placeholder || ''">
-                  @if (isFieldInvalid(field.key)) {
-                    <mat-error>
-                      {{ getErrorMessage(field.key) }}
-                    </mat-error>
-                  }
-                </mat-form-field>
-              }
-              <!-- Password Input -->
-              @case ('password') {
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>{{ field.label }}</mat-label>
-                  <input matInput type="password" [formControlName]="field.key" [placeholder]="field.placeholder || ''">
-                  @if (isFieldInvalid(field.key)) {
-                    <mat-error>
-                      {{ getErrorMessage(field.key) }}
-                    </mat-error>
-                  }
-                </mat-form-field>
-              }
-              <!-- Textarea -->
-              @case ('textarea') {
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>{{ field.label }}</mat-label>
-                  <textarea matInput [formControlName]="field.key" [placeholder]="field.placeholder || ''" rows="3"></textarea>
-                  @if (isFieldInvalid(field.key)) {
-                    <mat-error>
-                      {{ getErrorMessage(field.key) }}
-                    </mat-error>
-                  }
-                </mat-form-field>
-              }
-              <!-- Select -->
-              @case ('select') {
-                <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>{{ field.label }}</mat-label>
-                  <mat-select [formControlName]="field.key" >
-                    @for (option of field.options; track option) {
-                      <mat-option [value]="option.value">
-                        {{ option.label }}
-                      </mat-option>
-                    }
-                  </mat-select>
-                  @if (isFieldInvalid(field.key)) {
-                    <mat-error>
-                      {{ getErrorMessage(field.key) }}
-                    </mat-error>
-                  }
-                </mat-form-field>
-              }
-              <!-- Toggle -->
-              <!-- Checkbox -->
-              @case ('checkbox') {
-                <mat-checkbox [formControlName]="field.key">{{ field.label }}</mat-checkbox>
-              }
-              <!-- Radio Group -->
-              @case ('radio') {
-                <div class="radio-group">
-                  <label>{{ field.label }}</label>
-                  <mat-radio-group [formControlName]="field.key" >
-                    @for (option of field.options; track option) {
-                      <mat-radio-button [value]="option.value">
-                        {{ option.label }}
-                      </mat-radio-button>
-                    }
-                  </mat-radio-group>
-                </div>
-              }
-              <!-- Date Picker -->
-              @case ('date') {
-                <mat-form-field appearance="outline">
-                  <mat-label>{{ field.label }}</mat-label>
-                  <input matInput [matDatepicker]="picker" [formControlName]="field.key">
-                  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
-                  <mat-datepicker #picker></mat-datepicker>
-                  @if (isFieldInvalid(field.key)) {
-                    <mat-error>
-                      {{ getErrorMessage(field.key) }}
-                    </mat-error>
-                  }
-                </mat-form-field>
-              }
-              <!-- File Input -->
-              @case ('file') {
-                <div class="file-input input-group mb-3">
-                  <input type="file" class="form-control" id="inputGroupFile" [formControlName]="field.key" (change)="onFileChange($event, field.key)">
-                  <label class="input-group-text" for="inputGroupFile">{{ field.label }}</label>
-                </div>
-              }
+            <!-- Text/Number/Email/Password Input -->
+            @case ('text') { <ng-container *ngTemplateOutlet="inputField; context: { field: field }"></ng-container> }
+            @case ('number') { <ng-container *ngTemplateOutlet="inputField; context: { field: field }"></ng-container> }
+            @case ('email') { <ng-container *ngTemplateOutlet="inputField; context: { field: field }"></ng-container> }
+            @case ('password') { <ng-container *ngTemplateOutlet="inputField; context: { field: field }"></ng-container>
             }
+
+            <!-- Textarea -->
+            @case ('textarea') {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ field.label }}</mat-label>
+              <mat-icon matPrefix *ngIf="field.icon" class="field-icon">{{ field.icon }}</mat-icon>
+              <textarea matInput [formControlName]="field.key" [placeholder]="field.placeholder || ''"
+                rows="3"></textarea>
+              <mat-hint *ngIf="field.hint">{{ field.hint }}</mat-hint>
+              @if (isFieldInvalid(field.key)) {
+              <mat-error>{{ getErrorMessage(field.key) }}</mat-error>
+              }
+            </mat-form-field>
+            }
+
+            <!-- Select -->
+            @case ('select') {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ field.label }}</mat-label>
+              <mat-icon matPrefix *ngIf="field.icon" class="field-icon">{{ field.icon }}</mat-icon>
+              <mat-select [formControlName]="field.key">
+                @for (option of field.options; track option) {
+                <mat-option [value]="option.value">{{ option.label }}</mat-option>
+                }
+              </mat-select>
+              <mat-hint *ngIf="field.hint">{{ field.hint }}</mat-hint>
+              @if (isFieldInvalid(field.key)) {
+              <mat-error>{{ getErrorMessage(field.key) }}</mat-error>
+              }
+            </mat-form-field>
+            }
+
+            <!-- Checkbox -->
+            @case ('checkbox') {
+            <div class="checkbox-wrapper">
+              <mat-checkbox [formControlName]="field.key" color="primary">
+                <span class="checkbox-label">{{ field.label }}</span>
+              </mat-checkbox>
+              <span class="field-hint" *ngIf="field.hint">{{ field.hint }}</span>
+            </div>
+            }
+
+            <!-- Radio Group -->
+            @case ('radio') {
+            <div class="radio-section">
+              <label class="section-label">{{ field.label }}</label>
+              <mat-radio-group [formControlName]="field.key" class="modern-radio-group">
+                @for (option of field.options; track option) {
+                <mat-radio-button [value]="option.value" color="primary">
+                  {{ option.label }}
+                </mat-radio-button>
+                }
+              </mat-radio-group>
+              <span class="field-hint" *ngIf="field.hint">{{ field.hint }}</span>
+            </div>
+            }
+
+            <!-- Date Picker -->
+            @case ('date') {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ field.label }}</mat-label>
+              <input matInput [matDatepicker]="picker" [formControlName]="field.key">
+              <mat-icon matPrefix *ngIf="field.icon" class="field-icon">{{ field.icon }}</mat-icon>
+              <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-hint *ngIf="field.hint">{{ field.hint }}</mat-hint>
+              @if (isFieldInvalid(field.key)) {
+              <mat-error>{{ getErrorMessage(field.key) }}</mat-error>
+              }
+            </mat-form-field>
+            }
+
+            <!-- File Input -->
+            @case ('file') {
+            <div class="file-upload-container">
+              <label class="file-label">{{ field.label }}</label>
+              <div class="file-drop-zone">
+                <mat-icon>cloud_upload</mat-icon>
+                <p>Click or drag file to upload</p>
+                <input type="file" class="hidden-file-input" [formControlName]="field.key"
+                  (change)="onFileChange($event, field.key)">
+              </div>
+              <span class="field-hint" *ngIf="field.hint">{{ field.hint }}</span>
+            </div>
+            }
+            }
+
+            <ng-template #inputField let-field="field">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ field.label }}</mat-label>
+                <mat-icon matPrefix *ngIf="field.icon" class="field-icon">{{ field.icon }}</mat-icon>
+                <input matInput [type]="field.type" [formControlName]="field.key"
+                  [placeholder]="field.placeholder || ''">
+                <mat-hint *ngIf="field.hint">{{ field.hint }}</mat-hint>
+                @if (isFieldInvalid(field.key)) {
+                <mat-error>{{ getErrorMessage(field.key) }}</mat-error>
+                }
+              </mat-form-field>
+            </ng-template>
           </div>
+          }
+        </div>
         }
       </div>
-    }
 
-    @if (error()) {
-      <div class="error-message">
-        {{ error() }}
+      @if (error()) {
+      <div class="form-error-alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ error() }}</span>
       </div>
-    }
-  </form>
-</div>
-<div mat-dialog-actions>
-  <button mat-button type="button" (click)="onCancel()">
-    {{ cancelText() }}
-  </button>
-  <button mat-raised-button color="primary" type="button" (click)="onSubmit()" [disabled]="loading()">
-    {{ submitText() }}
-    @if (loading()) {
-      <mat-icon>hourglass_empty</mat-icon>
-    }
-  </button>
+      }
+    </form>
+  </mat-dialog-content>
+
+  <mat-dialog-actions class="form-actions">
+    <button mat-stroked-button type="button" (click)="onCancel()" [disabled]="loading()">
+      {{ cancelText() }}
+    </button>
+    <button mat-flat-button color="primary" type="button" (click)="onSubmit()" [disabled]="loading()" class="submit-btn"
+      [class.loading]="loading()">
+      <span *ngIf="!loading()">{{ submitText() }}</span>
+      <mat-spinner diameter="20" *ngIf="loading()"></mat-spinner>
+    </button>
+  </mat-dialog-actions>
 </div>

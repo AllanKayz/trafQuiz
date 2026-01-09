@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { TraffiquizService } from '../traffiquiz.service';
+import { ThemeService } from '../services/theme.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,6 +17,7 @@ import { TraffiquizService } from '../traffiquiz.service';
 export class DashboardComponent {
   private router = inject(Router);
   private trafQuizService = inject(TraffiquizService);
+  public themeService = inject(ThemeService);
 
   isSidenavCollapsed = signal(false);
   user = this.trafQuizService.currentUser;

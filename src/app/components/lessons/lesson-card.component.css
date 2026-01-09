@@ -66,10 +66,42 @@
   color: #64748b;
 }
 
-.status-dot {
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-indicator.pending {
+  background: #f97316;
+}
+
+.status-indicator.confirmed {
+  background: #10b981;
+}
+
+.status-indicator.upcoming {
+  background: #3b82f6;
+}
+
+.status-indicator.cancelled {
+  background: #ef4444;
+}
+
+.status-indicator.declined {
+  background: #64748b;
+}
+
+.status-indicator.completed {
+  background: #94a3b8;
 }
 
 .status-dot[data-status="upcoming"] {

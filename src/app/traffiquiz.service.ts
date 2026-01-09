@@ -77,10 +77,10 @@ export class TraffiquizService {
 
   /** Defines the menu items for different user roles. */
   private menus = {
-    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Settings'],
-    instructor: ['Dashboard', 'Schedule', 'Students', 'Feedbacks', 'Vehicle Status', 'Messages', 'Settings'],
+    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Scheduling', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Settings'],
+    instructor: ['Dashboard', 'Schedule', 'Students', 'Vehicle-Status', 'Messages', 'Settings'],
     student: ['Dashboard', 'Exam', 'Lessons', 'Reports', 'Messages', 'Payments', 'Settings'],
-    icons: { dashboard: '📊', questions: '❓', instructors: '👨‍🏫', exams: '📝', students: '👥', vehicles: '🚗', reports: '📈', settings: '⚙️' }
+    icons: { dashboard: 'dashboard', questions: 'help_outline', instructors: 'person', exams: 'assignment', students: 'group', vehicles: 'directions_car', reports: 'bar_chart', settings: 'settings', scheduling: 'event', schedule: 'calendar_month', 'vehicle-status': 'car_repair', messages: 'mail', finances: 'payments', useraccess: 'admin_panel_settings', lessons: 'school', 'lessons-admin': 'admin_panel_settings', exam: 'quiz', payments: 'account_balance_wallet' }
   }
 
   /** Configuration for the widgets displayed on the dashboard for different user roles. */
@@ -427,6 +427,20 @@ export class TraffiquizService {
   }
 
   /**
+   * Requests a password reset token for the specified username.
+   */
+  forgotPassword(username: string): Observable<any> {
+    return this.http.post(this.url + 'forgot-password', { username });
+  }
+
+  /**
+   * Resets the user's password using a reset token.
+   */
+  resetPassword(payload: any): Observable<any> {
+    return this.http.post(this.url + 'reset-password', payload);
+  }
+
+  /**
    * Fetches the exam questions from the API.
    * @param token The user's authentication token.
    */
@@ -726,6 +740,24 @@ export class TraffiquizService {
   }
 
   /**
+   * Updates an existing package's pricing or details.
+   * @param pkg The package object to update.
+   * @returns An observable that emits the API response.
+   */
+  updatePackage(pkg: any): Observable<any> {
+    // In a real app, this would be a PUT request to the API
+    // return this.http.put(this.url + `packages/${pkg.id}`, pkg);
+
+    // For now, we'll mock the success and update the signal
+    console.log('Mock Updating Package:', pkg);
+    const updatedPackages = this.packagesSignal().map(p => p.id === pkg.id ? { ...p, ...pkg } : p);
+    this.packagesSignal.set(updatedPackages);
+    localStorage.setItem('packages', JSON.stringify(this.transformPackagesJson(updatedPackages)));
+
+    return of({ status: 200, message: 'Package updated successfully' });
+  }
+
+  /**
    * Transforms the raw question categories data into a format suitable for use in form controls.
    * @param data The raw question categories data.
    * @returns The transformed question categories data.
@@ -928,6 +960,17 @@ export class TraffiquizService {
     }));
 
     return of(transactions);
+  }
+
+  processPayment(paymentData: any): Observable<any> {
+    console.log('Mock Processing Payment:', paymentData);
+    // In a real app, this would be a POST to /api/payments
+    return of({ status: 200, message: 'Payment processed successfully' }).pipe(
+      tap(() => {
+        // Refresh transactions if needed, or just let the mock logic handle it
+        // For demonstration, we'll just mock a success
+      })
+    );
   }
 
   fetchFinancialStats(): Observable<any> {

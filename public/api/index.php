@@ -26,6 +26,14 @@ $router->addRoute('POST', '/trafQuiz/public/api/login', function () {
        (new LoginController())->login();
 });
 
+$router->addRoute('POST', '/trafQuiz/public/api/forgot-password', function () {
+       (new LoginController())->forgotPassword();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/reset-password', function () {
+       (new LoginController())->resetPassword();
+});
+
 $router->addRoute('GET', '/trafQuiz/public/api/exam', function () {
        (new ExamController())->examQuestions();
 });
@@ -86,6 +94,53 @@ $router->addRoute('POST', '/trafQuiz/public/api/addspecialization', function () 
        (new AdminController())->addSpecialization();
 });
 
+// User profile update
+$router->addRoute('POST', '/trafQuiz/public/api/updateuser', function () {
+       (new \TrafQuiz\Controllers\UserController())->updateProfile();
+});
+
+// Questions CRUD
+$router->addRoute('POST', '/trafQuiz/public/api/questions', function () {
+       (new \TrafQuiz\Controllers\QuestionController())->create();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/questions/update', function () {
+       (new \TrafQuiz\Controllers\QuestionController())->update();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/questions/delete', function () {
+       (new \TrafQuiz\Controllers\QuestionController())->delete();
+});
+
+// Student updates
+$router->addRoute('POST', '/trafQuiz/public/api/students/update', function () {
+       (new AdminController())->updateStudent();
+});
+
+// Instructor updates
+$router->addRoute('POST', '/trafQuiz/public/api/instructors/update', function () {
+       (new AdminController())->updateInstructor();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/instructors/delete', function () {
+       (new AdminController())->deleteInstructor();
+});
+
+// Package updates
+$router->addRoute('POST', '/trafQuiz/public/api/packages/update', function () {
+       (new AdminController())->updatePackage();
+});
+
+// Specialization updates
+$router->addRoute('POST', '/trafQuiz/public/api/specializations/update', function () {
+       (new AdminController())->updateSpecialization();
+});
+
+// Certification updates
+$router->addRoute('POST', '/trafQuiz/public/api/certifications/update', function () {
+       (new AdminController())->updateCertification();
+});
+
 // Admin utilities: seed and check lessons
 $router->addRoute('POST', '/trafQuiz/public/api/admin/seed-lessons', function () {
        (new AdminController())->seedLessons();
@@ -131,6 +186,28 @@ $router->addRoute('POST', '/trafQuiz/public/api/vehicles/update', function () {
 
 $router->addRoute('POST', '/trafQuiz/public/api/vehicles/delete', function () {
        (new \TrafQuiz\Controllers\VehiclesController())->delete();
+});
+
+// Payments API
+$router->addRoute('POST', '/trafQuiz/public/api/payments/process', function () {
+       (new \TrafQuiz\Controllers\PaymentsController())->process();
+});
+
+// Messaging API
+$router->addRoute('GET', '/trafQuiz/public/api/conversations', function () {
+       (new \TrafQuiz\Controllers\MessagesController())->getConversations();
+});
+
+$router->addRoute('GET', '/trafQuiz/public/api/messages', function () {
+       (new \TrafQuiz\Controllers\MessagesController())->getMessages();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/messages/send', function () {
+       (new \TrafQuiz\Controllers\MessagesController())->sendMessage();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/admin/auto-allocate', function () {
+       (new \TrafQuiz\Controllers\AdminController())->autoAllocateSchedules();
 });
 
 

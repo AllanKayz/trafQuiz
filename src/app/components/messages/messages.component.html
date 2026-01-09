@@ -3,7 +3,7 @@
   <aside class="conversations-sidebar">
     <div class="sidebar-header">
       <h2>Messages</h2>
-      <button mat-icon-button>
+      <button mat-icon-button class="new-msg-btn" matTooltip="New Message">
         <mat-icon>edit_square</mat-icon>
       </button>
     </div>
@@ -11,25 +11,31 @@
     <div class="sidebar-search">
       <div class="search-inner">
         <mat-icon>search</mat-icon>
-        <input type="text" placeholder="Search messages..." (input)="searchText.set($any($event.target).value)">
+        <input type="text" placeholder="Search people or messages..."
+          (input)="searchText.set($any($event.target).value)">
       </div>
     </div>
 
     <mat-list class="conv-list">
       @for (c of filteredConversations(); track c.id) {
       <mat-list-item (click)="openConversation(c)" [class.active-item]="selectedConversation()?.id === c.id">
-        <div matListItemAvatar class="avatar">
-          {{ getInitials(c.name) }}
+        <div matListItemAvatar class="avatar-container">
+          <div class="avatar">
+            {{ getInitials(c.name) }}
+          </div>
+          <div class="status-dot" [class.offline]="c.id % 3 === 0"></div>
         </div>
-        <div matListItemTitle class="conv-title-row">
-          <span class="conv-name">{{ c.name }}</span>
-          <span class="conv-time">{{ formatTime(c.lastTime || '') }}</span>
-        </div>
-        <div matListItemLine class="conv-last-msg">
-          {{ c.lastMessage }}
+        <div matListItemTitle class="conv-info">
+          <div class="conv-title-row">
+            <span class="conv-name">{{ c.name }}</span>
+            <span class="conv-time">{{ formatTime(c.lastTime || '') }}</span>
+          </div>
+          <div class="conv-last-msg">
+            {{ c.lastMessage }}
+          </div>
         </div>
         @if (c.unread && c.unread > 0) {
-        <div class="unread-badge">{{ c.unread }}</div>
+        <div matListItemMeta class="unread-badge">{{ c.unread }}</div>
         }
       </mat-list-item>
       }
@@ -52,9 +58,9 @@
         <div class="header-status">Online</div>
       </div>
       <div class="header-actions">
-        <button mat-icon-button><mat-icon>phone</mat-icon></button>
-        <button mat-icon-button><mat-icon>videocam</mat-icon></button>
-        <button mat-icon-button><mat-icon>info</mat-icon></button>
+        <button mat-icon-button matTooltip="Voice Call"><mat-icon>phone</mat-icon></button>
+        <button mat-icon-button matTooltip="Video Call"><mat-icon>videocam</mat-icon></button>
+        <button mat-icon-button matTooltip="Details"><mat-icon>info</mat-icon></button>
       </div>
     </header>
 
@@ -77,25 +83,42 @@
     </div>
 
     <footer class="chat-footer">
+      <div class="footer-tools">
+        <button mat-icon-button class="tool-btn" matTooltip="Attach files">
+          <mat-icon>attach_file</mat-icon>
+        </button>
+        <button mat-icon-button class="tool-btn" matTooltip="Send Image">
+          <mat-icon>image</mat-icon>
+        </button>
+        <button mat-icon-button class="tool-btn" matTooltip="Insert Emoji">
+          <mat-icon>sentiment_satisfied_alt</mat-icon>
+        </button>
+      </div>
+
       <div class="reply-container">
-        <button mat-icon-button class="attach-btn">
-          <mat-icon>add_circle_outline</mat-icon>
-        </button>
         <div class="input-area">
-          <textarea [(ngModel)]="reply" placeholder="Write a message..."
-            (keydown.enter)="$event.preventDefault(); sendReply()" rows="1">
-            </textarea>
+          <textarea [(ngModel)]="reply" placeholder="Type your message..."
+            (keydown.enter)="$event.preventDefault(); sendReply()" (input)="onInput($event)" rows="1"></textarea>
         </div>
-        <button mat-fab color="primary" class="send-btn" [disabled]="!reply.trim()" (click)="sendReply()">
-          <mat-icon>send</mat-icon>
-        </button>
+
+        <div class="reply-actions">
+          <button mat-icon-button class="tool-btn voice-btn" matTooltip="Voice Message">
+            <mat-icon>mic</mat-icon>
+          </button>
+          <button mat-flat-button color="primary" class="send-btn" [disabled]="!reply.trim()" (click)="sendReply()"
+            matTooltip="Send Message">
+            <mat-icon>send</mat-icon>
+          </button>
+        </div>
       </div>
     </footer>
     } @else {
     <div class="chat-placeholder">
-      <mat-icon class="placeholder-icon">forum</mat-icon>
-      <h3>Your messages</h3>
-      <p>Select a person from the list to start a conversation.</p>
+      <div class="placeholder-illustration">
+        <mat-icon>forum</mat-icon>
+      </div>
+      <h3>Your Workspace Chat</h3>
+      <p>Select a colleague or student from the list to continue your conversation.</p>
     </div>
     }
   </main>

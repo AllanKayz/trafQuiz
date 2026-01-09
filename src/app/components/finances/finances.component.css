@@ -20,6 +20,7 @@
     color: var(--text-main);
     background: linear-gradient(135deg, var(--text-main) 0%, var(--primary-color) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
@@ -38,11 +39,16 @@
 }
 
 .stat-card {
+    background: var(--bg-card);
     padding: 24px;
     display: flex;
     align-items: center;
     gap: 20px;
     border-radius: 16px;
+    border: var(--glass-border);
+    -webkit-backdrop-filter: var(--glass-blur);
+    -moz-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -107,6 +113,11 @@
 
 /* Projections Chart */
 .chart-container {
+    background: var(--bg-card);
+    border: var(--glass-border);
+    -webkit-backdrop-filter: var(--glass-blur);
+    -moz-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     padding: 24px;
     border-radius: 16px;
     margin-bottom: 32px;
@@ -182,9 +193,15 @@
 
 /* Transactions Table */
 .table-card {
+    background: var(--bg-card);
+    border: var(--glass-border);
+    -webkit-backdrop-filter: var(--glass-blur);
+    -moz-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
     padding: 0;
     border-radius: 16px;
     overflow: hidden;
+    box-shadow: 0 8px 32px 0 var(--shadow-color);
 }
 
 .card-header {
@@ -283,4 +300,117 @@
     .stats-overview {
         grid-template-columns: 1fr;
     }
+}
+
+/* Package Management Section */
+.packages-management {
+    margin-top: 48px;
+    padding-bottom: 48px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    color: var(--text-main);
+}
+
+.section-title mat-icon {
+    color: var(--primary-color);
+}
+
+.section-title h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.packages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 24px;
+}
+
+.package-card {
+    padding: 24px;
+    border-radius: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: var(--glass-border);
+    background: var(--bg-card);
+    -webkit-backdrop-filter: var(--glass-blur);
+    -moz-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+}
+
+.package-card.editing {
+    background: var(--hover-bg);
+    border-color: var(--primary-color);
+    scale: 1.02;
+    box-shadow: 0 12px 32px var(--shadow-color);
+}
+
+.view-mode {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.package-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.pkg-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.pkg-price {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary-color);
+}
+
+.edit-mode .package-header {
+    margin-bottom: 20px;
+}
+
+.edit-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.edit-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.edit-fields mat-form-field {
+    width: 100%;
+}
+
+.edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.view-mode button {
+    background: rgba(79, 70, 229, 0.05);
+    color: var(--primary-color);
+    transition: all 0.2s;
+}
+
+.view-mode button:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: rotate(15deg);
 }

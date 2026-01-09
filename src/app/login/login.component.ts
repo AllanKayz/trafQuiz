@@ -30,11 +30,28 @@ export class LoginComponent {
 
 	/** A signal that indicates whether the login request is in progress. */
 	isLoading = signal(false);
+	/** A signal that indicates whether the reset password form is shown. */
+	showResetForm = signal(false);
+	/** A signal that indicates whether the reset token has been received. */
+	resetTokenReceived = signal(false);
+
 	/** The form group for the login form. */
 	loginForm = new FormGroup({
 		username: new FormControl('', Validators.required),
 		password: new FormControl('', Validators.required)
 	});
+
+	/** The form group for requesting reset. */
+	forgotForm = new FormGroup({
+		username: new FormControl('', Validators.required)
+	});
+
+	/** The form group for setting new password. */
+	resetForm = new FormGroup({
+		token: new FormControl('', Validators.required),
+		newPassword: new FormControl('', [Validators.required, Validators.minLength(6)])
+	});
+
 	hide = true;
 
 	constructor() { }
@@ -45,6 +62,59 @@ export class LoginComponent {
 
 	loadLicence() {
 
+	}
+
+	/**
+	 * Toggles the forgot password form.
+	 */
+	toggleResetForm() {
+		this.showResetForm.set(!this.showResetForm());
+		this.resetTokenReceived.set(false);
+		this.forgotForm.reset();
+		this.resetForm.reset();
+	}
+
+	/**
+	 * Sends a request for a password reset token.
+	 */
+	sendResetRequest() {
+		if (this.forgotForm.valid) {
+			this.isLoading.set(true);
+			const username = this.forgotForm.get('username')?.value || '';
+
+			this.trafQuizService.forgotPassword(username).pipe(
+				finalize(() => this.isLoading.set(false))
+			).subscribe({
+				next: (res) => {
+					this.resetTokenReceived.set(true);
+					this.resetForm.patchValue({ token: res.token });
+					this.showAlert('Success', 'Reset token generated (for demo: ' + res.token + '). Please enter your new password.', 'success');
+				},
+				error: (err) => {
+					this.showAlert('Error', err.error?.message || 'User not found', 'error');
+				}
+			});
+		}
+	}
+
+	/**
+	 * Resets the password using the token and new password.
+	 */
+	resetPassword() {
+		if (this.resetForm.valid) {
+			this.isLoading.set(true);
+			this.trafQuizService.resetPassword(this.resetForm.value).pipe(
+				finalize(() => this.isLoading.set(false))
+			).subscribe({
+				next: () => {
+					this.showAlert('Success', 'Password updated successfully. You can now log in.', 'success');
+					this.toggleResetForm();
+				},
+				error: (err) => {
+					this.showAlert('Error', err.error?.message || 'Could not reset password', 'error');
+				}
+			});
+		}
 	}
 
 	/**

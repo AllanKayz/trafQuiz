@@ -56,6 +56,11 @@ class LessonModel {
             'capacity' => isset($row['capacity']) ? (int)$row['capacity'] : null,
             'notes' => $row['notes'] ?? null,
             'resources' => !empty($row['resources']) ? json_decode($row['resources'], true) : [],
+            'studentId' => isset($row['student_id']) ? (int)$row['student_id'] : null,
+            'studentName' => $row['student_name'] ?? null,
+            'type' => $row['type'] ?? 'group',
+            'assignedVehicleId' => isset($row['assigned_vehicle_id']) ? (int)$row['assigned_vehicle_id'] : null,
+            'vehicleType' => $row['vehicle_type'] ?? null,
             'createdAt' => !empty($row['createdAt']) ? (new \DateTime($row['createdAt']))->format(DATE_ATOM) : null,
             'updatedAt' => !empty($row['updatedAt']) ? (new \DateTime($row['updatedAt']))->format(DATE_ATOM) : null,
         ];
@@ -153,12 +158,26 @@ class LessonModel {
     public static function patch($id, $payload) {
         $conn = self::getConnection();
         if ($conn) {
-            $allowed = ['title','subject','startTime','endTime','durationMinutes','location','onlineLink','status','studentCount','capacity','notes','resources'];
+            $allowed = [
+                'title','subject','startTime','endTime','durationMinutes','location',
+                'onlineLink','status','studentCount','capacity','notes','resources',
+                'student_id', 'student_name', 'type', 'assigned_vehicle_id', 'vehicle_type'
+            ];
             $sets = [];
             $params = [':id' => $id];
+            
+            // Map camelCase to snake_case if needed
+            $map = [
+                'studentId' => 'student_id',
+                'studentName' => 'student_name',
+                'assignedVehicleId' => 'assigned_vehicle_id',
+                'vehicleType' => 'vehicle_type'
+            ];
+
             foreach ($payload as $k => $v) {
-                if (!in_array($k, $allowed)) continue;
-                $sets[] = "$k = :$k";
+                $col = $map[$k] ?? $k;
+                if (!in_array($col, $allowed)) continue;
+                $sets[] = "$col = :$k";
                 if ($k === 'resources') $params[":$k"] = json_encode($v);
                 else $params[":$k"] = $v;
             }
@@ -225,7 +244,17 @@ class LessonModel {
     public static function add(array $payload) {
         $conn = self::getConnection();
         if ($conn) {
-            $sql = 'INSERT INTO lessons (title, subject, startTime, endTime, durationMinutes, instructor_id, instructor_name, instructor_avatar, location, onlineLink, status, studentCount, capacity, notes, resources, createdAt) VALUES (:title,:subject,:startTime,:endTime,:durationMinutes,:instructor_id,:instructor_name,:instructor_avatar,:location,:onlineLink,:status,:studentCount,:capacity,:notes,:resources,:createdAt)';
+            $sql = 'INSERT INTO lessons (
+                title, subject, startTime, endTime, durationMinutes, instructor_id, 
+                instructor_name, instructor_avatar, location, onlineLink, status, 
+                studentCount, capacity, notes, resources, student_id, student_name, 
+                type, assigned_vehicle_id, vehicle_type, createdAt
+            ) VALUES (
+                :title,:subject,:startTime,:endTime,:durationMinutes,:instructor_id,
+                :instructor_name,:instructor_avatar,:location,:onlineLink,:status,
+                :studentCount,:capacity,:notes,:resources,:student_id,:student_name,
+                :type,:assigned_vehicle_id,:vehicle_type,:createdAt
+            )';
             $stmt = $conn->prepare($sql);
             $params = [
                 ':title' => $payload['title'],
@@ -243,6 +272,11 @@ class LessonModel {
                 ':capacity' => $payload['capacity'] ?? null,
                 ':notes' => $payload['notes'] ?? null,
                 ':resources' => !empty($payload['resources']) ? json_encode($payload['resources']) : null,
+                ':student_id' => $payload['studentId'] ?? null,
+                ':student_name' => $payload['studentName'] ?? null,
+                ':type' => $payload['type'] ?? 'group',
+                ':assigned_vehicle_id' => $payload['assignedVehicleId'] ?? null,
+                ':vehicle_type' => $payload['vehicleType'] ?? null,
                 ':createdAt' => date('Y-m-d H:i:s')
             ];
             $stmt->execute($params);

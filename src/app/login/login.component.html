@@ -10,6 +10,7 @@
   <!-- Form Section -->
   <div class="form-section">
     <div class="login-card">
+      @if (!showResetForm()) {
       <div class="login-header">
         <img class="logo-img" src="assets/logo.png" alt="TrafQuiz Logo">
         <h2>Welcome back</h2>
@@ -43,9 +44,63 @@
         </div>
 
         <div class="helper-links">
-          <a href="#">Forgot password?</a>
+          <a href="javascript:void(0)" (click)="toggleResetForm()">Forgot password?</a>
         </div>
       </form>
+      } @else {
+      <div class="login-header">
+        <h2>Reset Password</h2>
+        <p>Follow the steps to regain access.</p>
+      </div>
+
+      @if (!resetTokenReceived()) {
+      <form [formGroup]="forgotForm" (submit)="sendResetRequest()">
+        <p class="form-hint">Enter your username to receive a reset token.</p>
+        <mat-form-field appearance="outline">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" type="text" required placeholder="Your username">
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" type="submit" class="login-btn" [disabled]="isLoading()">
+            @if (isLoading()) {
+            <mat-progress-spinner mode="indeterminate" diameter="24" color="accent"></mat-progress-spinner>
+            } @else {
+            Request Token
+            }
+          </button>
+          <button mat-button type="button" (click)="toggleResetForm()">Back to Login</button>
+        </div>
+      </form>
+      } @else {
+      <form [formGroup]="resetForm" (submit)="resetPassword()">
+        <mat-form-field appearance="outline">
+          <mat-label>Reset Token</mat-label>
+          <input matInput formControlName="token" type="text" required readonly>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>New Password</mat-label>
+          <input matInput formControlName="newPassword" [type]="hide ? 'password' : 'text'" required
+            placeholder="Min 6 characters">
+          <button mat-icon-button matSuffix (click)="togglePasswordVisibility()" type="button" tabindex="-1">
+            <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" type="submit" class="login-btn" [disabled]="isLoading()">
+            @if (isLoading()) {
+            <mat-progress-spinner mode="indeterminate" diameter="24" color="accent"></mat-progress-spinner>
+            } @else {
+            Reset Password
+            }
+          </button>
+          <button mat-button type="button" (click)="toggleResetForm()">Cancel</button>
+        </div>
+      </form>
+      }
+      }
     </div>
   </div>
 </div>

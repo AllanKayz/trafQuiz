@@ -1,10 +1,14 @@
-import { Component, OnInit, signal, effect } from '@angular/core';
+import { Component, OnInit, signal, effect, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Lesson } from '../../models/lesson';
 import { LessonService } from '../../services/lesson.service';
 import { LessonCardComponent } from './lesson-card.component';
 import { MatIconModule } from '@angular/material/icon';
+import { TraffiquizService } from '../../traffiquiz.service';
+import { MatDialog } from '@angular/material/dialog';
+import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
+import { FormConfigService } from '../../widgets/form-config.service';
 
 @Component({
   selector: 'app-upcoming-lessons',
@@ -14,12 +18,22 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrls: ['./upcoming-lessons.component.css']
 })
 export class UpcomingLessonsComponent implements OnInit {
+  private service = inject(TraffiquizService);
+  private lessonService = inject(LessonService);
+  private dialog = inject(MatDialog);
+  private formConfig = inject(FormConfigService);
+
+  user = this.service.currentUser;
+  isAdmin = computed(() => this.user()?.role === 'admin');
+  isInstructor = computed(() => this.user()?.role === 'instructor');
+  isStudent = computed(() => this.user()?.role === 'student');
+
   lessons: Lesson[] = [];
   selectedLesson: Lesson | null = null;
   range: 'today' | '7days' | 'week' | 'month' = '7days';
   q = '';
 
-  constructor(private lessonService: LessonService) { }
+  constructor() { }
 
   ngOnInit(): void {
     this.loadLessons();
@@ -27,10 +41,24 @@ export class UpcomingLessonsComponent implements OnInit {
 
   loadLessons() {
     this.lessonService.getLessons(this.range).subscribe((ls) => {
-      // sort ascending by startTime
-      this.lessons = ls.slice().sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+      const user = this.user();
+      let filtered = ls.slice();
 
-      // Auto-select first lesson if none selected or if previously selected lesson is no longer in list
+      if (user) {
+        if (user.role === 'student') {
+          // Students see group lessons OR lessons they booked
+          filtered = ls.filter(l => l.type === 'group' || l.studentId === user.id);
+        } else if (user.role === 'instructor') {
+          // Instructors see lessons assigned to them
+          filtered = ls.filter(l => l.instructor.id === user.id);
+        }
+        // Admins see everything
+      }
+
+      // sort ascending by startTime
+      this.lessons = filtered.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+
+      // Auto-select first lesson if none selected
       if (this.lessons.length > 0) {
         const stillExists = this.lessons.find(l => l.id === this.selectedLesson?.id);
         if (!stillExists) {
@@ -50,10 +78,14 @@ export class UpcomingLessonsComponent implements OnInit {
   filteredLessons(): Lesson[] {
     const q = this.q.trim().toLowerCase();
     return this.lessons.filter((l) => {
-      if (q) {
-        return (l.title + ' ' + l.instructor.name + ' ' + (l.subject || '')).toLowerCase().includes(q);
-      }
-      return true;
+      const matchSearch = !q || (
+        l.title + ' ' +
+        l.instructor.name + ' ' +
+        (l.subject || '') + ' ' +
+        (l.studentName || '')
+      ).toLowerCase().includes(q);
+
+      return matchSearch;
     });
   }
 
@@ -61,10 +93,67 @@ export class UpcomingLessonsComponent implements OnInit {
     this.selectedLesson = l;
   }
 
+  bookLesson() {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '500px',
+      data: {
+        title: 'Book a Lesson',
+        submitText: 'Request Booking',
+        fields: this.formConfig.getFormConfig('book-lesson'),
+        initialData: {}
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      const instructor = this.service.instructorsSignal().find(i => i.id === data.instructorId);
+      const payload: Partial<Lesson> = {
+        ...data,
+        type: 'private',
+        studentId: this.user()?.id,
+        studentName: this.user()?.username, // or use full name if available
+        instructor: { id: data.instructorId, name: instructor ? `${instructor.firstName} ${instructor.lastName}` : 'Unknown' },
+        status: 'pending',
+        studentCount: 1
+      };
+
+      this.lessonService.addLesson(payload).subscribe(() => {
+        dialogRef.close();
+        this.loadLessons();
+        this.service.openAlertDialog({
+          title: 'Booking Requested',
+          message: 'Your lesson booking has been sent to the instructor for approval.',
+          type: 'success',
+          buttons: [{ text: 'OK', value: 'ok', color: 'primary' }]
+        });
+      });
+    });
+  }
+
+  approve(lesson: Lesson | null) {
+    if (!lesson) return;
+    this.lessonService.approveLesson(lesson.id).subscribe(() => {
+      this.loadLessons();
+      this.service.openAlertDialog({
+        title: 'Lesson Confirmed',
+        message: 'The lesson has been successfully confirmed and added to your schedule.',
+        type: 'success',
+        buttons: [{ text: 'Awesome', value: 'ok', color: 'primary' }]
+      });
+    });
+  }
+
+  decline(lesson: Lesson | null) {
+    if (!lesson) return;
+    const reason = prompt('Reason for declining?');
+    if (reason === null) return;
+    this.lessonService.declineLesson(lesson.id, reason).subscribe(() => {
+      this.loadLessons();
+    });
+  }
+
   join(lesson: Lesson | null) {
     if (!lesson) return;
     this.lessonService.joinLesson(lesson.id).subscribe((res) => {
-      // For now, show meeting link in console; later show modal/toast
       console.log('Joined lesson:', res);
       alert('Joined: ' + (res.meetingLink || 'success'));
     });
@@ -74,8 +163,7 @@ export class UpcomingLessonsComponent implements OnInit {
     if (!lesson) return;
     if (!confirm('Cancel this lesson?')) return;
     this.lessonService.cancelLesson(lesson.id).subscribe(() => {
-      // local state updated by service
-      alert('Lesson cancelled');
+      this.loadLessons();
     });
   }
 

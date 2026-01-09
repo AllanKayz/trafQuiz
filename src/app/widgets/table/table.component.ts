@@ -77,18 +77,19 @@ export interface TableColumn {
     .table-container {
       width: 100%;
       overflow: hidden;
-      background: #ffffff;
+      background: var(--bg-card);
       border-radius: 16px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      border: 1px solid #f1f5f9;
+      box-shadow: 0 4px 6px -1px var(--shadow-color);
+      border: var(--glass-border);
+      backdrop-filter: var(--glass-blur);
       display: flex;
       flex-direction: column;
     }
 
     .filter-section {
         padding: 16px 24px;
-        border-bottom: 1px solid #f1f5f9;
-        background: #ffffff;
+        border-bottom: 1px solid var(--border-color);
+        background: var(--hover-bg);
     }
 
     .filter-field {
@@ -101,30 +102,31 @@ export interface TableColumn {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
+      background: transparent;
     }
 
     th.mat-header-cell {
-      background: #f8fafc;
-      color: #64748b;
+      background: var(--hover-bg);
+      color: var(--text-muted);
       font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       padding: 16px 24px;
-      border-bottom: 1px solid #e2e8f0;
+      border-bottom: 1px solid var(--border-color);
       white-space: nowrap;
     }
 
     td.mat-cell {
       padding: 16px 24px;
-      color: #334155;
+      color: var(--text-main);
       font-size: 0.875rem;
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid var(--border-color);
       transition: background 0.2s;
     }
 
     tr.mat-row:hover td {
-      background-color: #f8fafc;
+      background-color: var(--hover-bg);
     }
     
     tr.mat-row:last-child td {
@@ -139,19 +141,20 @@ export interface TableColumn {
     }
     
     .action-btn {
-        color: #94a3b8;
+        color: var(--text-muted);
     }
     
     .action-btn:hover {
-        color: #4f46e5;
-        background: #eef2ff;
+        color: var(--primary-color);
+        background: var(--hover-bg);
     }
 
     /* Paginator */
     mat-paginator {
-        border-top: 1px solid #f1f5f9;
+        border-top: 1px solid var(--border-color);
+        background: transparent;
         font-size: 0.875rem;
-        color: #64748b;
+        color: var(--text-muted);
     }
   `
 })

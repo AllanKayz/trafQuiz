@@ -29,33 +29,34 @@ import { MatIconModule } from '@angular/material/icon';
     }
 
 	.stat-card {
-        background: #ffffff;
+        background: var(--bg-card);
         padding: 24px;
         border-radius: 20px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        backdrop-filter: var(--glass-blur);
+        box-shadow: 0 4px 12px var(--shadow-color);
         display: flex;
         align-items: flex-start;
         gap: 20px;
-        border: 1px solid #f1f5f9;
+        border: var(--glass-border);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         height: 100%;
     }
 
     .stat-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
-        border-color: #e2e8f0;
+        box-shadow: 0 20px 25px -5px var(--shadow-color);
+        border-color: var(--primary-color);
     }
 
     .icon-wrapper {
         width: 56px;
         height: 56px;
         border-radius: 16px;
-        background: #f8fafc;
+        background: var(--hover-bg);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #64748b;
+        color: var(--text-muted);
         transition: all 0.3s ease;
     }
 
@@ -66,15 +67,15 @@ import { MatIconModule } from '@angular/material/icon';
     }
 
     /* Trend styling for icon */
-    .icon-wrapper.trend-up { background: #eff6ff; color: #3b82f6; }
-    .icon-wrapper.trend-down { background: #fef2f2; color: #ef4444; }
+    .icon-wrapper.trend-up { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .icon-wrapper.trend-down { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
 
     .content {
         flex: 1;
     }
 
     .stat-label {
-        color: #64748b;
+        color: var(--text-muted);
         font-size: 0.875rem;
         font-weight: 500;
         text-transform: uppercase;
@@ -85,14 +86,14 @@ import { MatIconModule } from '@angular/material/icon';
     .stat-value {
         font-size: 2rem;
         font-weight: 700;
-        color: #1e293b;
+        color: var(--text-main);
         margin-bottom: 8px;
         letter-spacing: -0.02em;
         line-height: 1;
     }
 
     .stat-footer {
-        color: #94a3b8;
+        color: var(--text-muted);
         font-size: 0.875rem;
         display: flex;
         align-items: center;
