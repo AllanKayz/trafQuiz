@@ -109,16 +109,15 @@ export class QuestionsComponent {
 	}
 
 	private deleteQuestion(id: number) {
-		if (confirm('Are you sure you want to delete this question?')) {
+		this.trafQuizService.showConfirm('Are you sure you want to delete this question?', 'DELETE').subscribe(() => {
 			this.trafQuizService.deleteQuestion(id).subscribe({
 				next: () => {
-					this.snackBar.open('Question deleted successfully', 'Close', { duration: 3000 });
+					this.trafQuizService.showNotification('Question deleted successfully', 'success');
 					this.trafQuizService.fetchQuestions(); // Refresh data
 				},
-				error: () => this.snackBar.open('Error deleting question', 'Close', { duration: 3000 })
+				error: () => this.trafQuizService.showNotification('Error deleting question', 'error')
 			});
-		}
-
+		});
 	}
 
 	private flagQuestion(question?: Question) {
@@ -134,17 +133,17 @@ export class QuestionsComponent {
 		};
 		return icons[action] || 'more_vert';
 	}
-	
+
 	// Helper function to transform questions data back to API structure
 	private transformQuestion(item: Question): ApiResponse {
 		return {
 			id: item.id!,
-  			answer: item.options[item.correct],
-  			option_a: item.options[0],
-  			option_b: item.options[1],
-  			option_c: item.options[2],
-  			photo: item.image!,
-  			question: item.question
+			answer: item.options[item.correct],
+			option_a: item.options[0],
+			option_b: item.options[1],
+			option_c: item.options[2],
+			photo: item.image!,
+			question: item.question
 		}
 	}
 

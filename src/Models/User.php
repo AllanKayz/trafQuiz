@@ -67,13 +67,32 @@ class User
         $updates = [];
         $params = [':id' => $id];
 
-        $allowedFields = ['username', 'firstName', 'lastName', 'email', 'phone', 'password'];
+        // Map camelCase input to snake_case DB columns
+        // Input data likely comes from JSON so it might be camelCase
 
-        foreach ($allowedFields as $field) {
-            if (isset($data[$field]) && $data[$field] !== '') {
-                $updates[] = "$field = :$field";
-                $params[":$field"] = $data[$field];
-            }
+        if (isset($data['username']) && $data['username'] !== '') {
+            $updates[] = "username = :username";
+            $params[':username'] = $data['username'];
+        }
+        if (isset($data['firstName']) && $data['firstName'] !== '') {
+            $updates[] = "first_name = :first_name";
+            $params[':first_name'] = $data['firstName'];
+        }
+        if (isset($data['lastName']) && $data['lastName'] !== '') {
+            $updates[] = "last_name = :last_name";
+            $params[':last_name'] = $data['lastName'];
+        }
+        if (isset($data['email']) && $data['email'] !== '') {
+            $updates[] = "email = :email";
+            $params[':email'] = $data['email'];
+        }
+        if (isset($data['phone']) && $data['phone'] !== '') {
+            $updates[] = "phone = :phone";
+            $params[':phone'] = $data['phone'];
+        }
+        if (isset($data['password']) && $data['password'] !== '') {
+            $updates[] = "password = :password";
+            $params[':password'] = $data['password'];
         }
 
         if (empty($updates)) {
@@ -94,16 +113,16 @@ class User
         $db = new Database();
         $conn = $db->getConnection();
 
-        $sql = "INSERT INTO users (username, password, role, firstName, lastName, email, phone) 
-                VALUES (:username, :password, :role, :firstName, :lastName, :email, :phone)";
+        $sql = "INSERT INTO users (username, password, role, first_name, last_name, email, phone) 
+                VALUES (:username, :password, :role, :first_name, :last_name, :email, :phone)";
 
         $stmt = $conn->prepare($sql);
         $result = $stmt->execute([
             ':username' => $data['username'],
             ':password' => $data['password'],
             ':role' => $data['role'] ?? 'student',
-            ':firstName' => $data['firstName'] ?? null,
-            ':lastName' => $data['lastName'] ?? null,
+            ':first_name' => $data['firstName'] ?? null,
+            ':last_name' => $data['lastName'] ?? null,
             ':email' => $data['email'] ?? null,
             ':phone' => $data['phone'] ?? null
         ]);

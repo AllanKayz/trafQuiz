@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
+import { Validators } from '@angular/forms';
 
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -97,11 +98,23 @@ export class InstructorsComponent {
 	}
 
 	openInstructorForm(instructor?: any) {
+		let fields = this.formConfig.getFormConfig('instructor').map(f => ({ ...f }));
+
+		// If editing, make password optional
+		if (instructor) {
+			fields = fields.map((f: any) => {
+				if (f.key === 'password') {
+					return { ...f, validators: [Validators.min(8), Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!*#?&])[A-Za-z\d@!%#?&]{8,}$/)] };
+				}
+				return f;
+			});
+		}
+
 		const dialogRef = this.dialog.open(DynamicFormComponent, {
 			width: '800px',
 			data: {
 				title: instructor ? 'Edit Instructor' : 'Add New Instructor',
-				fields: this.formConfig.getFormConfig('instructor'),
+				fields: fields,
 				initialData: instructor || {},
 				submitText: instructor ? 'Update' : 'Add'
 			}
@@ -126,51 +139,34 @@ export class InstructorsComponent {
 	}
 
 	private saveInstructor(data: any, id?: number) {
-		console.log('clicked');
-		
-		const newInstructorData = {
-			name: data.firstName + ' ' + data.lastName,
-			username: data.username,
-			email: data.email,
-			phone: data.phone,
-			license_number: data.license,
-			password: data.password,
-			experience: data.experience,
-			specialization: data.specialization,
-			certification: data.certification,
-			availability: data.available
-		};
-
 		const instructorData = {
+			...data,
 			id: id || 0,
-			name: data.firstName + ' ' + data.lastName,
-			username: data.username,
-			email: data.email,
-			phone: data.phone,
 			license_number: data.license,
-			password: data.password,
-			experience: data.experience,
-			specialization: data.specialization,
-			certification: data.certification,
 			availability: data.available
 		};
 
-		const action = id ? this.trafQuizService.updateInstructor(instructorData) : this.trafQuizService.addInstructor(newInstructorData);
+		// If password is empty in edit mode, don't send it
+		if (id && !data.password) {
+			delete (instructorData as any).password;
+		}
+
+		console.log('Saving Instructor:', instructorData);
+
+		const action = id ? this.trafQuizService.updateInstructor(instructorData) : this.trafQuizService.addInstructor(instructorData);
 
 		action.subscribe({
 			next: (res) => {
-				console.log(res);
 				if (res.success) {
-					this.snackBar.open(`Instructor ${id ? 'updated' : 'added'} successfully`, 'Close', { verticalPosition: 'top', duration: 4000 });
+					this.trafQuizService.showNotification(`Instructor ${id ? 'updated' : 'added'} successfully`, 'success');
 					this.trafQuizService.fetchInstructors();
 				} else {
-					this.snackBar.open(res.message, 'Close', { verticalPosition: 'top', duration: 4000 });
+					this.trafQuizService.showNotification(res.message, 'error');
 				}
 
 			},
 			error: (err) => {
-				console.log(err);
-				this.snackBar.open('Error saving instructor', 'Close', { verticalPosition: 'top', duration: 4000 });
+				this.trafQuizService.showNotification('Error saving instructor', 'error');
 			}
 		});
 	}

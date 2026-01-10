@@ -1,8 +1,9 @@
-import { Component, inject, signal, effect, computed } from '@angular/core';
+import { Component, inject, signal, effect, computed, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TraffiquizService } from '../../traffiquiz.service';
 import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -20,6 +21,7 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
     CommonModule,
     MatCardModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatProgressBarModule,
@@ -30,7 +32,7 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
   templateUrl: './finances.component.html',
   styleUrl: './finances.component.css'
 })
-export class FinancesComponent {
+export class FinancesComponent implements AfterViewInit {
   service = inject(TraffiquizService);
   dialog = inject(MatDialog);
   formConfig = inject(FormConfigService);
@@ -40,9 +42,11 @@ export class FinancesComponent {
   packages = this.service.packagesSignal;
 
   // Data Signals
-  transactions = signal<any[]>([]);
+  transactionDataSource = new MatTableDataSource<any>([]);
   stats = signal<any>(null);
   isLoading = signal<boolean>(false);
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   // Package Editing State
   editingPackageId = signal<number | null>(null);
@@ -58,6 +62,10 @@ export class FinancesComponent {
     });
   }
 
+  ngAfterViewInit() {
+    this.transactionDataSource.paginator = this.paginator;
+  }
+
   loadData() {
     const role = this.user()?.role || 'student';
     const userId = this.user()?.id;
@@ -65,7 +73,8 @@ export class FinancesComponent {
 
     // Fetch Transactions
     this.service.fetchTransactions(role, userId).subscribe(data => {
-      this.transactions.set(data);
+      this.transactionDataSource.data = data;
+      this.transactionDataSource.paginator = this.paginator;
       this.isLoading.set(false);
     });
 
@@ -121,12 +130,7 @@ export class FinancesComponent {
         if (res.status === 200) {
           dialogRef.close();
           this.loadData(); // Refresh transaction list
-          this.service.openAlertDialog({
-            title: 'Success',
-            message: 'Your payment has been processed successfully.',
-            type: 'success',
-            buttons: [{ text: 'Great!', value: 'ok', color: 'primary' }]
-          });
+          this.service.showNotification('Your payment has been processed successfully.', 'success');
         }
       });
     });

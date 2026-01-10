@@ -3,14 +3,16 @@
 namespace TrafQuiz\Models;
 
 use TrafQuiz\Core\Database;
+use PDO;
 
-class LessonModel {
-    private static $file = __DIR__ . '/../data/lessons.json';
+class LessonModel
+{
 
     /**
-     * Get PDO connection or null if unavailable
+     * Get PDO connection
      */
-    private static function getConnection() {
+    private static function getConnection()
+    {
         try {
             $db = new Database();
             return $db->getConnection();
@@ -19,278 +21,269 @@ class LessonModel {
         }
     }
 
-    private static function readData() {
-        if (!file_exists(self::$file)) {
-            return [];
-        }
-        $json = file_get_contents(self::$file);
-        $data = json_decode($json, true);
-        return is_array($data) ? $data : [];
-    }
+    private static function mapRowToArray($row)
+    {
+        $instructorName = trim(($row['instructor_first_name'] ?? '') . ' ' . ($row['instructor_last_name'] ?? ''));
+        $studentName = trim(($row['student_first_name'] ?? '') . ' ' . ($row['student_last_name'] ?? ''));
 
-    private static function writeData(array $data) {
-        $dir = dirname(self::$file);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
+        // Derive vehicleType from package_name
+        $vehicleType = 'Car'; // Default
+        if (!empty($row['package_name'])) {
+            $pkg = strtolower($row['package_name']);
+            if (strpos($pkg, 'heavy') !== false) $vehicleType = 'Truck';
+            elseif (strpos($pkg, 'cycle') !== false) $vehicleType = 'Motorcycle';
+            // Add more mappings as needed
         }
-        file_put_contents(self::$file, json_encode($data, JSON_PRETTY_PRINT));
-    }
 
-    private static function mapRowToArray($row) {
         return [
             'id' => (int)$row['id'],
             'title' => $row['title'],
             'subject' => $row['subject'] ?? null,
-            'startTime' => (new \DateTime($row['startTime']))->format(DATE_ATOM),
-            'endTime' => !empty($row['endTime']) ? (new \DateTime($row['endTime']))->format(DATE_ATOM) : null,
-            'durationMinutes' => isset($row['durationMinutes']) ? (int)$row['durationMinutes'] : null,
+            'startTime' => (new \DateTime($row['start_time']))->format(DATE_ATOM),
+            'endTime' => !empty($row['end_time']) ? (new \DateTime($row['end_time']))->format(DATE_ATOM) : null,
+            'durationMinutes' => isset($row['duration_minutes']) ? (int)$row['duration_minutes'] : null,
             'instructor' => [
                 'id' => isset($row['instructor_id']) ? (int)$row['instructor_id'] : null,
-                'name' => $row['instructor_name'] ?? null,
+                'name' => !empty($instructorName) ? $instructorName : null,
                 'avatarUrl' => $row['instructor_avatar'] ?? null,
             ],
             'location' => $row['location'] ?? null,
-            'onlineLink' => $row['onlineLink'] ?? null,
+            'onlineLink' => $row['online_link'] ?? null,
             'status' => $row['status'] ?? 'upcoming',
-            'studentCount' => isset($row['studentCount']) ? (int)$row['studentCount'] : 0,
+            'studentCount' => isset($row['student_count']) ? (int)$row['student_count'] : 0,
             'capacity' => isset($row['capacity']) ? (int)$row['capacity'] : null,
             'notes' => $row['notes'] ?? null,
             'resources' => !empty($row['resources']) ? json_decode($row['resources'], true) : [],
             'studentId' => isset($row['student_id']) ? (int)$row['student_id'] : null,
-            'studentName' => $row['student_name'] ?? null,
+            'studentName' => !empty($studentName) ? $studentName : null,
             'type' => $row['type'] ?? 'group',
             'assignedVehicleId' => isset($row['assigned_vehicle_id']) ? (int)$row['assigned_vehicle_id'] : null,
-            'vehicleType' => $row['vehicle_type'] ?? null,
-            'createdAt' => !empty($row['createdAt']) ? (new \DateTime($row['createdAt']))->format(DATE_ATOM) : null,
-            'updatedAt' => !empty($row['updatedAt']) ? (new \DateTime($row['updatedAt']))->format(DATE_ATOM) : null,
+            'vehicleType' => $vehicleType,
+            'createdAt' => !empty($row['created_at']) ? (new \DateTime($row['created_at']))->format(DATE_ATOM) : null,
+            'updatedAt' => !empty($row['updated_at']) ? (new \DateTime($row['updated_at']))->format(DATE_ATOM) : null,
         ];
     }
 
-    public static function all($range = null) {
+    public static function all($range = null)
+    {
         $conn = self::getConnection();
-        if ($conn) {
-            $sql = 'SELECT * FROM lessons';
-            $params = [];
+        if (!$conn) return [];
 
-            if ($range) {
-                $now = time();
-                switch ($range) {
-                    case 'today':
-                        $start = date('Y-m-d 00:00:00');
-                        $end = date('Y-m-d 23:59:59');
-                        break;
-                    case '7days':
-                        $start = date('Y-m-d H:i:s');
-                        $end = date('Y-m-d H:i:s', strtotime('+7 days'));
-                        break;
-                    case 'week':
-                        $start = date('Y-m-d 00:00:00', strtotime('monday this week'));
-                        $end = date('Y-m-d 23:59:59', strtotime('sunday this week'));
-                        break;
-                    case 'month':
-                        $start = date('Y-m-01 00:00:00');
-                        $end = date('Y-m-t 23:59:59');
-                        break;
-                    default:
-                        $start = null; $end = null;
-                }
-                if ($start && $end) {
-                    $sql .= ' WHERE startTime BETWEEN :start AND :end';
-                    $params = [':start' => $start, ':end' => $end];
-                }
+        // Updated query to JOIN instructors->users and students->users
+        $sql = 'SELECT l.*, 
+                       iu.first_name AS instructor_first_name, iu.last_name AS instructor_last_name, iu.avatar AS instructor_avatar,
+                       su.first_name AS student_first_name, su.last_name AS student_last_name,
+                       p.package AS package_name
+                FROM lessons l
+                LEFT JOIN instructors i ON l.instructor_id = i.id
+                LEFT JOIN users iu ON i.user_id = iu.id
+                LEFT JOIN students s ON l.student_id = s.id
+                LEFT JOIN users su ON s.user_id = su.id
+                LEFT JOIN packages p ON s.package_id = p.id';
+
+        $params = [];
+
+        if ($range) {
+            $now = time();
+            switch ($range) {
+                case 'today':
+                    $start = date('Y-m-d 00:00:00');
+                    $end = date('Y-m-d 23:59:59');
+                    break;
+                case '7days':
+                    $start = date('Y-m-d H:i:s');
+                    $end = date('Y-m-d H:i:s', strtotime('+7 days'));
+                    break;
+                case 'week':
+                    $start = date('Y-m-d 00:00:00', strtotime('monday this week'));
+                    $end = date('Y-m-d 23:59:59', strtotime('sunday this week'));
+                    break;
+                case 'month':
+                    $start = date('Y-m-01 00:00:00');
+                    $end = date('Y-m-t 23:59:59');
+                    break;
+                default:
+                    $start = null;
+                    $end = null;
             }
-
-            $stmt = $conn->prepare($sql);
-            $stmt->execute($params);
-            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-            return array_map([self::class, 'mapRowToArray'], $rows);
+            if ($start && $end) {
+                $sql .= ' WHERE l.start_time BETWEEN :start AND :end';
+                $params = [':start' => $start, ':end' => $end];
+            }
         }
 
-        // Fallback to file
-        $items = self::readData();
-        if (!$range) return $items;
-
-        $now = time();
-        switch ($range) {
-            case 'today':
-                $start = strtotime('today');
-                $end = strtotime('tomorrow') - 1;
-                break;
-            case '7days':
-                $start = $now;
-                $end = strtotime('+7 days', $now);
-                break;
-            case 'week':
-                $start = strtotime('monday this week');
-                $end = strtotime('sunday this week 23:59:59');
-                break;
-            case 'month':
-                $start = strtotime('first day of this month');
-                $end = strtotime('last day of this month 23:59:59');
-                break;
-            default:
-                return $items;
-        }
-
-        return array_values(array_filter($items, function($l) use ($start, $end) {
-            $t = strtotime($l['startTime']);
-            return $t >= $start && $t <= $end;
-        }));
+        $stmt = $conn->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map([self::class, 'mapRowToArray'], $rows);
     }
 
-    public static function find($id) {
+    public static function find($id)
+    {
         $conn = self::getConnection();
-        if ($conn) {
-            $stmt = $conn->prepare('SELECT * FROM lessons WHERE id = :id LIMIT 1');
-            $stmt->execute([':id' => $id]);
-            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if (!$row) return null;
-            return self::mapRowToArray($row);
-        }
+        if (!$conn) return null;
 
-        $items = self::readData();
-        foreach ($items as $it) {
-            if ($it['id'] == $id) return $it;
-        }
-        return null;
+        $sql = 'SELECT l.*, 
+                       iu.first_name AS instructor_first_name, iu.last_name AS instructor_last_name, iu.avatar AS instructor_avatar,
+                       su.first_name AS student_first_name, su.last_name AS student_last_name,
+                       p.package AS package_name
+                FROM lessons l
+                LEFT JOIN instructors i ON l.instructor_id = i.id
+                LEFT JOIN users iu ON i.user_id = iu.id
+                LEFT JOIN students s ON l.student_id = s.id
+                LEFT JOIN users su ON s.user_id = su.id
+                LEFT JOIN packages p ON s.package_id = p.id
+                WHERE l.id = :id LIMIT 1';
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return null;
+        return self::mapRowToArray($row);
     }
 
-    public static function patch($id, $payload) {
+    public static function patch($id, $payload)
+    {
         $conn = self::getConnection();
-        if ($conn) {
-            $allowed = [
-                'title','subject','startTime','endTime','durationMinutes','location',
-                'onlineLink','status','studentCount','capacity','notes','resources',
-                'student_id', 'student_name', 'type', 'assigned_vehicle_id', 'vehicle_type'
+        if (!$conn) return false;
+
+        $allowed = [
+            'title',
+            'subject',
+            'startTime',
+            'endTime',
+            'durationMinutes',
+            'location',
+            'onlineLink',
+            'status',
+            'studentCount',
+            'capacity',
+            'notes',
+            'resources',
+            'student_id',
+            'type',
+            'assigned_vehicle_id'
+        ];
+
+        $sets = [];
+        $params = [':id' => $id];
+
+        // Map camelCase to snake_case if needed
+        $map = [
+            'startTime' => 'start_time',
+            'endTime' => 'end_time',
+            'durationMinutes' => 'duration_minutes',
+            'onlineLink' => 'online_link',
+            'studentCount' => 'student_count',
+            'studentId' => 'student_id',
+            'assignedVehicleId' => 'assigned_vehicle_id'
+        ];
+
+        foreach ($payload as $k => $v) {
+            $dbCol = $map[$k] ?? $k;
+            $allowedDB = [
+                'title',
+                'subject',
+                'start_time',
+                'end_time',
+                'duration_minutes',
+                'location',
+                'online_link',
+                'status',
+                'student_count',
+                'capacity',
+                'notes',
+                'resources',
+                'student_id',
+                'type',
+                'assigned_vehicle_id'
             ];
-            $sets = [];
-            $params = [':id' => $id];
-            
-            // Map camelCase to snake_case if needed
-            $map = [
-                'studentId' => 'student_id',
-                'studentName' => 'student_name',
-                'assignedVehicleId' => 'assigned_vehicle_id',
-                'vehicleType' => 'vehicle_type'
-            ];
 
-            foreach ($payload as $k => $v) {
-                $col = $map[$k] ?? $k;
-                if (!in_array($col, $allowed)) continue;
-                $sets[] = "$col = :$k";
-                if ($k === 'resources') $params[":$k"] = json_encode($v);
-                else $params[":$k"] = $v;
-            }
-            if (empty($sets)) return false;
-            $params[':updatedAt'] = date('Y-m-d H:i:s');
-            $sql = 'UPDATE lessons SET ' . implode(', ', $sets) . ', updatedAt = :updatedAt WHERE id = :id';
-            $stmt = $conn->prepare($sql);
-            return $stmt->execute($params);
-        }
+            if (!in_array($dbCol, $allowedDB)) continue;
 
-        $items = self::readData();
-        $found = false;
-        foreach ($items as &$it) {
-            if ($it['id'] == $id) {
-                $it = array_merge($it, $payload);
-                $it['updatedAt'] = date('c');
-                $found = true;
-                break;
-            }
+            $sets[] = "$dbCol = :$k";
+            if ($k === 'resources') $params[":$k"] = json_encode($v);
+            else $params[":$k"] = $v;
         }
-        if ($found) self::writeData($items);
-        return $found;
+        if (empty($sets)) return false;
+
+        $sql = 'UPDATE lessons SET ' . implode(', ', $sets) . ' WHERE id = :id';
+        $stmt = $conn->prepare($sql);
+        return $stmt->execute($params);
     }
 
-    public static function cancel($id) {
+    public static function cancel($id)
+    {
         return self::patch($id, ['status' => 'cancelled']);
     }
 
-    public static function join($id) {
+    public static function join($id)
+    {
         $conn = self::getConnection();
-        if ($conn) {
-            // Increment studentCount and return meeting link
-            $conn->beginTransaction();
-            try {
-                $stmt = $conn->prepare('SELECT onlineLink, studentCount FROM lessons WHERE id = :id FOR UPDATE');
-                $stmt->execute([':id' => $id]);
-                $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-                if (!$row) { $conn->rollBack(); return null; }
-                $link = $row['onlineLink'] ?: ('https://meet.example.com/lesson-' . $id);
-                $newCount = ((int)$row['studentCount']) + 1;
-                $upd = $conn->prepare('UPDATE lessons SET studentCount = :sc, updatedAt = :u WHERE id = :id');
-                $upd->execute([':sc' => $newCount, ':u' => date('Y-m-d H:i:s'), ':id' => $id]);
-                $conn->commit();
-                return ['meetingLink' => $link, 'success' => true];
-            } catch (\Exception $e) {
+        if (!$conn) return null;
+
+        $conn->beginTransaction();
+        try {
+            $stmt = $conn->prepare('SELECT online_link, student_count FROM lessons WHERE id = :id FOR UPDATE');
+            $stmt->execute([':id' => $id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$row) {
                 $conn->rollBack();
                 return null;
             }
-        }
 
-        $lesson = self::find($id);
-        if (!$lesson) return null;
-        if (!empty($lesson['onlineLink'])) return ['meetingLink' => $lesson['onlineLink'], 'success' => true];
-        $link = 'https://meet.example.com/lesson-' . $id;
-        // Update local file count
-        $items = self::readData();
-        foreach ($items as &$it) {
-            if ($it['id'] == $id) { $it['studentCount'] = ($it['studentCount'] ?? 0) + 1; break; }
+            $link = $row['online_link'] ?: ('https://meet.example.com/lesson-' . $id);
+            $newCount = ((int)$row['student_count']) + 1;
+
+            $upd = $conn->prepare('UPDATE lessons SET student_count = :sc WHERE id = :id');
+            $upd->execute([':sc' => $newCount, ':id' => $id]);
+            $conn->commit();
+            return ['meetingLink' => $link, 'success' => true];
+        } catch (\Exception $e) {
+            $conn->rollBack();
+            return null;
         }
-        self::writeData($items);
-        return ['meetingLink' => $link, 'success' => true];
     }
 
-    public static function add(array $payload) {
+    public static function add(array $payload)
+    {
         $conn = self::getConnection();
-        if ($conn) {
-            $sql = 'INSERT INTO lessons (
-                title, subject, startTime, endTime, durationMinutes, instructor_id, 
-                instructor_name, instructor_avatar, location, onlineLink, status, 
-                studentCount, capacity, notes, resources, student_id, student_name, 
-                type, assigned_vehicle_id, vehicle_type, createdAt
-            ) VALUES (
-                :title,:subject,:startTime,:endTime,:durationMinutes,:instructor_id,
-                :instructor_name,:instructor_avatar,:location,:onlineLink,:status,
-                :studentCount,:capacity,:notes,:resources,:student_id,:student_name,
-                :type,:assigned_vehicle_id,:vehicle_type,:createdAt
-            )';
-            $stmt = $conn->prepare($sql);
-            $params = [
-                ':title' => $payload['title'],
-                ':subject' => $payload['subject'] ?? null,
-                ':startTime' => $payload['startTime'],
-                ':endTime' => $payload['endTime'] ?? null,
-                ':durationMinutes' => $payload['durationMinutes'] ?? null,
-                ':instructor_id' => $payload['instructor']['id'] ?? null,
-                ':instructor_name' => $payload['instructor']['name'] ?? null,
-                ':instructor_avatar' => $payload['instructor']['avatarUrl'] ?? null,
-                ':location' => $payload['location'] ?? null,
-                ':onlineLink' => $payload['onlineLink'] ?? null,
-                ':status' => $payload['status'] ?? 'upcoming',
-                ':studentCount' => $payload['studentCount'] ?? 0,
-                ':capacity' => $payload['capacity'] ?? null,
-                ':notes' => $payload['notes'] ?? null,
-                ':resources' => !empty($payload['resources']) ? json_encode($payload['resources']) : null,
-                ':student_id' => $payload['studentId'] ?? null,
-                ':student_name' => $payload['studentName'] ?? null,
-                ':type' => $payload['type'] ?? 'group',
-                ':assigned_vehicle_id' => $payload['assignedVehicleId'] ?? null,
-                ':vehicle_type' => $payload['vehicleType'] ?? null,
-                ':createdAt' => date('Y-m-d H:i:s')
-            ];
-            $stmt->execute($params);
-            $id = (int)$conn->lastInsertId();
-            return self::find($id);
-        }
+        if (!$conn) return false;
 
-        $items = self::readData();
-        $max = 0;
-        foreach ($items as $it) $max = max($max, $it['id']);
-        $payload['id'] = $max + 1;
-        $payload['createdAt'] = date('c');
-        $items[] = $payload;
-        self::writeData($items);
-        return $payload;
+        $sql = 'INSERT INTO lessons (
+            title, subject, start_time, end_time, duration_minutes, instructor_id, 
+            location, online_link, status, 
+            student_count, capacity, notes, resources, student_id, 
+            type, assigned_vehicle_id
+        ) VALUES (
+            :title, :subject, :startTime, :endTime, :durationMinutes, :instructor_id,
+            :location, :onlineLink, :status,
+            :studentCount, :capacity, :notes, :resources, :student_id,
+            :type, :assigned_vehicle_id
+        )';
+
+        $stmt = $conn->prepare($sql);
+        $params = [
+            ':title' => $payload['title'],
+            ':subject' => $payload['subject'] ?? null,
+            ':startTime' => $payload['startTime'],
+            ':endTime' => $payload['endTime'] ?? null,
+            ':durationMinutes' => $payload['durationMinutes'] ?? null,
+            ':instructor_id' => $payload['instructor']['id'] ?? null,
+            ':location' => $payload['location'] ?? null,
+            ':onlineLink' => $payload['onlineLink'] ?? null,
+            ':status' => $payload['status'] ?? 'upcoming',
+            ':studentCount' => $payload['studentCount'] ?? 0,
+            ':capacity' => $payload['capacity'] ?? null,
+            ':notes' => $payload['notes'] ?? null,
+            ':resources' => !empty($payload['resources']) ? json_encode($payload['resources']) : null,
+            ':student_id' => $payload['studentId'] ?? null,
+            ':type' => $payload['type'] ?? 'group',
+            ':assigned_vehicle_id' => $payload['assignedVehicleId'] ?? null
+        ];
+
+        $stmt->execute($params);
+        $id = (int)$conn->lastInsertId();
+        return self::find($id);
     }
 }

@@ -84,6 +84,8 @@
       <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
       <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </mat-table>
+    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
 
     @if (!loading && dataSource.data.length === 0) {
     <div class="no-data">
@@ -111,7 +113,7 @@
 
         <mat-form-field appearance="outline">
           <mat-label>Year</mat-label>
-          <input matInput type="number" [(ngModel)]="formVehicle.year" required>
+          <input placeholder="2005" matInput type="number" [(ngModel)]="formVehicle.year" required>
         </mat-form-field>
 
         <mat-form-field appearance="outline">

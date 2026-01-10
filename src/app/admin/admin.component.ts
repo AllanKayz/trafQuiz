@@ -6,14 +6,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { finalize } from 'rxjs';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { AlertComponent } from '../alert/alert.component';
 
 @Component({
-    selector: 'app-admin',
-    imports: [RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, MatDialogModule],
-    templateUrl: './admin.component.html',
-    styleUrl: './admin.component.css'
+  selector: 'app-admin',
+  imports: [RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule],
+  templateUrl: './admin.component.html',
+  styleUrl: './admin.component.css'
 })
 export class AdminComponent implements OnInit, OnDestroy {
   adminData: any;
@@ -23,7 +21,6 @@ export class AdminComponent implements OnInit, OnDestroy {
   chosenUser: any;
 
 
-  public alertDialog: MatDialog = inject(MatDialog);
   getAdminData: TraffiquizService = inject(TraffiquizService);
   usersList = this.getAdminData.studentsSignal;
 
@@ -74,36 +71,18 @@ export class AdminComponent implements OnInit, OnDestroy {
       this.getAdminData.setExamTimeframe(payload).subscribe({
         next: (response) => {
           if (response.success) {
-            const data = {
-              title: 'Notification',
-              message: response.message,
-              type: 'success',
-              buttonText: 'OK'
-            };
+            this.getAdminData.showNotification(response.message, 'success');
             this.examTime.reset();
-            this.openAlertDialog(data);
             this.currentExamDuration = response.new_time;
           }
         },
         error: (err) => {
-          const data = {
-            title: 'Error',
-            message: err,
-            type: 'error',
-            buttonText: 'OK'
-          };
-          this.openAlertDialog(data);
+          this.getAdminData.showNotification(err, 'error');
         }
       });
 
     } else {
-      const data = {
-        title: 'Error',
-        message: 'No Change Made, Input new time',
-        type: 'error',
-        buttonText: 'OK'
-      };
-      this.openAlertDialog(data);
+      this.getAdminData.showNotification('No Change Made, Input new time', 'error');
       newtime = 300;
     }
   }
@@ -117,43 +96,25 @@ export class AdminComponent implements OnInit, OnDestroy {
         email: this.addStudentForm.value.email?.trim(),
         password: this.addStudentForm.value.password?.trim()
       };
-	  
-	  console.log(payload);
+
+      console.log(payload);
 
       this.getAdminData.addInstructor(payload).subscribe({
         next: (res) => {
           if (res.success) {
-            const data = {
-              title: 'Notification',
-              message: res.message,
-              type: 'success',
-              buttonText: 'OK'
-            };
+            this.getAdminData.showNotification(res.message, 'success');
             this.addStudentForm.reset();
-            this.openAlertDialog(data);
           }
         },
         error: (err) => {
-          const data = {
-            title: 'Error',
-            message: err,
-            type: 'error',
-            buttonText: 'OK'
-          };
-          this.openAlertDialog(data);
+          this.getAdminData.showNotification(err, 'error');
         },
         complete: () => {
           this.getAdminData.fetchStudents();
         }
       });
     } else {
-      const data = {
-        title: 'Error',
-        message: 'Fill all required details',
-        type: 'error',
-        buttonText: 'OK'
-      };
-      this.openAlertDialog(data);
+      this.getAdminData.showNotification('Fill all required details', 'error');
     }
 
   }
@@ -178,29 +139,17 @@ export class AdminComponent implements OnInit, OnDestroy {
     if (studentToDelete) {
       this.getAdminData.deleteStudent(studentToDelete).subscribe({
         next: (res) => {
-        if (res.success) {
-          const data = {
-            title: 'Notification',
-            message: res.message,
-            type: 'success',
-            buttonText: 'OK'
-          };;
-          this.openAlertDialog(data);
+          if (res.success) {
+            this.getAdminData.showNotification(res.message, 'success');
+          }
+        },
+        error: (err) => {
+          this.getAdminData.showNotification(err, 'error');
+        },
+        complete: () => {
+          this.getAdminData.fetchStudents();
         }
-      },
-      error: (err) => {
-        const data = {
-          title: 'Error',
-          message: err,
-          type: 'error',
-          buttonText: 'OK'
-        };
-        this.openAlertDialog(data);
-      },
-      complete: () => {
-        this.getAdminData.fetchStudents();
-      }
-    });
+      });
     }
   }
 
@@ -218,43 +167,18 @@ export class AdminComponent implements OnInit, OnDestroy {
       this.getAdminData.updateStudent(payload).subscribe({
         next: (res) => {
           if (res.success) {
-            const data = {
-              title: 'Notification',
-              message: res.message,
-              type: 'success',
-              buttonText: 'OK'
-            };
-            this.openAlertDialog(data);
+            this.getAdminData.showNotification(res.message, 'success');
           }
         },
         error: (err) => {
-          const data = {
-            title: 'Error',
-            message: err,
-            type: 'error',
-            buttonText: 'OK'
-          };
-          this.openAlertDialog(data);
+          this.getAdminData.showNotification(err, 'error');
         }
       });
     } else {
-      const data = {
-        title: 'Error',
-        message: 'Fill all required details',
-        type: 'error',
-        buttonText: 'OK'
-      };
-      this.openAlertDialog(data);
+      this.getAdminData.showNotification('Fill all required details', 'error');
     }
   }
 
   ngOnDestroy(): void {
-
-  }
-
-  openAlertDialog(data: any): void {
-    this.alertDialog.open(AlertComponent, {
-      data: data
-    });
   }
 }

@@ -119,12 +119,7 @@ export class UpcomingLessonsComponent implements OnInit {
       this.lessonService.addLesson(payload).subscribe(() => {
         dialogRef.close();
         this.loadLessons();
-        this.service.openAlertDialog({
-          title: 'Booking Requested',
-          message: 'Your lesson booking has been sent to the instructor for approval.',
-          type: 'success',
-          buttons: [{ text: 'OK', value: 'ok', color: 'primary' }]
-        });
+        this.service.showNotification('Your lesson booking has been sent to the instructor for approval.', 'success');
       });
     });
   }
@@ -133,12 +128,7 @@ export class UpcomingLessonsComponent implements OnInit {
     if (!lesson) return;
     this.lessonService.approveLesson(lesson.id).subscribe(() => {
       this.loadLessons();
-      this.service.openAlertDialog({
-        title: 'Lesson Confirmed',
-        message: 'The lesson has been successfully confirmed and added to your schedule.',
-        type: 'success',
-        buttons: [{ text: 'Awesome', value: 'ok', color: 'primary' }]
-      });
+      this.service.showNotification('The lesson has been successfully confirmed and added to your schedule.', 'success');
     });
   }
 
@@ -154,16 +144,17 @@ export class UpcomingLessonsComponent implements OnInit {
   join(lesson: Lesson | null) {
     if (!lesson) return;
     this.lessonService.joinLesson(lesson.id).subscribe((res) => {
-      console.log('Joined lesson:', res);
-      alert('Joined: ' + (res.meetingLink || 'success'));
+      this.service.showNotification(`Joined: ${res.meetingLink || 'success'}`, 'success');
     });
   }
 
   cancel(lesson: Lesson | null) {
     if (!lesson) return;
-    if (!confirm('Cancel this lesson?')) return;
-    this.lessonService.cancelLesson(lesson.id).subscribe(() => {
-      this.loadLessons();
+    this.service.showConfirm('Cancel this lesson?', 'CANCEL').subscribe(() => {
+      this.lessonService.cancelLesson(lesson.id).subscribe(() => {
+        this.service.showNotification('Lesson canceled', 'info');
+        this.loadLessons();
+      });
     });
   }
 
@@ -173,6 +164,6 @@ export class UpcomingLessonsComponent implements OnInit {
     const msg = prompt(`Message to ${lesson.instructor.name}`);
     if (!msg) return;
     // TODO: wire to MessagesService
-    alert('Message sent (mock): ' + msg);
+    this.service.showNotification(`Message sent (mock): ${msg}`, 'success');
   }
 }

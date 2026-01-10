@@ -26,7 +26,6 @@ import { AlertComponent } from '../alert/alert.component';
 export class LoginComponent {
 	private trafQuizService = inject(TraffiquizService);
 	private router = inject(Router);
-	public alert = inject(MatDialog);
 
 	/** A signal that indicates whether the login request is in progress. */
 	isLoading = signal(false);
@@ -88,10 +87,10 @@ export class LoginComponent {
 				next: (res) => {
 					this.resetTokenReceived.set(true);
 					this.resetForm.patchValue({ token: res.token });
-					this.showAlert('Success', 'Reset token generated (for demo: ' + res.token + '). Please enter your new password.', 'success');
+					this.showAlert('Reset token generated (for demo: ' + res.token + '). Please enter your new password.', 'success');
 				},
 				error: (err) => {
-					this.showAlert('Error', err.error?.message || 'User not found', 'error');
+					this.showAlert(err.error?.message || 'User not found', 'error');
 				}
 			});
 		}
@@ -107,11 +106,11 @@ export class LoginComponent {
 				finalize(() => this.isLoading.set(false))
 			).subscribe({
 				next: () => {
-					this.showAlert('Success', 'Password updated successfully. You can now log in.', 'success');
+					this.showAlert('Password updated successfully. You can now log in.', 'success');
 					this.toggleResetForm();
 				},
 				error: (err) => {
-					this.showAlert('Error', err.error?.message || 'Could not reset password', 'error');
+					this.showAlert(err.error?.message || 'Could not reset password', 'error');
 				}
 			});
 		}
@@ -134,45 +133,25 @@ export class LoginComponent {
 					if (response) {
 						this.router.navigate(['/dashboard']);
 					} else {
-						this.showAlert(
-							response.statusText || 'Error',
-							response.message || 'Login failed. Parsing Error.',
-							'error'
-						);
+						this.showAlert(response.message || 'Login failed. Parsing Error.', 'error');
 						this.router.navigate(['/login']);
 					}
 				},
 				error: (err) => {
-					this.showAlert(
-						err.statusText || 'Error',
-						err.error?.message || 'Login failed. Please check your credentials.',
-						'error'
-					);
+					this.showAlert(err.error?.message || 'Login failed. Please check your credentials.', 'error');
 				}
 			});
 		} else {
-			this.showAlert(
-				'Validation Error',
-				'Please fill in all required fields',
-				'error'
-			);
+			this.showAlert('Please fill in all required fields', 'error');
 		}
 	}
 
 	/**
-	 * Displays an alert dialog with the specified title, message, and type.
-	 * @param title The title of the alert.
-	 * @param message The message of the alert.
-	 * @param type The type of the alert ('error' or 'success').
+	 * Displays a snackbar notification with the specified message and type.
+	 * @param message The message of the notification.
+	 * @param type The type of the notification ('error' or 'success').
 	 */
-	private showAlert(title: string, message: string, type: 'error' | 'success') {
-		this.alert.open(AlertComponent, {
-			data: {
-				title,
-				message,
-				type,
-				buttonText: 'OK'
-			}
-		});
+	private showAlert(message: string, type: 'error' | 'success') {
+		this.trafQuizService.showNotification(message, type);
 	}
 }

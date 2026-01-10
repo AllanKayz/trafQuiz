@@ -158,6 +158,47 @@ class AdminController
 		}
 	}
 
+	public function getAllUsers()
+	{
+		$users = Dashboard::getUsers();
+		// Normalize for frontend
+		$mapped = array_map(function ($u) {
+			return [
+				'id' => $u['id'],
+				'username' => $u['username'],
+				'name' => trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')),
+				'email' => $u['email'],
+				'role' => $u['role'],
+				'status' => 'active' // Simplified for now
+			];
+		}, $users);
+		echo json_encode($mapped);
+	}
+
+	public function resetUserPassword()
+	{
+		$data = json_decode(file_get_contents("php://input"), true);
+		if (!$data || empty($data['id']) || empty($data['password'])) {
+			http_response_code(400);
+			echo json_encode(['message' => 'Missing ID or Password']);
+			return;
+		}
+		$res = Dashboard::resetUserPassword($data['id'], $data['password']);
+		echo json_encode($res);
+	}
+
+	public function deleteUser()
+	{
+		$data = json_decode(file_get_contents("php://input"), true);
+		if (!$data || empty($data['id'])) {
+			http_response_code(400);
+			echo json_encode(['message' => 'Missing ID']);
+			return;
+		}
+		$res = Dashboard::deleteUser($data['id']);
+		echo json_encode($res);
+	}
+
 	public function getAllData()
 	{
 		//Get the Authorization header
@@ -229,28 +270,24 @@ class AdminController
 		$firstname = $data['firstname'] ?? '';
 		$email = $data['email'] ?? '';
 
-		$addstudent = Dashboard::addUser($username, $password, $email, $firstname, $lastname);
+		$role = 'user';
+		$addstudent = Dashboard::addUser($username, $password, $role, $firstname, $lastname, $email);
 		echo json_encode($addstudent);
 	}
 
 	public function updateStudent()
 	{
+		header('Content-Type: application/json');
 		$data = json_decode(file_get_contents("php://input"), true);
 
-		if (!$data) {
-			file_put_contents('debug.log', "Input Data: " . file_get_contents("php://input") . PHP_EOL, FILE_APPEND);
-			echo json_encode(["message" => "No data recieved or invalid JSON"]);
+		if (!$data || empty($data['id'])) {
+			http_response_code(400);
+			echo json_encode(["message" => "Student ID is required"]);
 			return;
 		}
 
-		$status = $data['status'] ?? '';
-		$address = $data['address'] ?? '';
-		$phone = $data['phone'] ?? '';
-		$name = $data['name'] ?? '';
-		$email = $data['email'] ?? '';
-		$id = $data['id'] ?? '';
-
-		$updateStudent = Dashboard::updateStudent($id, $name, $email, $phone, $address, $status);
+		$id = $data['id'];
+		$updateStudent = Dashboard::updateStudent($id, $data);
 		echo json_encode($updateStudent);
 	}
 
@@ -300,10 +337,11 @@ class AdminController
 			return [
 				'id' => $item['id'],
 				'firstName' => explode(' ', $item['name'])[0],
-				'lastName' => explode(' ', $item['name'])[1],
+				'lastName' => explode(' ', $item['name'])[1] ?? '',
 				'email' => $item['email'],
 				'phone' => $item['phone'],
 				'address' => $item['address'],
+				'active' => $item['status'] === 'active',
 				'status' => $item['status'],
 				'enrollmentDate' => $item['enrollmentDate']
 			];
@@ -332,7 +370,15 @@ class AdminController
 		$status = $data['status'] ?? '';
 		$package = $data['package'] ?? '';
 
-		$userid = Dashboard::addUser($username, $password, $role);
+		$lastname = '';
+		$firstname = $name;
+		if (strpos($name, ' ') !== false) {
+			$parts = explode(' ', $name, 2);
+			$firstname = $parts[0];
+			$lastname = $parts[1];
+		}
+
+		$userid = Dashboard::addUser($username, $password, $role, $firstname, $lastname, $email, $phone);
 		$userid = intval($userid);
 
 		if (is_int($userid)) {
@@ -349,17 +395,19 @@ class AdminController
 		$instructors = Dashboard::getInstructors();
 
 		$instructorsArray = array_map(function ($instructor) {
+			$nameParts = explode(' ', $instructor['name'], 2);
 			return [
 				'id' => $instructor['id'],
 				'username' => $instructor['username'],
-				'firstName' => explode(' ', $instructor['name'])[0],
-				'lastName' => explode(' ', $instructor['name'])[1],
+				'firstName' => $nameParts[0] ?? '',
+				'lastName' => $nameParts[1] ?? '',
 				'email' => $instructor['email'],
 				'phone' => $instructor['phone'],
 				'license' => $instructor['license_number'],
 				'specialization' => $instructor['specialization'],
 				'certification' => $instructor['certification'],
-				'experience' => $instructor['experience'],
+				'experience' => (int)$instructor['experience'],
+				'available' => ($instructor['availability'] > 0) ? true : false,
 				'availability' => ($instructor['availability'] > 0) ? true : false,
 				'employmentDate' => $instructor['created_at']
 			];
@@ -390,7 +438,15 @@ class AdminController
 		$experience = $data['experience'];
 		$availability = $data['availability'];
 
-		$userid = Dashboard::addUser($username, $password, $role);
+		$lastname = '';
+		$firstname = $name;
+		if (strpos($name, ' ') !== false) {
+			$parts = explode(' ', $name, 2);
+			$firstname = $parts[0];
+			$lastname = $parts[1];
+		}
+
+		$userid = Dashboard::addUser($username, $password, $role, $firstname, $lastname, $email, $phone);
 		$userid = intval($userid);
 
 		if (is_int($userid)) {

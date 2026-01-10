@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, catchError, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Vehicle } from '../models/vehicle';
+import { TraffiquizService } from '../traffiquiz.service';
 
 @Injectable({ providedIn: 'root' })
 export class VehicleService {
@@ -9,7 +10,7 @@ export class VehicleService {
   private base = 'http://localhost:84/trafQuiz/public/api/vehicles';
   //private base = '/trafQuiz/public/api/vehicles';
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private trafService: TraffiquizService) {
     // Try to load from API, fallback to mock data on error
     this.fetchVehicles().subscribe({ error: () => this.loadMock() });
   }
@@ -27,7 +28,7 @@ export class VehicleService {
     return this.http.get<Vehicle[]>(this.base).pipe(
       tap(vs => this.vehicles$.next(vs)),
       catchError((err) => {
-        console.warn('Vehicle API fetch failed; falling back to mock', err);
+        this.trafService.showNotification('Vehicle API fetch failed; falling back to mock', 'info');
         return of([] as Vehicle[]);
       })
     );

@@ -1,222 +1,219 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Dec 30, 2025 at 12:08 PM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
-
+-- Normalized Database for Traffiquiz System
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
-
+SET FOREIGN_KEY_CHECKS = 0;
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
---
--- Database: `traffiquiz_system`
---
+DROP TABLE IF EXISTS `messages`;
+DROP TABLE IF EXISTS `conversations`;
+DROP TABLE IF EXISTS `student_exams`;
+DROP TABLE IF EXISTS `reports`;
+DROP TABLE IF EXISTS `payments`;
+DROP TABLE IF EXISTS `questions`;
+DROP TABLE IF EXISTS `lessons`;
+DROP TABLE IF EXISTS `students`;
+DROP TABLE IF EXISTS `instructors`;
+DROP TABLE IF EXISTS `administrators`;
+DROP TABLE IF EXISTS `license_keys`;
+DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `vehicles`;
+DROP TABLE IF EXISTS `packages`;
+DROP TABLE IF EXISTS `certification`;
+DROP TABLE IF EXISTS `specialization`;
+DROP TABLE IF EXISTS `exams`;
+DROP TABLE IF EXISTS `exam_timeframe`;
+DROP TABLE IF EXISTS `system_license`;
 
--- --------------------------------------------------------
-
 --
--- Table structure for table `administrators`
+-- Table structure for table `users`
 --
-
-CREATE TABLE `administrators` (
-  `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
+CREATE TABLE `users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(100) NOT NULL UNIQUE,
   `password` varchar(255) NOT NULL,
+  `role` enum('admin', 'instructor', 'student', 'user') NOT NULL DEFAULT 'user',
+  `first_name` varchar(100) DEFAULT NULL,
+  `last_name` varchar(100) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `phone` varchar(255) DEFAULT NULL,
+  `avatar` varchar(500) DEFAULT NULL,
+  `reset_token` varchar(255) DEFAULT NULL,
+  `reset_expires` datetime DEFAULT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `license_key_id` int(11) NOT NULL
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `administrators`
+-- Table structure for table `specialization`
 --
-
-INSERT INTO `administrators` (`id`, `name`, `email`, `password`, `created_at`, `updated_at`, `license_key_id`) VALUES
-(1, 'Allan Kanyemba', 'allankanyemba@gmail.com', '123456', '2025-03-13 17:10:28', '2025-03-14 00:33:56', 1),
-(2, 'Asan Kanyemba', 'asankanyemba@gmail.com', '123456', '2025-03-13 17:10:28', '2025-03-14 00:34:04', 2);
-
--- --------------------------------------------------------
+CREATE TABLE `specialization` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `specialization` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Table structure for table `certification`
 --
-
 CREATE TABLE `certification` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `certification` varchar(255) NOT NULL,
-  `description` text NOT NULL
+  `description` text NOT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `certification`
---
-
-INSERT INTO `certification` (`id`, `certification`, `description`) VALUES
-(1, 'TSCZ Instructor Certificate', 'Traffic Safety Council of Zimbabwe Instructor Certification');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `exams`
---
-
-CREATE TABLE `exams` (
-  `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `start_time` datetime NOT NULL,
-  `end_time` datetime NOT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `exams`
---
-
-INSERT INTO `exams` (`id`, `name`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
-(1, 'test 1', '2025-03-14 09:49:35', '2025-03-14 11:49:35', '2025-03-14 10:50:42', '2025-03-14 10:50:42'),
-(2, 'test 2', '2025-03-14 14:49:35', '2025-03-14 11:52:35', '2025-03-14 10:50:42', '2025-03-14 10:50:42');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `exam_timeframe`
---
-
-CREATE TABLE `exam_timeframe` (
-  `id` int(11) NOT NULL,
-  `period` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `exam_timeframe`
---
-
-INSERT INTO `exam_timeframe` (`id`, `period`, `created_at`, `updated_at`) VALUES
-(1, 10, '2025-03-18 18:56:25', '2025-07-21 14:56:13');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `instructors`
---
-
-CREATE TABLE `instructors` (
-  `id` int(11) NOT NULL,
-  `userid` int(11) NOT NULL,
-  `name` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `phone` varchar(20) NOT NULL,
-  `license_number` varchar(255) NOT NULL,
-  `specialization` int(11) NOT NULL,
-  `certification` int(11) NOT NULL,
-  `experience` int(11) NOT NULL,
-  `availability` tinyint(1) NOT NULL,
-  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `instructors`
---
-
-INSERT INTO `instructors` (`id`, `userid`, `name`, `email`, `phone`, `license_number`, `specialization`, `certification`, `experience`, `availability`, `created_at`, `updated_at`) VALUES
-(1, 50, 'Keysha Pondo', 'keysha@gmail.com', '+263717834413', '1667555900', 2, 1, 5, 1, '2025-08-31 19:04:51', '2025-08-31 17:04:51');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `lessons`
---
-
-CREATE TABLE `lessons` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
-  `instructor_id` int(11) NOT NULL,
-  `vehicle_id` int(11) NOT NULL,
-  `lesson_date` time NOT NULL,
-  `lesson_status` varchar(50) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
 
 --
 -- Table structure for table `license_keys`
 --
-
 CREATE TABLE `license_keys` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `license_key` varchar(100) NOT NULL,
-  `status` enum('active','inactive') DEFAULT 'active'
+  `status` enum('active','inactive') DEFAULT 'active',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `license_keys`
+-- Table structure for table `administrators`
 --
+CREATE TABLE `administrators` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `license_key_id` int(11) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`),
+  FOREIGN KEY (`license_key_id`) REFERENCES `license_keys`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO `license_keys` (`id`, `license_key`, `status`) VALUES
-(1, 'e5f1c63b41cc3ac15282ef67621e1a10012506f47dedc645246dd3b3fa6d8781', 'active'),
-(2, '2af2092fa53001c70acbc44fdd61a1220c9553d312e166f57789d19f385fcd9d', 'active');
-
--- --------------------------------------------------------
+--
+-- Table structure for table `instructors`
+--
+CREATE TABLE `instructors` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `license_number` varchar(255) NOT NULL,
+  `specialization_id` int(11) NOT NULL,
+  `certification_id` int(11) NOT NULL,
+  `experience` int(11) NOT NULL,
+  `availability` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`specialization_id`) REFERENCES `specialization`(`id`),
+  FOREIGN KEY (`certification_id`) REFERENCES `certification`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Table structure for table `packages`
 --
-
 CREATE TABLE `packages` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `package` varchar(255) DEFAULT NULL,
   `description` text DEFAULT NULL,
-  `amount` decimal(18,2) DEFAULT NULL
+  `amount` decimal(18,2) DEFAULT NULL,
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `packages`
+-- Table structure for table `students`
 --
-
-INSERT INTO `packages` (`id`, `package`, `description`, `amount`) VALUES
-(1, 'Provisional Drivers Certificate', '', 2.00),
-(2, 'Light Motor Vehicles(Class 4)', '', 10.00),
-(3, 'Motor Cycles (Class 3)', '', 5.00),
-(4, 'Heavy Motor Vehicles (Class 2)', '', 20.00),
-(5, 'Public Motor Vehicles (Class 1)', '', 30.00);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `payments`
---
-
-CREATE TABLE `payments` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
-  `amount` decimal(10,2) NOT NULL,
-  `payment_date` datetime DEFAULT current_timestamp(),
-  `transaction_id` varchar(100) NOT NULL,
-  `created_at` datetime DEFAULT current_timestamp()
+CREATE TABLE `students` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `address` text DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'active',
+  `package_id` int(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`package_id`) REFERENCES `packages`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
+--
+-- Table structure for table `vehicles`
+--
+CREATE TABLE `vehicles` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `make` varchar(100) DEFAULT NULL,
+  `model` varchar(100) DEFAULT NULL,
+  `year` int(11) DEFAULT NULL,
+  `registration` varchar(50) DEFAULT NULL,
+  `type` varchar(50) DEFAULT 'car',
+  `status` enum('active', 'maintenance', 'retired') DEFAULT 'active',
+  `notes` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `lessons`
+--
+CREATE TABLE `lessons` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(200) NOT NULL,
+  `subject` varchar(100) DEFAULT NULL,
+  `start_time` datetime NOT NULL,
+  `end_time` datetime DEFAULT NULL,
+  `duration_minutes` int(11) DEFAULT NULL,
+  `instructor_id` int(11) DEFAULT NULL,
+  `student_id` int(11) DEFAULT NULL,
+  `assigned_vehicle_id` int(11) DEFAULT NULL,
+  `location` varchar(200) DEFAULT NULL,
+  `online_link` varchar(500) DEFAULT NULL,
+  `status` enum('upcoming','confirmed','cancelled','completed','pending','declined') DEFAULT 'upcoming',
+  `student_count` int(11) DEFAULT 0,
+  `capacity` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `resources` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`resources`)),
+  `type` enum('group','individual','theory','practical') DEFAULT 'group',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`instructor_id`) REFERENCES `instructors`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`student_id`) REFERENCES `students`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`assigned_vehicle_id`) REFERENCES `vehicles`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `exams`
+--
+CREATE TABLE `exams` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `start_time` datetime NOT NULL,
+  `end_time` datetime NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `exam_timeframe`
+--
+CREATE TABLE `exam_timeframe` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `period` int(11) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 
 --
 -- Table structure for table `questions`
 --
-
 CREATE TABLE `questions` (
-  `id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `question_text` longtext DEFAULT NULL,
   `img_insert` varchar(300) DEFAULT NULL,
   `option_image` tinyint(4) DEFAULT 0,
@@ -225,13 +222,154 @@ CREATE TABLE `questions` (
   `option_c` longtext DEFAULT NULL,
   `correct_option` varchar(45) DEFAULT NULL,
   `exam_id` int(11) DEFAULT NULL,
-  `answer` varchar(255) NOT NULL
+  `answer` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`exam_id`) REFERENCES `exams`(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Dumping data for table `questions`
+-- Table structure for table `payments`
 --
+CREATE TABLE `payments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `amount` decimal(10,2) NOT NULL,
+  `payment_date` datetime DEFAULT current_timestamp(),
+  `transaction_id` varchar(100) NOT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `status` enum('pending','completed','failed') DEFAULT 'completed',
+  `package_id` int(11) DEFAULT NULL,
+  `method` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`student_id`) REFERENCES `students`(`id`),
+  FOREIGN KEY (`package_id`) REFERENCES `packages`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Table structure for table `conversations`
+--
+CREATE TABLE `conversations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT NULL,
+  `participant_ids` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`participant_ids`)),
+  `last_message_at` datetime DEFAULT current_timestamp(),
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `messages`
+--
+CREATE TABLE `messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `conversation_id` int(11) NOT NULL,
+  `sender_id` int(11) NOT NULL,
+  `sender_name` varchar(255) DEFAULT NULL,
+  `text` text NOT NULL,
+  `timestamp` datetime DEFAULT current_timestamp(),
+  `is_read` tinyint(1) DEFAULT 0,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`conversation_id`) REFERENCES `conversations`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `system_license`
+--
+CREATE TABLE `system_license` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `device_id` text NOT NULL,
+  `system_license_key` text NOT NULL,
+  `business_name` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `reports`
+--
+CREATE TABLE `reports` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `exam_count` int(11) NOT NULL DEFAULT 0,
+  `total_score` int(11) NOT NULL DEFAULT 0,
+  `average_score` decimal(5,2) DEFAULT 0.00,
+  `progress_summary` text DEFAULT NULL,
+  `generated_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`student_id`) REFERENCES `students`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `student_exams`
+--
+CREATE TABLE `student_exams` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `student_id` int(11) NOT NULL,
+  `exam_id` int(11) NOT NULL,
+  `score` int(11) DEFAULT 0,
+  `completed_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`student_id`) REFERENCES `students`(`id`),
+  FOREIGN KEY (`exam_id`) REFERENCES `exams`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- Removed premature FOREGIN_KEY_CHECKS = 1 here
+
+-- Insert Seed Data for Packages
+INSERT INTO `packages` (`id`, `package`, `description`, `amount`) VALUES
+(1, 'Provisional Drivers Certificate', '', 2.00),
+(2, 'Light Motor Vehicles(Class 4)', '', 10.00),
+(3, 'Motor Cycles (Class 3)', '', 5.00),
+(4, 'Heavy Motor Vehicles (Class 2)', '', 20.00),
+(5, 'Public Motor Vehicles (Class 1)', '', 30.00);
+
+-- Insert Seed Data for Certification
+INSERT INTO `certification` (`id`, `certification`, `description`) VALUES
+(1, 'TSCZ Instructor Certificate', 'Traffic Safety Council of Zimbabwe Instructor Certification');
+
+
+-- MIGRATED DATA 
+-- Users (Handling duplicates by appending ID)
+INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `first_name`, `last_name`, `reset_token`, `reset_expires`) VALUES
+(1, 'admin', '$2y$10$j8KHrniTKtPcVga7/7HHUeFiPsC3vouihT6HFS85W/AhaAjTay6NG', 'admin@gmail.com', 'admin', 'admin', 'admin', NULL, NULL),
+(2, 'student', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'student@gmail.com', 'student', 'student', 'student', NULL, NULL),
+(3, 'allankayz', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'allankanyemba@gmail.com', 'instructor', 'Allan', 'Kanyemba', NULL, NULL),
+(35, 'asankayz', '$2y$10$Eg7RHqZou0Of91scp4RsjeMmL9eqUYTVfLC8fs0PBxUyl7GJZkeba', '', 'student', '', '', NULL, NULL),
+(36, 'allankayz_36', '$2y$10$29hmPayZYhj7PGo7ixLNS.tp1hnLzSq5qznRHKYcGn48X.bb3X47i', '', 'student', '', '', NULL, NULL),
+(37, 'allankayz_37', '$2y$10$uzTCc1Yviy4qaygdU44ITOEeu01WWKS449ynjWEFcdJtF5WBGDgz6', '', 'student', '', '', NULL, NULL),
+(38, 'allankayz_38', '$2y$10$uGbnI3PJaUkRR3/QgIaQWO8fI7hlKbq1W0CrucCXEWig1RTyRH3DS', '', 'student', '', '', NULL, NULL),
+(49, 'keysha', '$2y$10$FCUH6XwULHgjfsWedYCFce6plgdKV8mPHrQI2H4kbsCmSm8.X1eLq', '', 'instructor', '', '', NULL, NULL),
+(50, 'keysha_50', '$2y$10$qj/BrvxUdecT8fC/uzeQAOCoNLssGOJZ2LgUdhi.Mlbeyf7DSz1i6', '', 'instructor', '', '', NULL, NULL);
+
+-- Specialization
+INSERT INTO `specialization` (`id`, `specialization`, `description`) VALUES
+(1, 'Advanced Driving', ''),
+(2, 'Commercial License', ''),
+(3, 'Beginner Courses', '')
+ON DUPLICATE KEY UPDATE specialization=VALUES(specialization);
+
+-- Students
+INSERT INTO `students` (`id`, `user_id`, `package_id`, `address`, `status`, `created_at`) VALUES
+(1, 2, 1, '4708 Chiedza Karoi', 'Active', '2025-08-16 22:07:24'),
+(2, 35, 2, '4708 Chiedza, Karoi', 'active', '2025-08-18 18:27:57'),
+(3, 36, 4, '4708 Chiedza, Karoi', 'active', '2025-08-18 20:03:49');
+
+-- Instructors
+INSERT INTO `instructors` (`id`, `user_id`, `license_number`, `specialization_id`, `certification_id`, `experience`, `availability`) VALUES
+(1, 3, '12345-ZIM', 1, 1, 5, 1);
+
+-- Vehicles
+INSERT INTO `vehicles` (`id`, `make`, `model`, `year`, `registration`, `type`, `status`) VALUES
+(1, 'Toyota', 'Corolla', 2018, 'ABC-123', 'car', 'active'),
+(2, 'Isuzu', 'D-Max', 2019, 'TRK-001', 'truck', 'active'),
+(3, 'Honda', 'CBR', 2020, 'MOT-09', 'motorcycle', 'maintenance');
+
+-- EXAMS DATA 
+INSERT INTO `exams` (`id`, `name`, `start_time`, `end_time`, `created_at`, `updated_at`) VALUES
+(1, 'test 1', '2025-03-14 09:49:35', '2025-03-14 11:49:35', '2025-03-14 10:50:42', '2025-03-14 10:50:42'),
+(2, 'test 2', '2025-03-14 14:49:35', '2025-03-14 11:52:35', '2025-03-14 10:50:42', '2025-03-14 10:50:42');
+
+-- QUESTIONS DATA 
 INSERT INTO `questions` (`id`, `question_text`, `img_insert`, `option_image`, `option_a`, `option_b`, `option_c`, `correct_option`, `exam_id`, `answer`) VALUES
 (1, 'When can an applicant apply for a duplicate learner’s licence?', NULL, 0, ' A.	Whenever they feel like ', 'B.	When the original has been lost or defaced ', 'C.	None of the above', '2', 1, 'B.	When the original has been lost or defaced '),
 (2, 'what are the colors of a private vehicle registration plate ?', NULL, 0, 'Yellow background  ', 'White on black background', 'Black on yellow background  ', '3', 1, 'Black on yellow background  '),
@@ -1840,402 +1978,5 @@ INSERT INTO `questions` (`id`, `question_text`, `img_insert`, `option_image`, `o
 (1606, 'A driver’s medical certificate is valid for how long?', NULL, 0, '24 months', '18 months', '12 months', '3', 11, '12 months'),
 (1607, 'What is the colour of reflector at the front of vehicles?  ', NULL, 0, 'Red reflectors', 'White reflectors', 'Yellow reflectors', '2', 11, 'White reflectors');
 
--- --------------------------------------------------------
 
---
--- Table structure for table `reports`
---
-
-CREATE TABLE `reports` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
-  `exam_count` int(11) NOT NULL DEFAULT 0,
-  `total_score` int(11) NOT NULL DEFAULT 0,
-  `average_score` decimal(5,2) DEFAULT 0.00,
-  `progress_summary` text DEFAULT NULL,
-  `generated_at` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `specialization`
---
-
-CREATE TABLE `specialization` (
-  `id` int(11) NOT NULL,
-  `specialization` varchar(255) NOT NULL,
-  `description` text NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `specialization`
---
-
-INSERT INTO `specialization` (`id`, `specialization`, `description`) VALUES
-(1, 'Advanced Driving', ''),
-(2, 'Commercial License', ''),
-(3, 'Beginner Courses', '');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `students`
---
-
-CREATE TABLE `students` (
-  `id` int(11) NOT NULL,
-  `userid` int(11) NOT NULL,
-  `pkgid` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `address` varchar(255) NOT NULL,
-  `phone` varchar(20) NOT NULL,
-  `status` varchar(50) NOT NULL,
-  `license_key_id` int(11) DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `students`
---
-
-INSERT INTO `students` (`id`, `userid`, `pkgid`, `name`, `email`, `address`, `phone`, `status`, `license_key_id`, `created_at`, `updated_at`) VALUES
-(1, 2, 1, 'Letwin Pondo', 'letwin003@gmail.com', '4708 Chiedza Karoi', '+263774833890', 'Active', NULL, '2025-08-16 22:07:24', '2025-08-18 15:33:16'),
-(2, 35, 2, 'Asan Kanyemba', 'asankanyemba@gmail.com', '4708 Chiedza, Karoi', '+263717834413', 'active', NULL, '2025-08-18 18:27:57', '2025-08-18 18:27:57'),
-(3, 36, 4, 'Allan Kanyemba', 'allankanyemba@gmail.com', '4708 Chiedza, Karoi', '+263717834413', 'active', NULL, '2025-08-18 20:03:49', '2025-08-18 20:03:49');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `student_exams`
---
-
-CREATE TABLE `student_exams` (
-  `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
-  `exam_id` int(11) NOT NULL,
-  `score` int(11) DEFAULT 0,
-  `completed_at` datetime DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `system_license`
---
-
-CREATE TABLE `system_license` (
-  `id` int(11) NOT NULL,
-  `device_id` text NOT NULL,
-  `system_license_key` text NOT NULL,
-  `business_name` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `users`
---
-
-CREATE TABLE `users` (
-  `id` int(11) NOT NULL,
-  `username` varchar(255) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `email` varchar(255) NOT NULL,
-  `role` varchar(255) NOT NULL,
-  `firstname` varchar(255) NOT NULL,
-  `lastname` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `firstname`, `lastname`) VALUES
-(1, 'admin', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'admin@gmail.com', 'admin', 'admin', 'admin'),
-(2, 'student', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'student@gmail.com', 'student', 'student', 'student'),
-(3, 'allankayz', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'allankanyemba@gmail.com', 'instructor', 'Allan', 'Kanyemba'),
-(35, 'asankayz', '$2y$10$Eg7RHqZou0Of91scp4RsjeMmL9eqUYTVfLC8fs0PBxUyl7GJZkeba', '', 'student', '', ''),
-(36, 'allankayz', '$2y$10$29hmPayZYhj7PGo7ixLNS.tp1hnLzSq5qznRHKYcGn48X.bb3X47i', '', 'student', '', ''),
-(37, 'allankayz', '$2y$10$uzTCc1Yviy4qaygdU44ITOEeu01WWKS449ynjWEFcdJtF5WBGDgz6', '', 'student', '', ''),
-(38, 'allankayz', '$2y$10$uGbnI3PJaUkRR3/QgIaQWO8fI7hlKbq1W0CrucCXEWig1RTyRH3DS', '', 'student', '', ''),
-(49, 'keysha', '$2y$10$FCUH6XwULHgjfsWedYCFce6plgdKV8mPHrQI2H4kbsCmSm8.X1eLq', '', 'instructor', '', ''),
-(50, 'keysha', '$2y$10$qj/BrvxUdecT8fC/uzeQAOCoNLssGOJZ2LgUdhi.Mlbeyf7DSz1i6', '', 'instructor', '', '');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `vehicles`
---
-
-CREATE TABLE `vehicles` (
-  `id` int(11) NOT NULL,
-  `vehicle_type` varchar(255) NOT NULL,
-  `license_plate` varchar(20) NOT NULL,
-  `vehicles_status` varchar(50) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Indexes for dumped tables
---
-
---
--- Indexes for table `administrators`
---
-ALTER TABLE `administrators`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`);
-
---
--- Indexes for table `certification`
---
-ALTER TABLE `certification`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `exams`
---
-ALTER TABLE `exams`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `exam_timeframe`
---
-ALTER TABLE `exam_timeframe`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `instructors`
---
-ALTER TABLE `instructors`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_specialization_id` (`specialization`),
-  ADD KEY `fk_certification_id` (`certification`),
-  ADD KEY `fk_users_id` (`userid`);
-
---
--- Indexes for table `lessons`
---
-ALTER TABLE `lessons`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `student_fk` (`student_id`),
-  ADD KEY `instructor_fk` (`instructor_id`),
-  ADD KEY `vehicle_id` (`vehicle_id`);
-
---
--- Indexes for table `license_keys`
---
-ALTER TABLE `license_keys`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `license_key` (`license_key`);
-
---
--- Indexes for table `packages`
---
-ALTER TABLE `packages`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `payments`
---
-ALTER TABLE `payments`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `transaction_id` (`transaction_id`),
-  ADD KEY `student_id` (`student_id`);
-
---
--- Indexes for table `reports`
---
-ALTER TABLE `reports`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `student_id` (`student_id`);
-
---
--- Indexes for table `specialization`
---
-ALTER TABLE `specialization`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `students`
---
-ALTER TABLE `students`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `email` (`email`),
-  ADD KEY `students_ibfk_1` (`license_key_id`),
-  ADD KEY `userid_fk` (`userid`),
-  ADD KEY `fk_packages_id` (`pkgid`);
-
---
--- Indexes for table `student_exams`
---
-ALTER TABLE `student_exams`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `student_id` (`student_id`),
-  ADD KEY `exam_id` (`exam_id`);
-
---
--- Indexes for table `system_license`
---
-ALTER TABLE `system_license`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `users`
---
-ALTER TABLE `users`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `vehicles`
---
-ALTER TABLE `vehicles`
-  ADD PRIMARY KEY (`id`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `administrators`
---
-ALTER TABLE `administrators`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `certification`
---
-ALTER TABLE `certification`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `exams`
---
-ALTER TABLE `exams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `exam_timeframe`
---
-ALTER TABLE `exam_timeframe`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `instructors`
---
-ALTER TABLE `instructors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- AUTO_INCREMENT for table `lessons`
---
-ALTER TABLE `lessons`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `license_keys`
---
-ALTER TABLE `license_keys`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT for table `payments`
---
-ALTER TABLE `payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `reports`
---
-ALTER TABLE `reports`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `specialization`
---
-ALTER TABLE `specialization`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT for table `students`
---
-ALTER TABLE `students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `student_exams`
---
-ALTER TABLE `student_exams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `system_license`
---
-ALTER TABLE `system_license`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=51;
-
---
--- AUTO_INCREMENT for table `vehicles`
---
-ALTER TABLE `vehicles`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `instructors`
---
-ALTER TABLE `instructors`
-  ADD CONSTRAINT `fk_certification_id` FOREIGN KEY (`certification`) REFERENCES `certification` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_specialization_id` FOREIGN KEY (`specialization`) REFERENCES `specialization` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_users_id` FOREIGN KEY (`userid`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `lessons`
---
-ALTER TABLE `lessons`
-  ADD CONSTRAINT `instructor_fk` FOREIGN KEY (`instructor_id`) REFERENCES `instructors` (`id`),
-  ADD CONSTRAINT `student_fk` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`),
-  ADD CONSTRAINT `vehicle_id` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`);
-
---
--- Constraints for table `payments`
---
-ALTER TABLE `payments`
-  ADD CONSTRAINT `payments_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`);
-
---
--- Constraints for table `reports`
---
-ALTER TABLE `reports`
-  ADD CONSTRAINT `reports_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`);
-
---
--- Constraints for table `students`
---
-ALTER TABLE `students`
-  ADD CONSTRAINT `fk_packages_id` FOREIGN KEY (`pkgid`) REFERENCES `packages` (`id`),
-  ADD CONSTRAINT `students_ibfk_1` FOREIGN KEY (`license_key_id`) REFERENCES `license_keys` (`id`),
-  ADD CONSTRAINT `userid_fk` FOREIGN KEY (`userid`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `student_exams`
---
-ALTER TABLE `student_exams`
-  ADD CONSTRAINT `student_exams_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`),
-  ADD CONSTRAINT `student_exams_ibfk_2` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`);
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+SET FOREIGN_KEY_CHECKS = 1;

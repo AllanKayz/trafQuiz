@@ -8,14 +8,18 @@ use PDO;
 class Dashboard
 {
     // Manage User Data
-    public static function addUser($username, $password, $role)
+    public static function addUser($username, $password, $role, $firstName = null, $lastName = null, $email = null, $phone = null)
     {
         $db = new Database();
-        $sql = 'INSERT INTO users(username, password, role) VALUES (:username, :password, :role)';
+        $sql = 'INSERT INTO users(username, password, role, first_name, last_name, email, phone) VALUES (:username, :password, :role, :firstName, :lastName, :email, :phone)';
         $stmt = $db->getConnection()->prepare($sql);
         $stmt->bindParam(':username', $username);
         $stmt->bindParam(':password', $password);
         $stmt->bindParam(':role', $role);
+        $stmt->bindParam(':firstName', $firstName);
+        $stmt->bindParam(':lastName', $lastName);
+        $stmt->bindParam(':email', $email);
+        $stmt->bindParam(':phone', $phone);
         $stmt->execute();
         return $db->getConnection()->lastInsertId();
     }
@@ -32,10 +36,25 @@ class Dashboard
         ];
     }
 
+    public static function resetUserPassword($id, $newPassword)
+    {
+        $db = new Database();
+        $hash = password_hash($newPassword, PASSWORD_DEFAULT);
+        $stmt = $db->getConnection()->prepare('UPDATE users SET password = :password WHERE id = :id');
+        $stmt->bindParam(':password', $hash);
+        $stmt->bindParam(':id', $id);
+        $stmt->execute();
+        return [
+            'success' => $stmt->rowCount() > 0,
+            'message' => $stmt->rowCount() > 0 ? 'Password updated successfully' : 'Failed to update password'
+        ];
+    }
+
     public static function updateUser($username, $password, $lastname, $firstname, $email, $id)
     {
         $db = new Database();
-        $sql = 'UPDATE users SET username = :username, password = :password, email = :email, firstname = :firstname, lastname = :lastname WHERE id = :id';
+        // Updated column names to match new schema (first_name, last_name)
+        $sql = 'UPDATE users SET username = :username, password = :password, email = :email, first_name = :firstname, last_name = :lastname WHERE id = :id';
         $stmt = $db->getConnection()->prepare($sql);
         $stmt->bindParam('id', $id);
         $stmt->bindParam(':username', $username);
@@ -53,7 +72,7 @@ class Dashboard
     public static function getUsers()
     {
         $db = new Database();
-        $stmt = $db->getConnection()->prepare('SELECT id, username, password, email, firstname, lastname FROM users WHERE role = "user"');
+        $stmt = $db->getConnection()->prepare('SELECT id, username, first_name, last_name, email, role, created_at FROM users');
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -128,7 +147,10 @@ class Dashboard
     public static function getStudents()
     {
         $db = new Database();
-        $sql = 'SELECT id, name, email, phone, address, status, created_at AS enrollmentDate FROM students';
+        // Join with users table to get name and email
+        $sql = 'SELECT s.id, CONCAT(u.first_name, " ", u.last_name) as name, u.email, u.phone, s.address, s.status, s.created_at AS enrollmentDate 
+                FROM students s 
+                JOIN users u ON s.user_id = u.id';
         $stmt = $db->getConnection()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -136,15 +158,20 @@ class Dashboard
 
     public static function addStudent($name, $email, $phone, $address, $status, $userid, $pkgid)
     {
+        // NOTE: $name, $email, $phone are passed but we expect $userid to already be created with these details in Users table.
+        // However, if the user was just created with username/password, we might need to update the user record here?
+        // Or assume the Controller handled calling addUser with all details.
+        // In the new schema, students table only holds address, status, package_id.
+
+        // For safety, let's update the user record if name/email/phone are provided effectively ensuring data consistency
+        // But for now, let's assume Controller calls addUser with full details.
+
         $db = new Database();
-        $sql = 'INSERT INTO students(name, email, phone, address, status, userid, pkgid) VALUES (:name, :email, :phone, :address, :status, :userid, :pkgid)';
+        $sql = 'INSERT INTO students(user_id, address, status, package_id) VALUES (:userid, :address, :status, :pkgid)';
         $stmt = $db->getConnection()->prepare($sql);
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':phone', $phone);
+        $stmt->bindParam(':userid', $userid);
         $stmt->bindParam(':address', $address);
         $stmt->bindParam(':status', $status);
-        $stmt->bindParam(':userid', $userid);
         $stmt->bindParam(':pkgid', $pkgid);
         $stmt->execute();
         return [
@@ -153,30 +180,109 @@ class Dashboard
         ];
     }
 
-    public static function updateStudent($id, $name, $email, $phone, $address, $status)
+    public static function updateStudent($id, $data)
     {
         $db = new Database();
-        $sql = 'UPDATE students SET name = :name, email = :email, phone_number = :phone, address = :address, status = :status WHERE id = :id';
-        $stmt = $db->getConnection()->prepare($sql);
-        $stmt->bindParam(':id', $id);
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':phone', $phone);
-        $stmt->bindParam(':address', $address);
-        $stmt->bindParam(':status', $status);
-        $stmt->execute();
+        $conn = $db->getConnection();
+
+        // 1. Get user_id from students table
+        $stmt0 = $conn->prepare('SELECT user_id FROM students WHERE id = :id');
+        $stmt0->execute([':id' => $id]);
+        $row = $stmt0->fetch(PDO::FETCH_ASSOC);
+        $userid = $row ? $row['user_id'] : null;
+
+        // 2. Update Users table
+        if ($userid) {
+            $userUpdates = [];
+            $userParams = [':uid' => $userid];
+
+            if (isset($data['firstName'])) {
+                $userUpdates[] = "first_name = :fname";
+                $userParams[':fname'] = $data['firstName'];
+            }
+            if (isset($data['lastName'])) {
+                $userUpdates[] = "last_name = :lname";
+                $userParams[':lname'] = $data['lastName'];
+            }
+            if (isset($data['name']) && !isset($data['firstName']) && !isset($data['lastName'])) {
+                $parts = explode(' ', $data['name'], 2);
+                $userUpdates[] = "first_name = :fname";
+                $userUpdates[] = "last_name = :lname";
+                $userParams[':fname'] = $parts[0] ?? '';
+                $userParams[':lname'] = $parts[1] ?? '';
+            }
+            if (isset($data['email'])) {
+                $userUpdates[] = "email = :email";
+                $userParams[':email'] = $data['email'];
+            }
+            if (isset($data['phone'])) {
+                $userUpdates[] = "phone = :phone";
+                $userParams[':phone'] = $data['phone'];
+            }
+            if (!empty($data['password'])) {
+                $userUpdates[] = "password = :password";
+                $userParams[':password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+            }
+
+            if (!empty($userUpdates)) {
+                $uSql = 'UPDATE users SET ' . implode(', ', $userUpdates) . ' WHERE id = :uid';
+                $uStmt = $conn->prepare($uSql);
+                $uStmt->execute($userParams);
+            }
+        }
+
+        // 3. Update Students table
+        $studentUpdates = [];
+        $studentParams = [':id' => $id];
+
+        if (isset($data['address'])) {
+            $studentUpdates[] = "address = :address";
+            $studentParams[':address'] = $data['address'];
+        }
+        if (isset($data['status'])) {
+            $studentUpdates[] = "status = :status";
+            $studentParams[':status'] = $data['status'];
+        }
+        if (isset($data['active'])) {
+            $studentUpdates[] = "status = :status";
+            $studentParams[':status'] = $data['active'] ? 'active' : 'inactive';
+        }
+
+        if (!empty($studentUpdates)) {
+            $sql = 'UPDATE students SET ' . implode(', ', $studentUpdates) . ' WHERE id = :id';
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($studentParams);
+        }
+
         return [
-            'success' => $stmt->rowCount() > 0,
-            'message' => $stmt->rowCount() > 0 ? 'Update successful' : 'No rows updated'
+            'success' => true,
+            'message' => 'Update successful'
         ];
     }
 
     public static function deleteStudent($id)
     {
         $db = new Database();
+        // Since ON DELETE CASCADE is set on foreign key, deleting user would delete student.
+        // But here we are deleting student by student ID.
+        // We should probably delete the User record too if the business logic implies "Student IS A User".
+
+        // Get user_id first
+        $stmt0 = $db->getConnection()->prepare('SELECT user_id FROM students WHERE id = :id');
+        $stmt0->execute([':id' => $id]);
+        $row = $stmt0->fetch(PDO::FETCH_ASSOC);
+        $userid = $row ? $row['user_id'] : null;
+
+        // Delete from students
         $stmt = $db->getConnection()->prepare('DELETE FROM students WHERE id = :id');
         $stmt->bindParam('id', $id);
         $stmt->execute();
+
+        // Optionally delete user? 
+        // For now, let's keep the User record unless explicitly told to delete User.
+        // But based on "deleteStudent" naming, usually implies removing the student entity.
+        // If we only delete from students table, the User remains but is no longer a student.
+
         return [
             'success' => $stmt->rowCount() > 0,
             'message' => $stmt->rowCount() > 0 ? 'Delete successful' : 'Failed to delete'
@@ -187,7 +293,12 @@ class Dashboard
     public static function getInstructors()
     {
         $db = new Database();
-        $sql = 'SELECT i.id, i.name, i.email, i.phone, i.license_number, s.specialization, c.certification, i.experience, i.availability, i.created_at, u.username FROM instructors i INNER JOIN specialization s ON i.specialization = s.id INNER JOIN certification c ON i.certification = c.id INNER JOIN users u ON i.userid = u.id';
+        // Join users to get profile data
+        $sql = 'SELECT i.id, CONCAT(u.first_name, " ", u.last_name) as name, u.email, u.phone, i.license_number, s.specialization, c.certification, i.experience, i.availability, i.created_at, u.username 
+                FROM instructors i 
+                INNER JOIN specialization s ON i.specialization_id = s.id 
+                INNER JOIN certification c ON i.certification_id = c.id 
+                INNER JOIN users u ON i.user_id = u.id';
         $stmt = $db->getConnection()->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -195,13 +306,15 @@ class Dashboard
 
     public static function addInstructor($userid, $name, $email, $phone, $license_number, $specialization, $certification, $experience, $availability)
     {
+        // Similar to addStudent, we assume the User record ($userid) is already created/updated with name, email, phone.
         $db = new Database();
-        $sql = 'INSERT INTO instructors(userid, name, email, phone, license_number, specialization, certification, experience, availability) VALUES (:userid, :name, :email, :phone, :license_number, :specialization, :certification, :experience, :availability)';
+
+        // We might need to ensure User has the data if not passed during creation?
+        // But let's stick to inserting into instructors table.
+
+        $sql = 'INSERT INTO instructors(user_id, license_number, specialization_id, certification_id, experience, availability) VALUES (:userid, :license_number, :specialization, :certification, :experience, :availability)';
         $stmt = $db->getConnection()->prepare($sql);
         $stmt->bindParam(':userid', $userid, PDO::PARAM_INT);
-        $stmt->bindParam(':name', $name);
-        $stmt->bindParam(':email', $email);
-        $stmt->bindParam(':phone', $phone);
         $stmt->bindParam(':license_number', $license_number);
         $stmt->bindParam(':specialization', $specialization, PDO::PARAM_INT);
         $stmt->bindParam(':certification', $certification, PDO::PARAM_INT);
@@ -219,17 +332,18 @@ class Dashboard
         $db = new Database();
         $conn = $db->getConnection();
 
-        // 1. Get userid
-        $stmt0 = $conn->prepare('SELECT userid FROM instructors WHERE id = :id');
+        // 1. Get user_id
+        $stmt0 = $conn->prepare('SELECT user_id FROM instructors WHERE id = :id');
         $stmt0->execute([':id' => $id]);
         $row = $stmt0->fetch(PDO::FETCH_ASSOC);
-        $userid = $row ? $row['userid'] : null;
+        $userid = $row ? $row['user_id'] : null;
 
-        // 2. Update Users table (username/password)
+        // 2. Update Users table (username/password/name/email/phone)
         if ($userid) {
             $userUpdates = [];
             $userParams = [':uid' => $userid];
-            if (!empty($data['username'])) {
+
+            if (isset($data['username'])) {
                 $userUpdates[] = "username = :username";
                 $userParams[':username'] = $data['username'];
             }
@@ -237,12 +351,28 @@ class Dashboard
                 $userUpdates[] = "password = :password";
                 $userParams[':password'] = password_hash($data['password'], PASSWORD_DEFAULT);
             }
-            if (!empty($data['name'])) {
+            if (isset($data['firstName'])) {
+                $userUpdates[] = "first_name = :firstname";
+                $userParams[':firstname'] = $data['firstName'];
+            }
+            if (isset($data['lastName'])) {
+                $userUpdates[] = "last_name = :lastname";
+                $userParams[':lastname'] = $data['lastName'];
+            }
+            if (isset($data['name']) && !isset($data['firstName']) && !isset($data['lastName'])) {
                 $parts = explode(' ', $data['name'], 2);
-                $userUpdates[] = "firstname = :firstname";
-                $userUpdates[] = "lastname = :lastname";
+                $userUpdates[] = "first_name = :firstname";
+                $userUpdates[] = "last_name = :lastname";
                 $userParams[':firstname'] = $parts[0] ?? '';
                 $userParams[':lastname'] = $parts[1] ?? '';
+            }
+            if (isset($data['email'])) {
+                $userUpdates[] = "email = :email";
+                $userParams[':email'] = $data['email'];
+            }
+            if (isset($data['phone'])) {
+                $userUpdates[] = "phone = :phone";
+                $userParams[':phone'] = $data['phone'];
             }
 
             if (!empty($userUpdates)) {
@@ -253,40 +383,59 @@ class Dashboard
         }
 
         // 3. Update Instructors table
-        $allowedFields = ['name', 'email', 'phone', 'license_number', 'specialization', 'certification', 'experience', 'availability'];
+        $allowedFields = ['license_number', 'specialization', 'certification', 'experience', 'availability', 'available'];
+        $mapFields = ['specialization' => 'specialization_id', 'certification' => 'certification_id', 'available' => 'availability']; // Map input to DB column
+
         $setParts = [];
         $params = [':id' => $id];
 
         foreach ($allowedFields as $field) {
             if (isset($data[$field])) {
-                $setParts[] = "$field = :$field";
-                if ($field === 'availability') {
-                    $params[":$field"] = $data[$field] ? 1 : 0;
+                $dbField = $mapFields[$field] ?? $field;
+                $setParts[] = "$dbField = :$dbField";
+
+                if ($field === 'availability' || $field === 'available') {
+                    $params[":$dbField"] = $data[$field] ? 1 : 0;
                 } else {
-                    $params[":$field"] = $data[$field];
+                    $params[":$dbField"] = $data[$field];
                 }
             }
         }
 
-        if (empty($setParts)) {
-            return [
-                'success' => true,
-                'message' => 'Update successful (User details)'
-            ];
+        if (!empty($setParts)) {
+            $sql = 'UPDATE instructors SET ' . implode(', ', $setParts) . ' WHERE id = :id';
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
         }
 
-        $sql = 'UPDATE instructors SET ' . implode(', ', $setParts) . ' WHERE id = :id';
-        $stmt = $conn->prepare($sql);
-        $stmt->execute($params);
         return [
             'success' => true,
             'message' => 'Update successful'
         ];
     }
 
-    public static function deleteInstructor() {}
+    public static function deleteInstructor($id)
+    {
+        $db = new Database();
+        // Get user_id first
+        $stmt0 = $db->getConnection()->prepare('SELECT user_id FROM instructors WHERE id = :id');
+        $stmt0->execute([':id' => $id]);
+        $row = $stmt0->fetch(PDO::FETCH_ASSOC);
+        $userid = $row ? $row['user_id'] : null;
 
-    // Manage Certification Data
+        $stmt = $db->getConnection()->prepare('DELETE FROM instructors WHERE id = :id');
+        $stmt->bindParam('id', $id);
+        $stmt->execute();
+
+        // Optionally delete user? For now, no.
+
+        return [
+            'success' => $stmt->rowCount() > 0,
+            'message' => $stmt->rowCount() > 0 ? 'Delete successful' : 'Failed to delete'
+        ];
+    }
+
+    // Manage Documentation Data
     public static function getCertifications()
     {
         $db = new Database();

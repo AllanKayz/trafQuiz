@@ -64,7 +64,7 @@ export class ExamComponent implements OnDestroy {
     this.UserData = JSON.parse(localStorage['user']);
     this.examToken.set(this.UserData.token);
     this.fetchDurationAndStartExam();
-		
+
     // Watch for questions to be loaded
     effect(() => {
       if (this.questions().length > 0) {
@@ -223,13 +223,7 @@ export class ExamComponent implements OnDestroy {
       this.showResults.set(true);
 
     } else {
-      const data = {
-        title: 'Error',
-        message: 'Unflag questions flagged to make a submission',
-        type: 'error',
-        buttonText: 'OK'
-      };
-      this.openAlertDialog(data);
+      this.examService.showNotification('Unflag questions flagged to make a submission', 'error');
     }
   }
 
@@ -258,12 +252,12 @@ export class ExamComponent implements OnDestroy {
     return this.alert.open(AlertComponent, {
       data: data
     });
-	
-	/*
-	this.alert.afterClosed().subscribe(result => {
-		console.log('Dialog closed', result);
-	});
-	*/
+
+    /*
+    this.alert.afterClosed().subscribe(result => {
+      console.log('Dialog closed', result);
+    });
+    */
   }
 
   closeModal() {
@@ -273,7 +267,7 @@ export class ExamComponent implements OnDestroy {
   closeExam(): void {
     this.router.navigate(['/dashboard']);
   }
-  
+
   ngOnDestroy() {
     this.timerSubscription?.unsubscribe();
   }

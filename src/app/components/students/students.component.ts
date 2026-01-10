@@ -1,4 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
+import { Validators } from '@angular/forms';
 
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -93,11 +94,23 @@ export class StudentsComponent {
 	}
 
 	openStudentForm(student?: any) {
+		let fields = this.formConfig.getFormConfig('student').map(f => ({ ...f }));
+
+		// If editing, make password optional
+		if (student) {
+			fields = fields.map((f: any) => {
+				if (f.key === 'password' || f.key === 'confirmpassword') {
+					return { ...f, validators: [Validators.min(8), Validators.pattern(/^(?=.*[A-Z])(?=.*\d)(?=.*[@$!*#?&])[A-Za-z\d@!%#?&]{8,}$/)] };
+				}
+				return f;
+			});
+		}
+
 		const dialogRef = this.dialog.open(DynamicFormComponent, {
 			width: '800px',
 			data: {
 				title: student ? 'Edit Student' : 'Add New Student',
-				fields: this.formConfig.getFormConfig('student'),
+				fields: fields,
 				initialData: student || {},
 				submitText: student ? 'Update' : 'Add'
 			}
@@ -122,42 +135,27 @@ export class StudentsComponent {
 	}
 
 	private saveStudent(data: any, id?: number) {
-		let status = 'inactive';
-		if (data.active) status = 'active';
-
-		const newStudentData = {
-			name: data.firstName + ' ' + data.lastName,
-			username: data.username,
-			email: data.email,
-			phone: data.phone,
-			password: data.password,
-			address: data.address,
-			package: data.package,
-			status: status
-		};
-
 		const studentData = {
+			...data,
 			id: id || 0,
-			password: data.password,
-			firstName: data.firstName,
-			lastName: data.lastName,
-			email: data.email,
-			phone: data.phone,
-			address: data.address,
-			enrollmentDate: data.enrollmentDate,
-			active: data.active
+			name: data.firstName + ' ' + data.lastName
 		};
 
-		const action = id ? this.trafQuizService.updateStudent(studentData) : this.trafQuizService.addStudent(newStudentData);
+		// If password is empty in edit mode, don't send it
+		if (id && !data.password) {
+			delete (studentData as any).password;
+			delete (studentData as any).confirmpassword;
+		}
+
+		const action = id ? this.trafQuizService.updateStudent(studentData) : this.trafQuizService.addStudent(studentData);
 
 		action.subscribe({
 			next: (res) => {
-				this.snackBar.open(`Student ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
+				this.trafQuizService.showNotification(`Student ${id ? 'updated' : 'added'} successfully`, 'success');
 				this.trafQuizService.fetchStudents();
 			},
 			error: (err) => {
-				console.log(err);
-				this.snackBar.open('Error saving student', 'Close', { duration: 3000 });
+				this.trafQuizService.showNotification('Error saving student', 'error');
 			}
 		});
 	}

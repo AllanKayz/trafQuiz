@@ -65,7 +65,7 @@ export class ReportsComponent {
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('Error fetching progress', err);
+        this.service.showNotification(`Error fetching progress: ${err.message || 'Unknown error'}`, 'error');
         this.isLoading.set(false);
       }
     });

@@ -83,11 +83,12 @@ export class ScheduleComponent {
   }
 
   cancelLesson(lesson: Lesson) {
-    if (confirm('Are you sure you want to cancel this lesson?')) {
+    this.trafService.showConfirm('Are you sure you want to cancel this lesson?', 'CANCEL').subscribe(() => {
       this.lessonService.cancelLesson(lesson.id).subscribe(() => {
+        this.trafService.showNotification('Lesson canceled', 'success');
         this.refreshSchedule();
       });
-    }
+    });
   }
 
   reschedule(lesson: Lesson) {
@@ -100,7 +101,7 @@ export class ScheduleComponent {
   }
 
   messageStudent(lesson: Lesson) {
-    alert(`Opening chat with ${lesson.studentName || 'students'}...`);
+    this.trafService.showNotification(`Opening chat with ${lesson.studentName || 'students'}...`, 'info');
     // Logic to navigate to /dashboard/messages with this user selected
   }
 }

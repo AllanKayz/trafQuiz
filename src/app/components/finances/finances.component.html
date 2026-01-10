@@ -91,7 +91,7 @@
         <mat-progress-bar mode="indeterminate"></mat-progress-bar>
         }
 
-        <table mat-table [dataSource]="transactions()" class="transactions-table">
+        <table mat-table [dataSource]="transactionDataSource" class="transactions-table">
             <!-- ID Column -->
             <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef> ID </th>
@@ -136,7 +136,10 @@
             <tr mat-row *matRowDef="let row; columns: tableColumns;"></tr>
         </table>
 
-        @if (!isLoading() && transactions().length === 0) {
+        <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
+
+        @if (!isLoading() && transactionDataSource.data.length === 0) {
         <div class="empty-state">
             <p>No transactions found.</p>
         </div>

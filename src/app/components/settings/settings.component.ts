@@ -62,15 +62,13 @@ export class SettingsComponent {
 
   saveProfile() {
     if (this.profileForm.invalid) {
-      const data = { title: 'Invalid', message: 'Please fix errors before saving', type: 'error', buttons: [{ text: 'Ok', value: 'close' }] };
-      this.service.openAlertDialog(data);
+      this.service.showNotification('Please fix errors before saving', 'error');
       return;
     }
 
     if (this.profileForm.value.changePassword) {
       if (this.profileForm.value.password !== this.profileForm.value.confirmPassword) {
-        const data = { title: 'Password mismatch', message: 'Passwords do not match', type: 'error', buttons: [{ text: 'Ok', value: 'close' }] };
-        this.service.openAlertDialog(data);
+        this.service.showNotification('Passwords do not match', 'error');
         return;
       }
     }
@@ -90,13 +88,11 @@ export class SettingsComponent {
     this.saving = true;
     this.service.updateProfile(payload).subscribe({
       next: () => {
-        const data = { title: 'Saved', message: 'Profile updated', type: 'success', buttons: [{ text: 'Close', value: 'close' }] };
-        this.service.openAlertDialog(data);
+        this.service.showNotification('Profile updated', 'success');
         this.saving = false;
       },
       error: () => {
-        const data = { title: 'Error', message: 'Unable to save profile', type: 'error', buttons: [{ text: 'Close', value: 'close' }] };
-        this.service.openAlertDialog(data);
+        this.service.showNotification('Unable to save profile', 'error');
         this.saving = false;
       }
     });
@@ -105,22 +101,14 @@ export class SettingsComponent {
   savePreferences() {
     const prefs = this.prefsForm.value;
     this.service.updatePreferences(prefs);
-    const data = { title: 'Saved', message: 'Preferences updated', type: 'success', buttons: [{ text: 'Close', value: 'close' }] };
-    this.service.openAlertDialog(data);
+    this.service.showNotification('Preferences updated', 'success');
   }
 
   deleteAccount() {
-    const data = {
-      title: 'Delete Account?',
-      message: 'This action cannot be undone. Are you sure you want to permanently delete your account?',
-      type: 'warning',
-      buttons: [
-        { text: 'Cancel', value: 'cancel' },
-        { text: 'Delete', value: 'confirm' }
-      ]
-    };
-    // Mock confirmation for now
-    this.service.openAlertDialog(data);
+    this.service.showConfirm('Are you sure you want to permanently delete your account?', 'DELETE').subscribe(() => {
+      // Mock account deletion logic
+      this.service.showNotification('Account deletion requested', 'info');
+    });
   }
 }
 

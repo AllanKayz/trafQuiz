@@ -101,6 +101,17 @@ $router->addRoute('POST', '/trafQuiz/public/api/addspecialization', function () 
        (new AdminController())->addSpecialization();
 });
 
+// Admin User Access
+$router->addRoute('GET', '/trafQuiz/public/api/users', function () {
+       (new AdminController())->getAllUsers();
+});
+$router->addRoute('POST', '/trafQuiz/public/api/users/delete', function () {
+       (new AdminController())->deleteUser();
+});
+$router->addRoute('POST', '/trafQuiz/public/api/users/password', function () {
+       (new AdminController())->resetUserPassword();
+});
+
 // User profile update
 $router->addRoute('POST', '/trafQuiz/public/api/updateuser', function () {
        (new UserController())->updateProfile();

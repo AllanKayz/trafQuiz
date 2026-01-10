@@ -4,6 +4,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse } from './trafquiz';
 
 export interface StudentProgress {
@@ -36,11 +37,48 @@ export class TraffiquizService {
   private http: HttpClient = inject(HttpClient);
   private url = 'http://localhost:84/trafQuiz/public/api/';
   public alert = inject(MatDialog);
+  private snackBar = inject(MatSnackBar);
 
   // Convert user data to signal for reactive user state management.
   private userSignal = signal<any>(null);
   /** A computed signal that exposes the current user's data. */
   public currentUser = computed(() => this.userSignal());
+
+  /**
+   * Shows a snackbar notification.
+   * @param message The message to display.
+   * @param type The type of notification ('success', 'error', or 'info').
+   * @param duration The duration in milliseconds (default: 4000).
+   */
+  public showNotification(message: string, type: 'success' | 'error' | 'info' = 'info', duration: number = 4000) {
+    let panelClass = '';
+    switch (type) {
+      case 'success': panelClass = 'success-snackbar'; break;
+      case 'error': panelClass = 'error-snackbar'; break;
+      case 'info': panelClass = 'info-snackbar'; break;
+    }
+
+    this.snackBar.open(message, 'Close', {
+      duration: duration,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      panelClass: [panelClass]
+    });
+  }
+
+  /**
+   * Shows a snackbar confirmation.
+   * @param message The message to display.
+   * @param action The action label (e.g., 'DELETE').
+   * @returns An observable that emits when the action is clicked.
+   */
+  public showConfirm(message: string, action: string = 'CONFIRM'): Observable<void> {
+    return this.snackBar.open(message, action, {
+      duration: 5000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top'
+    }).onAction();
+  }
 
   // Writable signals for managing collections of data.
   /** A signal that holds the array of quiz questions. */
@@ -355,8 +393,7 @@ export class TraffiquizService {
           ]
         };
 
-        this.openAlertDialog(data);
-        console.error('Error parsing user data', e);
+        this.showNotification(`Error parsing user data: ${e}`, 'error');
       }
     }
   }
@@ -412,7 +449,7 @@ export class TraffiquizService {
           localStorage.setItem('user', JSON.stringify(response));
           this.userSignal.set(this.formatUser(response));
         } else {
-          console.error('Fatal error', response.message);
+          this.showNotification(`Fatal error: ${response.message}`, 'error');
         }
       })
     );
@@ -452,7 +489,7 @@ export class TraffiquizService {
         );
       },
       error: (error) => {
-        console.error('Error Fetching Data', error);
+        this.showNotification(`Error Fetching Exam Data: ${error.message || error.statusText}`, 'error');
         this.questionsSignal.set([]); // Reset on error
       }
     });
@@ -529,16 +566,7 @@ export class TraffiquizService {
         this.questionWidgetConfig.admin[0].title = this.totalQuestions().toString();
       },
       error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching questions /c: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
+        this.showNotification(`Error fetching questions: ${error.error?.message || error.statusText}`, 'error');
         this.questionsSignal.set([]);
       }
     });
@@ -584,16 +612,7 @@ export class TraffiquizService {
         this.studentWidgetConfig.admin[0].title = this.totalStudents().toString();
       },
       error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching students: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
+        this.showNotification(`Error fetching students: ${error.error?.message || error.statusText}`, 'error');
       }
     });
   }
@@ -637,16 +656,7 @@ export class TraffiquizService {
         this.instructorWidgetConfig.admin[0].title = this.totalInstructors().toString();
       },
       error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching instructors: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
+        this.showNotification(`Error fetching instructors: ${error.error?.message || error.statusText}`, 'error');
       }
     })
   }
@@ -725,16 +735,7 @@ export class TraffiquizService {
         localStorage.setItem('packages', JSON.stringify(this.transformPackagesJson(pkgs)));
       },
       error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching packages: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
+        this.showNotification(`Error fetching packages: ${error.error?.message || error.statusText}`, 'error');
       }
     });
   }
@@ -792,16 +793,7 @@ export class TraffiquizService {
         localStorage.setItem('specializations', JSON.stringify(this.transformSpecializationJson(sptzn)));
       },
       error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching specializations: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
+        this.showNotification(`Error fetching specializations: ${error.error?.message || error.statusText}`, 'error');
       }
 
     });
@@ -847,16 +839,7 @@ export class TraffiquizService {
         localStorage.setItem('certifications', JSON.stringify(this.transformCertificationJson(cert)));
       },
       error: (error) => {
-        const data = {
-          title: `Error: ${error.status} (${error.statusText})`,
-          message: `Error fetching certifications: ${error.error.message}`,
-          type: 'error',
-          buttons: [
-            { text: 'Close', value: 'close', color: 'warn' }
-          ]
-        };
-
-        this.openAlertDialog(data);
+        this.showNotification(`Error fetching certifications: ${error.error?.message || error.statusText}`, 'error');
       }
     });
   }
@@ -953,12 +936,13 @@ export class TraffiquizService {
   }
 
   processPayment(paymentData: any): Observable<any> {
-    console.log('Mock Processing Payment:', paymentData);
-    // In a real app, this would be a POST to /api/payments
-    return of({ status: 200, message: 'Payment processed successfully' }).pipe(
-      tap(() => {
-        // Refresh transactions if needed, or just let the mock logic handle it
-        // For demonstration, we'll just mock a success
+    return this.http.post(this.url + 'payment', paymentData).pipe(
+      tap((res: any) => {
+        this.showNotification('Payment processed successfully', 'success');
+      }),
+      catchError(err => {
+        this.showNotification('Payment processing failed', 'error');
+        return of(null);
       })
     );
   }
@@ -984,65 +968,58 @@ export class TraffiquizService {
 
   // --- User Access Management (Mocked) ---
 
-  /** Fetches all users (students and instructors). */
+  /** Fetches all users (students and instructors) from the backend. */
   fetchAllUsers(): Observable<any[]> {
-    const students = this.studentsSignal() || [];
-    const instructors = this.instructorsSignal() || [];
-
-    // Normalize data structures
-    const allUsers = [
-      ...students.map(s => ({ ...s, role: 'student', name: s.firstName + ' ' + s.lastName })),
-      ...instructors.map(i => ({ ...i, role: 'instructor', name: i.firstName + ' ' + i.lastName }))
-    ];
-
-    // If empty (e.g. before initial fetch), mock some data
-    if (allUsers.length === 0) {
-      return of([
-        { id: '1', name: 'John Doe', email: 'john@example.com', role: 'student', status: 'active' },
-        { id: '2', name: 'Jane Smith', email: 'jane@example.com', role: 'instructor', status: 'active' },
-        { id: '3', name: 'Bob Wilson', email: 'bob@example.com', role: 'student', status: 'suspended' }
-      ]);
-    }
-
-    return of(allUsers);
+    return this.http.get<any[]>(this.url + 'users').pipe(
+      catchError(error => {
+        this.showNotification('Error fetching users: ' + (error.error?.message || error.statusText), 'error');
+        // Fallback to local logic if backend fails or for robustness
+        const students = this.studentsSignal() || [];
+        const instructors = this.instructorsSignal() || [];
+        const allUsers = [
+          ...students.map(s => ({ ...s, role: 'student', name: s.firstName + ' ' + s.lastName })),
+          ...instructors.map(i => ({ ...i, role: 'instructor', name: i.firstName + ' ' + i.lastName }))
+        ];
+        return of(allUsers);
+      })
+    );
   }
 
-  addUser(user: any): Observable<any> {
-    // Determine target mock endpoint
-    // In real app: POST /api/users
-    console.log('Mock Adding User:', user);
+  // For generic user add, we likely want to redirect to specific student/instructor add endpoints based on role
+  // Or implemented a generic addUser in AdminController. For now, we'll route based on role if available.
 
-    // Simulate updating local signal
-    const newId = Date.now();
+  /**
+   * Adds a new user to the system.
+   * @param user The user to add.
+   * @returns An observable that emits the API response.
+   */
+  public addUser(user: any): Observable<any> {
     if (user.role === 'student') {
-      const current = this.studentsSignal();
-      this.studentsSignal.set([...current, { ...user, id: newId }]);
-    } else {
-      const current = this.instructorsSignal();
-      this.instructorsSignal.set([...current, { ...user, id: newId }]);
+      return this.addStudent({ ...user, firstName: user.name.split(' ')[0], lastName: user.name.split(' ')[1] || '' });
+    }
+    if (user.role === 'instructor') {
+      return this.addInstructor({ ...user, firstName: user.name.split(' ')[0], lastName: user.name.split(' ')[1] || '' });
     }
 
-    return of({ success: true, message: 'User added successfully' });
+    // Fallback or generic user
+    return this.http.post(this.url + 'users/add', user); // Assuming endpoint exists or we rely on specific adds
   }
 
-  updateUserPassword(userId: string, newPass: string): Observable<any> {
-    // In real app: PUT /api/users/{id}/password
-    console.log(`Mock Password Update for ${userId}: ${newPass}`);
-    return of({ success: true, message: 'Password updated successfully' });
+  /**
+   * Resets a user's password (admin function).
+   * @param userId The ID of the user.
+   * @param newPass The new password.
+   */
+  public updateUserPassword(userId: string, newPass: string): Observable<any> {
+    return this.http.post(this.url + 'users/password', { id: userId, password: newPass });
   }
 
-  deleteUser(userId: string, role: string): Observable<any> {
-    // In real app: DELETE /api/users/{id}
-    console.log(`Mock Delete User: ${userId}`);
-
-    const uid = Number(userId);
-
-    if (role === 'student') {
-      this.studentsSignal.set(this.studentsSignal().filter(s => s.id !== uid));
-    } else {
-      this.instructorsSignal.set(this.instructorsSignal().filter(i => i.id !== uid));
-    }
-
-    return of({ success: true, message: 'User deleted successfully' });
+  /**
+   * Deletes a user (admin function).
+   * @param userId The ID of the user to delete.
+   * @param role Optional role of the user.
+   */
+  public deleteUser(userId: string, role?: string): Observable<any> {
+    return this.http.post(this.url + 'users/delete', { id: userId, role: role });
   }
 }

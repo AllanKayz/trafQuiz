@@ -11,7 +11,7 @@
         </button>
     </header>
 
-    <mat-table [dataSource]="users()" class="users-table mat-elevation-z1">
+    <mat-table [dataSource]="userDataSource" class="users-table mat-elevation-z1">
 
         <!-- Name Column -->
         <ng-container matColumnDef="name">
@@ -64,6 +64,8 @@
         <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
         <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
     </mat-table>
+    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
 
 </div>
 
@@ -75,15 +77,15 @@
             <mat-dialog-content class="dialog-content">
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>First Name</mat-label>
-                    <input matInput name="firstName" ngModel required>
+                    <input matInput name="firstName" ngModel required placeholder="First Name">
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Last Name</mat-label>
-                    <input matInput name="lastName" ngModel required>
+                    <input matInput name="lastName" ngModel required placeholder="Last Name">
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Email</mat-label>
-                    <input matInput name="email" ngModel required email>
+                    <input matInput name="email" ngModel required email placeholder="Email Address">
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Role</mat-label>
@@ -108,7 +110,7 @@
         <div class="dialog-content">
             <mat-form-field appearance="outline" class="full-width">
                 <mat-label>New Password</mat-label>
-                <input matInput #newPass type="text">
+                <input matInput #newPass type="text" placeholder="Enter new password">
             </mat-form-field>
         </div>
         <mat-dialog-actions align="end">

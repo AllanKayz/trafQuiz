@@ -1,8 +1,9 @@
-import { Component, inject, signal, effect, computed } from '@angular/core';
+import { Component, inject, signal, effect, computed, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TraffiquizService } from '../../traffiquiz.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dialog';
@@ -17,6 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     imports: [
         CommonModule,
         MatTableModule,
+        MatPaginatorModule,
         MatButtonModule,
         MatIconModule,
         MatDialogModule,
@@ -30,21 +32,28 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
     templateUrl: './user-access.component.html',
     styleUrl: './user-access.component.css'
 })
-export class UserAccessComponent {
+export class UserAccessComponent implements AfterViewInit {
     service = inject(TraffiquizService);
     dialog = inject(MatDialog);
     snackBar = inject(MatSnackBar);
 
-    users = signal<any[]>([]);
+    userDataSource = new MatTableDataSource<any>([]);
     displayedColumns: string[] = ['name', 'email', 'role', 'status', 'actions'];
+
+    @ViewChild(MatPaginator) paginator!: MatPaginator;
 
     constructor() {
         this.loadUsers();
     }
 
+    ngAfterViewInit() {
+        this.userDataSource.paginator = this.paginator;
+    }
+
     loadUsers() {
         this.service.fetchAllUsers().subscribe(data => {
-            this.users.set(data);
+            this.userDataSource.data = data;
+            this.userDataSource.paginator = this.paginator;
         });
     }
 
@@ -57,12 +66,12 @@ export class UserAccessComponent {
     }
 
     deleteUser(user: any) {
-        if (confirm(`Are you sure you want to delete ${user.name}?`)) {
+        this.service.showConfirm(`Are you sure you want to delete ${user.name}?`, 'DELETE').subscribe(() => {
             this.service.deleteUser(user.id, user.role).subscribe(() => {
-                this.snackBar.open('User deleted', 'Close', { duration: 3000 });
+                this.service.showNotification('User deleted', 'success');
                 this.loadUsers();
             });
-        }
+        });
     }
 
     onUserAdded(dialogRef: MatDialogRef<any>, form: any) {

@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -12,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Vehicle } from '../../models/vehicle';
 import { VehicleService } from '../../services/vehicle.service';
+import { TraffiquizService } from '../../traffiquiz.service';
 
 @Component({
   selector: 'app-vehicles',
@@ -21,6 +23,7 @@ import { VehicleService } from '../../services/vehicle.service';
     FormsModule,
     ReactiveFormsModule,
     MatTableModule,
+    MatPaginatorModule,
     MatButtonModule,
     MatIconModule,
     MatDialogModule,
@@ -33,14 +36,17 @@ import { VehicleService } from '../../services/vehicle.service';
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
 })
-export class VehiclesComponent {
+export class VehiclesComponent implements AfterViewInit {
   private vehicleService = inject(VehicleService);
+  private trafService = inject(TraffiquizService);
   private dialog = inject(MatDialog);
 
   dataSource = new MatTableDataSource<Vehicle>([]);
   displayedColumns: string[] = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
   loading = false;
-  error = '';
+  error: string | null = null;
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   // Form state for dialogs
   formVehicle: Partial<Vehicle> = {};
@@ -50,16 +56,22 @@ export class VehiclesComponent {
     this.load();
   }
 
+  ngAfterViewInit() {
+    this.dataSource.paginator = this.paginator;
+  }
+
   load() {
     this.loading = true;
-    this.error = '';
+    this.error = null;
     this.vehicleService.fetchVehicles().subscribe({
       next: (res) => {
         this.dataSource.data = res || [];
+        this.dataSource.paginator = this.paginator;
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load vehicles';
+        this.error = 'Failed to load vehicles. Please try again later.';
+        this.trafService.showNotification('Failed to load vehicles', 'error');
         this.loading = false;
       }
     });
@@ -67,6 +79,7 @@ export class VehiclesComponent {
 
   openAdd(template: any) {
     this.isEditing = false;
+    this.error = null;
     this.formVehicle = {
       make: '',
       model: '',
@@ -81,14 +94,14 @@ export class VehiclesComponent {
 
   openEdit(v: Vehicle, template: any) {
     this.isEditing = true;
+    this.error = null;
     this.formVehicle = { ...v };
     this.dialog.open(template, { width: '500px' });
   }
 
   save(dialogRef: any) {
-    this.error = '';
     if (!this.formVehicle.make || !this.formVehicle.model || !this.formVehicle.registration) {
-      this.error = 'Make, model, and registration are required';
+      this.trafService.showNotification('Make, model, and registration are required', 'error');
       return;
     }
 
@@ -98,22 +111,28 @@ export class VehiclesComponent {
 
     obs.subscribe({
       next: () => {
+        this.trafService.showNotification(`Vehicle ${this.isEditing ? 'updated' : 'added'} successfully`, 'success');
         dialogRef.close();
         this.load();
       },
       error: () => {
         this.error = this.isEditing ? 'Update failed' : 'Create failed';
+        this.trafService.showNotification(this.error, 'error');
       }
     });
   }
 
   confirmDelete(id?: number) {
     if (!id) return;
-    if (!confirm('Are you sure you want to delete this vehicle?')) return;
-    this.vehicleService.deleteVehicle(id).subscribe({
-      next: () => this.load(),
-      error: () => this.error = 'Delete failed'
+
+    this.trafService.showConfirm('Delete this vehicle?', 'DELETE').subscribe(() => {
+      this.vehicleService.deleteVehicle(id).subscribe({
+        next: () => {
+          this.trafService.showNotification('Vehicle deleted', 'success');
+          this.load();
+        },
+        error: () => this.trafService.showNotification('Delete failed', 'error')
+      });
     });
   }
 }
-
