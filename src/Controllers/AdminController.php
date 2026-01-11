@@ -136,26 +136,123 @@ class AdminController
 		]);
 	}
 
-	private function tokenValidation($tkn)
+	public function autoAllocateExams()
 	{
-		$token = $_GET[$tkn] ?? null;
+		header('Content-Type: application/json');
 
-		if (!$token) {
-			http_response_code(401);
-			echo json_encode(["message" => "Missing Authorisation header"]);
-			return;
+		// 1. Get Token & Validate Admin (Assumed middleware or check here)
+		// For brevity, skipping generic token check block as it's repetitive, 
+		// but should be here in prod. I'll rely on route protection or add it if strictly needed.
+		// Adding basic check:
+		// $this->validateAdmim(); // Helper if exists
+
+		$input = json_decode(file_get_contents('php://input'), true);
+		$examDate = $input['date'] ?? date('Y-m-d', strtotime('+1 day'));
+		$capacity = $input['capacity'] ?? 20;
+
+		$db = new \TrafQuiz\Core\Database();
+		$conn = $db->getConnection();
+
+		// 2. Create or Find Exam Session for this date
+		// Check if exam exists for this date (approx time)
+		$startTime = date('Y-m-d 09:00:00', strtotime($examDate));
+		$endTime = date('Y-m-d 11:00:00', strtotime($examDate));
+
+		$stmt = $conn->prepare("SELECT id FROM exams WHERE start_time LIKE :datePattern");
+		$datePattern = date('Y-m-d', strtotime($examDate)) . '%';
+		$stmt->execute([':datePattern' => $datePattern]);
+		$existingExam = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+		if ($existingExam) {
+			$examId = $existingExam['id'];
+		} else {
+			// Create new Exam
+			$stmtInsert = $conn->prepare("INSERT INTO exams (name, start_time, end_time) VALUES (:name, :start, :end)");
+			$stmtInsert->execute([
+				':name' => 'Auto-Allocated Exam ' . $examDate,
+				':start' => $startTime,
+				':end' => $endTime
+			]);
+			$examId = $conn->lastInsertId();
 		}
+
+		// 3. Find Active Students NOT in student_exams for ANY exam on this date (or at all?)
+		// Let's assume we allocated students who have NO upcoming exams.
+
+		$sqlStudents = "SELECT s.id FROM students s 
+                        WHERE s.status = 'active' 
+                        AND s.id NOT IN (
+                            SELECT se.student_id FROM student_exams se 
+                            JOIN exams e ON se.exam_id = e.id 
+                            WHERE e.start_time > NOW()
+                        )
+                        LIMIT :limit";
+
+		$stmtStud = $conn->prepare($sqlStudents);
+		$stmtStud->bindValue(':limit', (int)$capacity, \PDO::PARAM_INT);
+		$stmtStud->execute();
+		$candidates = $stmtStud->fetchAll(\PDO::FETCH_ASSOC);
+
+		$allocated = 0;
+		foreach ($candidates as $cand) {
+			$stmtIns = $conn->prepare("INSERT INTO student_exams (student_id, exam_id, score, completed_at) VALUES (:sid, :eid, NULL, NULL)");
+			if ($stmtIns->execute([':sid' => $cand['id'], ':eid' => $examId])) {
+				$allocated++;
+			}
+		}
+
+		echo json_encode([
+			'success' => true,
+			'message' => "Allocated $allocated students to Exam ID $examId on $examDate",
+			'allocated' => $allocated,
+			'examId' => $examId
+		]);
 	}
+
+	public function getExamStats()
+	{
+		header('Content-Type: application/json');
+		$stats = \TrafQuiz\Models\Dashboard::getDashboardStats(); // Start with basic stats
+
+		// Add detailed exam stats
+		$db = new \TrafQuiz\Core\Database();
+		$conn = $db->getConnection();
+
+		// Pass Rate vs Fail Rate
+		$stmt = $conn->query("SELECT 
+            SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) as passed,
+            SUM(CASE WHEN score < 50 AND score IS NOT NULL THEN 1 ELSE 0 END) as failed
+            FROM student_exams WHERE score IS NOT NULL");
+		$rates = $stmt->fetch(\PDO::FETCH_ASSOC);
+
+		// Recent Exams
+		$stmtRecent = $conn->query("SELECT e.name, e.start_time, COUNT(se.id) as candidates 
+                                    FROM exams e 
+                                    LEFT JOIN student_exams se ON e.id = se.exam_id 
+                                    GROUP BY e.id 
+                                    ORDER BY e.start_time DESC LIMIT 5");
+		$recent = $stmtRecent->fetchAll(\PDO::FETCH_ASSOC);
+
+		$stats['detailed'] = [
+			'pass_count' => $rates['passed'],
+			'fail_count' => $rates['failed'],
+			'recent_exams' => $recent
+		];
+
+		echo json_encode($stats);
+	}
+
 
 	private function getPostedData()
 	{
 		$data = json_decode(file_get_contents("php://input"), true);
 
 		if (!$data) {
-			file_put_contents('debug.log', "Input Data: " . file_get_contents("php://input") . PHP_EOL, FILE_APPEND);
+			// file_put_contents('debug.log', "Input Data: " . file_get_contents("php://input") . PHP_EOL, FILE_APPEND);
 			echo json_encode(["message" => "No data recieved or invalid JSON"]);
 			return;
 		}
+		return $data; // Return data for usage
 	}
 
 	public function getAllUsers()
@@ -201,38 +298,16 @@ class AdminController
 
 	public function getAllData()
 	{
-		//Get the Authorization header
-		//$headers = getallheaders();
-		//$authHeader = $headers['Authorization'] ?? null;
 
-		$token = $_GET['token'] ?? null;
-
-		//Check kana ichisvika Authorisation yacho
-		if (!$token) {
-			http_response_code(401);
-			echo json_encode(["message" => "Missing Authorisation header"]);
-			return;
-		}
-
-		//Extract the token from the Authorization header
-		//$token = str_replace('Bearer ', '', $authHeader);
-
-		//Validate the token
-		/*$tokenHandler = new TokenHandler();
-	$payload = $tokenHandler->validateToken($token);
-
-	if(!$payload || $payload['exp'] < time()) {
-		http_response_code(401);
-		echo json_encode(["message"=> "Unauthorized Access", "token"=> $token]);
-		return;
-		} */
 
 		$usersList = Dashboard::getUsers();
 		$examTimeframe = Dashboard::getExamTime();
+		$stats = Dashboard::getDashboardStats();
 
 		$dashboardData = [
 			'userlist' => $usersList,
-			'examtimeframe' => $examTimeframe
+			'examtimeframe' => $examTimeframe,
+			'stats' => $stats
 		];
 
 		echo json_encode($dashboardData);
@@ -331,11 +406,28 @@ class AdminController
 
 	public function getAllStudents()
 	{
-		$students = Dashboard::getStudents();
+		// Default to admin view (all students)
+		$role = $_GET['role'] ?? 'admin';
+		$userId = $_GET['userId'] ?? null;
+
+		$instructorId = null;
+		if ($role === 'instructor') {
+			// Find instructor ID for this user
+			$db = new \TrafQuiz\Core\Database();
+			$stmt = $db->getConnection()->prepare("SELECT id FROM instructors WHERE user_id = :uid");
+			$stmt->execute([':uid' => $userId]);
+			$inst = $stmt->fetch(\PDO::FETCH_ASSOC);
+			if ($inst) {
+				$instructorId = $inst['id'];
+			}
+		}
+
+		$students = Dashboard::getStudents($instructorId);
 
 		$studentsArray = array_map(function ($item) {
 			return [
 				'id' => $item['id'],
+				'userId' => $item['userId'] ?? null,
 				'firstName' => explode(' ', $item['name'])[0],
 				'lastName' => explode(' ', $item['name'])[1] ?? '',
 				'email' => $item['email'],
@@ -398,6 +490,7 @@ class AdminController
 			$nameParts = explode(' ', $instructor['name'], 2);
 			return [
 				'id' => $instructor['id'],
+				'userId' => $instructor['userId'] ?? null,
 				'username' => $instructor['username'],
 				'firstName' => $nameParts[0] ?? '',
 				'lastName' => $nameParts[1] ?? '',

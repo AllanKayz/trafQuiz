@@ -45,6 +45,7 @@ export class FinancesComponent implements AfterViewInit {
   transactionDataSource = new MatTableDataSource<any>([]);
   stats = signal<any>(null);
   isLoading = signal<boolean>(false);
+  searchQuery = signal<string>('');
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -53,13 +54,15 @@ export class FinancesComponent implements AfterViewInit {
   editBuffer = signal<any>(null);
 
   // Table Columns
-  displayedColumns: string[] = ['id', 'date', 'description', 'amount', 'status'];
-  adminColumns: string[] = ['id', 'studentName', 'date', 'description', 'amount', 'status'];
+  displayedColumns: string[] = ['id', 'date', 'transactionId', 'description', 'amount', 'status'];
+  adminColumns: string[] = ['date', 'type', 'entityName', 'transactionId', 'description', 'amount', 'status'];
 
   constructor() {
     effect(() => {
+      this.user();
+      this.searchQuery();
       this.loadData();
-    });
+    }, { allowSignalWrites: true });
   }
 
   ngAfterViewInit() {
@@ -68,12 +71,14 @@ export class FinancesComponent implements AfterViewInit {
 
   loadData() {
     const role = this.user()?.role || 'student';
-    const userId = this.user()?.id;
+    const userId = role === 'student' ? this.user()?.id : undefined;
+    const query = this.searchQuery();
+
     this.isLoading.set(true);
 
     // Fetch Transactions
-    this.service.fetchTransactions(role, userId).subscribe(data => {
-      this.transactionDataSource.data = data;
+    this.service.fetchTransactions(userId, query).subscribe(res => {
+      this.transactionDataSource.data = res.data || [];
       this.transactionDataSource.paginator = this.paginator;
       this.isLoading.set(false);
     });
@@ -83,13 +88,19 @@ export class FinancesComponent implements AfterViewInit {
       this.service.fetchFinancialStats().subscribe(data => {
         this.stats.set(data);
       });
-      // Ensure packages are loaded
+      // Ensure packages, instructors, and vehicles are loaded for forms
       this.service.getPackages();
+      this.service.fetchInstructors();
+      this.service.fetchVehicles();
     }
   }
 
   get tableColumns() {
     return this.isAdmin() ? this.adminColumns : this.displayedColumns;
+  }
+
+  applyFilter() {
+    // Handled by effect on searchQuery
   }
 
   startEdit(pkg: any) {
@@ -110,6 +121,7 @@ export class FinancesComponent implements AfterViewInit {
       if (res.status === 200) {
         this.editingPackageId.set(null);
         this.editBuffer.set(null);
+        this.service.showNotification('Package updated', 'success');
       }
     });
   }
@@ -126,13 +138,93 @@ export class FinancesComponent implements AfterViewInit {
     });
 
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
-      this.service.processPayment(data).subscribe(res => {
-        if (res.status === 200) {
+      const paymentPayload = { ...data, userId: this.user()?.id };
+
+      this.service.processPayment(paymentPayload).subscribe(res => {
+        if (res && res.success) {
           dialogRef.close();
-          this.loadData(); // Refresh transaction list
-          this.service.showNotification('Your payment has been processed successfully.', 'success');
+          this.loadData();
+          // Generate receipt with transaction ID from response
+          this.service.generateReceipt({
+            ...paymentPayload,
+            transactionId: res.transactionId
+          });
+        }
+      });
+    });
+  }
+
+  makeAdminPayment() {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '600px',
+      maxHeight: '90vh',
+      data: {
+        title: 'Process Student Payment',
+        submitText: 'Record Payment',
+        fields: this.formConfig.getFormConfig('admin-payment'),
+        initialData: {
+          isNewStudent: false,
+          method: 'card'
+        }
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      this.service.processPayment(data).subscribe(res => {
+        if (res && res.success) {
+          dialogRef.close();
+          this.loadData();
+          if (data.isNewStudent) this.service.fetchStudents();
+          // Generate receipt
+          this.service.generateReceipt({
+            ...data,
+            transactionId: res.transactionId
+          });
+        }
+      });
+    });
+  }
+
+  processSalary() {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '500px',
+      data: {
+        title: 'Process Instructor Salary',
+        submitText: 'Pay Salary',
+        fields: this.formConfig.getFormConfig('admin-salary'),
+        initialData: { method: 'cash' }
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      this.service.processSalary(data).subscribe(res => {
+        if (res && res.success) {
+          dialogRef.close();
+          this.loadData();
+        }
+      });
+    });
+  }
+
+  recordExpense() {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '500px',
+      data: {
+        title: 'Record Business Expense',
+        submitText: 'Record Expense',
+        fields: this.formConfig.getFormConfig('admin-expense'),
+        initialData: { method: 'cash', category: 'other' }
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      this.service.recordExpense(data).subscribe(res => {
+        if (res && res.success) {
+          dialogRef.close();
+          this.loadData();
         }
       });
     });
   }
 }
+

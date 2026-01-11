@@ -1,28 +1,14 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap } from 'rxjs/operators';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse } from './trafquiz';
+import { ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse, StudentProgress } from './trafquiz';
+import { jsPDF } from 'jspdf';
 
-export interface StudentProgress {
-  studentId: string;
-  totalTests: number;
-  averageScore: number;
-  completionRate: number;
-  recentActivity: {
-    quizTitle: string;
-    score: number;
-    date: Date;
-    status: 'pass' | 'fail';
-  }[];
-  monthlyPerformance: {
-    month: string;
-    score: number;
-  }[];
-}
+
 
 /**
  * Service responsible for managing the application's data and state.
@@ -74,7 +60,7 @@ export class TraffiquizService {
    */
   public showConfirm(message: string, action: string = 'CONFIRM'): Observable<void> {
     return this.snackBar.open(message, action, {
-      duration: 5000,
+      duration: 10000,
       horizontalPosition: 'end',
       verticalPosition: 'top'
     }).onAction();
@@ -84,15 +70,17 @@ export class TraffiquizService {
   /** A signal that holds the array of quiz questions. */
   public questionsSignal = signal<Question[]>([]);
   /** A signal that holds the array of students. */
-  public studentsSignal = signal<any[]>([]);
+  public studentsSignal = signal<any[]>(this.loadCache('students_raw', []));
   /** A signal that holds the array of instructors. */
-  public instructorsSignal = signal<Instructor[]>([]);
+  public instructorsSignal = signal<Instructor[]>(this.loadCache('instructors_raw', []));
   /** A signal that holds the array of available packages. */
-  public packagesSignal = signal<any[]>([]);
+  public packagesSignal = signal<any[]>(this.loadCache('packages_raw', []));
   /** A signal that holds the array of instructor specializations. */
-  public specializationsSignal = signal<any[]>([]);
+  public specializationsSignal = signal<any[]>(this.loadCache('specializations_raw', []));
   /** A signal that holds the array of instructor certifications. */
-  public certificationsSignal = signal<any[]>([]);
+  public certificationsSignal = signal<any[]>(this.loadCache('certifications_raw', []));
+  /** A signal that holds the array of vehicles. */
+  public vehiclesSignal = signal<any[]>(this.loadCache('vehicles_raw', []));
 
   /** A signal for the exam duration in seconds. */
   examDuration = signal<number>(300); //default 10 minutes
@@ -122,16 +110,20 @@ export class TraffiquizService {
   }
 
   /** Configuration for the widgets displayed on the dashboard for different user roles. */
+  /** Signal to store dynamic dashboard stats from backend. */
+  public dashboardStats = signal<any>(null);
+
+  /** Configuration for the widgets, updated dynamically. */
   private widgetsConfig = {
     admin: [
-      { title: 'Total Students', data: Math.floor(Math.random() * 50) + 100, footer: 'Active' },
-      { title: 'Monthly Revenue', data: '$' + (Math.floor(Math.random() * 1000) + 2000), footer: 'Current month' },
-      { title: 'Exams Today', data: Math.floor(Math.random() * 5) + 2, footer: 'Scheduled' },
-      { title: 'Pass Rate', data: '78%', footer: 'Overall' },
-      { title: 'System Alerts', data: 2, footer: 'Requires Attention', type: 'warn' }
+      { id: 'students', title: 'Total Students', data: '...', footer: 'Active' },
+      { id: 'revenue', title: 'Monthly Revenue', data: '...', footer: 'Current month' },
+      { id: 'exams', title: 'Exams Today', data: '...', footer: 'Scheduled' },
+      { id: 'pass_rate', title: 'Pass Rate', data: '...', footer: 'Overall' },
+      { id: 'alerts', title: 'System Alerts', data: '...', footer: 'Requires Attention', type: 'warn' }
     ],
     instructor: [
-      { title: 'Next Lesson', data: '14:00', footer: 'Today' },
+      { title: 'Next Lesson', data: '14:00', footer: 'Today' }, // Placeholder, needs specific endpoint
       { title: 'Pending Reports', data: 3, footer: 'To Review' },
       { title: 'Vehicle Status', data: 'OK', footer: 'Assigned Car' },
       { title: 'Students', data: 12, footer: 'Active' }
@@ -194,10 +186,26 @@ export class TraffiquizService {
   }
 
   /** A computed signal that returns the widgets for the current user's role. */
+  /** A computed signal that returns the widgets for the current user's role with real data. */
   public userWidgets = computed(() => {
     const user = this.userSignal();
     const role: 'admin' | 'instructor' | 'student' = user?.role || 'student';
-    return this.widgetsConfig[role] || [];
+    let widgets = this.widgetsConfig[role] || [];
+
+    // Merge real stats if available (Admin mostly)
+    const stats = this.dashboardStats();
+    if (role === 'admin' && stats) {
+      return this.widgetsConfig.admin.map(w => {
+        switch (w.id) {
+          case 'students': return { ...w, data: stats.total_students || 0 };
+          case 'revenue': return { ...w, data: '$' + (stats.monthly_revenue || 0) };
+          case 'exams': return { ...w, data: stats.exams_today || 0 };
+          case 'alerts': return { ...w, data: stats.system_alerts || 0 };
+          default: return w;
+        }
+      });
+    }
+    return widgets;
   });
 
   public userQuickActions = computed(() => {
@@ -296,6 +304,25 @@ export class TraffiquizService {
     this.initializeTheme();
   }
 
+  private loadCache(key: string, defaultValue: any): any {
+    const cached = localStorage.getItem(key);
+    if (!cached) return defaultValue;
+    try {
+      return JSON.parse(cached);
+    } catch (e) {
+      console.warn(`Failed to parse cache for ${key}`, e);
+      return defaultValue;
+    }
+  }
+
+  private setCache(key: string, value: any) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.warn(`Failed to set cache for ${key}`, e);
+    }
+  }
+
   /**
    * Returns the raw user object as stored in localStorage (if any).
    */
@@ -382,6 +409,7 @@ export class TraffiquizService {
           this.getPackages();
           this.getSpecializations();
           this.getCertifications();
+          this.fetchDashboardStats(); // Fetch dynamic stats
         }
       } catch (e) {
         const data = {
@@ -407,6 +435,7 @@ export class TraffiquizService {
     switch (user['role']) {
       case 'admin':
         return {
+          id: user['id'],
           username: user['username'],
           role: user['role'],
           sidebar: this.menus.admin,
@@ -416,6 +445,7 @@ export class TraffiquizService {
         };
       case 'instructor':
         return {
+          id: user['id'],
           username: user['username'],
           role: user['role'],
           sidebar: this.menus.instructor,
@@ -425,6 +455,7 @@ export class TraffiquizService {
         };
       case 'student':
         return {
+          id: user['id'],
           username: user['username'],
           role: user['role'],
           sidebar: this.menus.student,
@@ -608,11 +639,28 @@ export class TraffiquizService {
       next: (students) => {
         //this.studentsSignal.set([students]);
         this.studentsSignal.set(students.map(item => item));
+        this.setCache('students_raw', students);
         this.widgetsConfig.admin[0].data = this.totalStudents().toString();
         this.studentWidgetConfig.admin[0].title = this.totalStudents().toString();
       },
       error: (error) => {
         this.showNotification(`Error fetching students: ${error.error?.message || error.statusText}`, 'error');
+      }
+    });
+  }
+
+  /**
+   * Fetches all vehicles from the API.
+   */
+  fetchVehicles() {
+    this.http.get<any[]>(this.url + 'vehicles').subscribe({
+      next: (vehicles) => {
+        this.vehiclesSignal.set(vehicles);
+        this.setCache('vehicles_raw', vehicles);
+      },
+      error: (error) => {
+        this.showNotification('Error fetching vehicles', 'error');
+        // Keep existing signal data (from cache) on error
       }
     });
   }
@@ -652,6 +700,7 @@ export class TraffiquizService {
     this.http.get<instructorApiResponse[]>(this.url + 'instructors').subscribe({
       next: (instructors) => {
         this.instructorsSignal.set(instructors.map((item: any) => item));
+        this.setCache('instructors_raw', instructors);
         this.widgetsConfig.admin[4].data = this.totalInstructors().toString();
         this.instructorWidgetConfig.admin[0].title = this.totalInstructors().toString();
       },
@@ -732,6 +781,7 @@ export class TraffiquizService {
     this.http.get<any[]>(this.url + 'packages').subscribe({
       next: (pkgs) => {
         this.packagesSignal.set(pkgs.map(item => item));
+        this.setCache('packages_raw', pkgs);
         localStorage.setItem('packages', JSON.stringify(this.transformPackagesJson(pkgs)));
       },
       error: (error) => {
@@ -790,6 +840,7 @@ export class TraffiquizService {
     this.http.get<any[]>(this.url + 'specializations').subscribe({
       next: (sptzn) => {
         this.specializationsSignal.set(sptzn.map(item => item));
+        this.setCache('specializations_raw', sptzn);
         localStorage.setItem('specializations', JSON.stringify(this.transformSpecializationJson(sptzn)));
       },
       error: (error) => {
@@ -809,6 +860,34 @@ export class TraffiquizService {
       value: item.id,
       label: item.specialization
     }))
+  }
+
+  /**
+   * Fetches dashboard statistics from the backend.
+   */
+  fetchDashboardStats() {
+    this.http.get<any>(this.url + 'admin/getAllData').subscribe({
+      next: (data) => {
+        if (data.stats) {
+          this.dashboardStats.set(data.stats);
+        }
+      },
+      error: (err) => console.error("Failed to fetch dashboard stats", err)
+    });
+  }
+
+  /**
+   * Automatically allocates students to an exam.
+   */
+  autoAllocateExams(date: string, capacity: number): Observable<any> {
+    return this.http.post(this.url + 'admin/autoAllocateExams', { date, capacity });
+  }
+
+  /**
+   * Gets detailed exam statistics.
+   */
+  getExamStatistics(): Observable<any> {
+    return this.http.get(this.url + 'admin/getExamStats');
   }
 
   /**
@@ -836,6 +915,7 @@ export class TraffiquizService {
     this.http.get<any[]>(this.url + 'certifications').subscribe({
       next: (cert) => {
         this.certificationsSignal.set(cert.map(item => item));
+        this.setCache('certifications_raw', cert);
         localStorage.setItem('certifications', JSON.stringify(this.transformCertificationJson(cert)));
       },
       error: (error) => {
@@ -891,52 +971,40 @@ export class TraffiquizService {
    * returning MOCKED data for demonstration purposes as per plan.
    */
   fetchStudentProgress(studentId?: string): Observable<StudentProgress> {
-    // In a real app, this would hit an API endpoint like /api/students/{id}/progress
-    const mockData: StudentProgress = {
-      studentId: studentId || this.currentUser()?.username || 'current-user',
-      totalTests: Math.floor(Math.random() * 20) + 5,
-      averageScore: Math.floor(Math.random() * 30) + 70, // 70-100
-      completionRate: Math.floor(Math.random() * 40) + 60, // 60-100%
-      recentActivity: [
-        { quizTitle: 'Road Signs & Signals', score: 85, date: new Date(Date.now() - 86400000 * 2), status: 'pass' },
-        { quizTitle: 'Vehicle Maintenance', score: 92, date: new Date(Date.now() - 86400000 * 5), status: 'pass' },
-        { quizTitle: 'Traffic Laws', score: 65, date: new Date(Date.now() - 86400000 * 10), status: 'fail' },
-        { quizTitle: 'Safety Precautions', score: 78, date: new Date(Date.now() - 86400000 * 15), status: 'pass' },
-        { quizTitle: 'Highway Code', score: 88, date: new Date(Date.now() - 86400000 * 20), status: 'pass' }
-      ],
-      monthlyPerformance: [
-        { month: 'Jan', score: 65 },
-        { month: 'Feb', score: 70 },
-        { month: 'Mar', score: 75 },
-        { month: 'Apr', score: 82 },
-        { month: 'May', score: 78 },
-        { month: 'Jun', score: 88 }
-      ]
-    };
+    const id = studentId || this.currentUser()?.id;
+    return this.http.get<any>(`${this.url}students/progress?id=${id}`).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to load progress data');
+        }
 
-    return of(mockData);
+        // Transform API response to StudentProgress interface
+        return {
+          studentId: id || 'current-user',
+          totalTests: response.data.examsTaken || 0,
+          averageScore: response.data.averageScore || 0,
+          completionRate: response.data.examsTaken > 0 ? 100 : 0,
+          recentActivity: (response.data.recentExams || []).map((exam: any) => ({
+            quizTitle: exam.exam_name,
+            score: exam.score,
+            date: new Date(exam.completed_at),
+            status: exam.score >= 70 ? 'pass' : 'fail'
+          })),
+          monthlyPerformance: [] // Can be calculated from examHistory if needed
+        };
+      }),
+      catchError(error => {
+        this.showNotification('Failed to load progress data', 'error');
+        throw error;
+      })
+    );
   }
 
   // --- Financial & Payments Mocks ---
 
-  fetchTransactions(role: string, userId: string): Observable<any[]> {
-    // Generate mock transactions
-    const count = role === 'student' ? 5 : 20;
-    const transactions = Array.from({ length: count }, (_, i) => ({
-      id: `TRX-${1000 + i}`,
-      studentName: role === 'student' ? 'You' : `Student ${i + 1}`,
-      description: role === 'student' ? 'Lesson Payment' : (i % 3 === 0 ? 'Exam Fee' : 'Lesson Package'),
-      amount: role === 'student' ? ((i + 1) * 20) : (Math.floor(Math.random() * 200) + 50),
-      type: 'credit',
-      date: new Date(Date.now() - 86400000 * i * 2),
-      status: Math.random() > 0.1 ? 'completed' : 'pending' // 90% success rate
-    }));
-
-    return of(transactions);
-  }
 
   processPayment(paymentData: any): Observable<any> {
-    return this.http.post(this.url + 'payment', paymentData).pipe(
+    return this.http.post(this.url + 'payments/process', paymentData).pipe(
       tap((res: any) => {
         this.showNotification('Payment processed successfully', 'success');
       }),
@@ -948,22 +1016,169 @@ export class TraffiquizService {
   }
 
   fetchFinancialStats(): Observable<any> {
-    const revenue = [1200, 1500, 1100, 1800, 2100, 2400]; // Last 6 months
-    const expenses = [800, 900, 850, 950, 1100, 1000];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    return this.http.get<any>(`${this.url}finances/stats`).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message || 'Failed to load financial statistics');
+        }
 
-    return of({
-      totalRevenue: revenue.reduce((a, b) => a + b, 0),
-      totalExpenses: expenses.reduce((a, b) => a + b, 0),
-      netProfit: revenue.reduce((a, b) => a + b, 0) - expenses.reduce((a, b) => a + b, 0),
-      projectedRevenue: 3000, // Next month projection
-      chartData: {
-        labels: months,
-        revenue: revenue,
-        expenses: expenses,
-        profit: revenue.map((r, i) => r - expenses[i])
+        const data = response.data;
+        const overview = data.overview;
+
+        const months = data.monthlyStats?.map((m: any) => m.month) || [];
+        const revenue = data.monthlyStats?.map((m: any) => parseFloat(m.income)) || [];
+        const expenses = data.monthlyStats?.map((m: any) => parseFloat(m.expenses)) || [];
+
+        return {
+          totalRevenue: parseFloat(overview.total_income || 0),
+          totalExpenses: parseFloat(overview.total_expenses || 0),
+          netProfit: parseFloat(overview.net_profit || 0),
+          projectedRevenue: (parseFloat(overview.total_income || 0) / (months.length || 1)) * 1.1,
+          chartData: {
+            labels: months,
+            revenue: revenue,
+            expenses: expenses
+          },
+          categoriesBreakdown: data.categoriesBreakdown
+        };
+      }),
+      catchError(error => {
+        this.showNotification('Error loading finances: ' + error.message, 'error');
+        return of({
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netProfit: 0,
+          monthlyStats: [],
+          categoriesBreakdown: []
+        });
+      })
+    );
+  }
+
+  /**
+   * Fetches financial transactions from the API.
+   * @param userId Optional filter by user ID.
+   * @param query Optional search query.
+   * @returns An observable that emits the API response.
+   */
+  fetchTransactions(userId?: string | number, query?: string): Observable<any> {
+    let params = new HttpParams();
+    if (userId) params = params.set('userId', userId.toString());
+    if (query) params = params.set('query', query);
+
+    return this.http.get<any>(this.url + 'finances/transactions', { params }).pipe(
+      catchError(error => {
+        this.showNotification('Failed to load transactions', 'error');
+        return of({ success: false, message: 'Failed to load transactions', data: [] });
+      })
+    );
+  }
+
+  processSalary(payload: any): Observable<any> {
+    return this.http.post<any>(this.url + 'finances/salary', payload).pipe(
+      tap(res => {
+        if (res.success) this.showNotification('Salary processed successfully', 'success');
+      }),
+      catchError(err => {
+        this.showNotification('Failed to process salary', 'error');
+        return of(null);
+      })
+    );
+  }
+
+  recordExpense(payload: any): Observable<any> {
+    return this.http.post<any>(this.url + 'finances/expense', payload).pipe(
+      tap(res => {
+        if (res.success) this.showNotification('Expense recorded successfully', 'success');
+      }),
+      catchError(err => {
+        this.showNotification('Failed to record expense', 'error');
+        return of(null);
+      })
+    );
+  }
+
+  /**
+   * Generates and downloads a PDF receipt for a payment.
+   * @param data The payment data including transactionId, studentName, amount, etc.
+   */
+  public generateReceipt(data: any) {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(44, 62, 80); // Dark Blue
+    doc.text('TrafQuiz System', pageWidth / 2, 20, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setTextColor(127, 140, 141); // Gray
+    doc.text('Official Payment Receipt', pageWidth / 2, 30, { align: 'center' });
+
+    // Divider
+    doc.setDrawColor(189, 195, 199);
+    doc.line(20, 35, pageWidth - 20, 35);
+
+    // Transaction Details
+    doc.setFontSize(12);
+    doc.setTextColor(52, 73, 94);
+
+    let y = 50;
+    const lineSpacing = 10;
+
+    const details = [
+      { label: 'Transaction ID:', value: data.transactionId || 'N/A' },
+      { label: 'Date:', value: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString() },
+      { label: 'Amount Paid:', value: `$${parseFloat(data.amount || 0).toFixed(2)}` },
+      { label: 'Payment Method:', value: (data.method || 'cash').toUpperCase() },
+      { label: 'Category:', value: (data.category || 'student_payment').replace('_', ' ').toUpperCase() }
+    ];
+
+    if (data.studentName || data.firstName) {
+      const name = data.studentName || `${data.firstName} ${data.lastName || ''}`;
+      details.push({ label: 'Client Name:', value: name });
+    } else if (data.studentId || data.userId) {
+      // Try to lookup name from students list
+      const targetId = data.studentId || data.userId;
+      const student = this.studentsSignal().find(s => s.id === targetId || s.user_id === targetId);
+      if (student) {
+        details.push({ label: 'Client Name:', value: `${student.firstName} ${student.lastName}` });
+      } else {
+        // Fallback to username if we are the student
+        const current = this.currentUser();
+        if (current && (current.id === targetId || current.username)) {
+          details.push({ label: 'Client Name:', value: current.username });
+        }
       }
+    }
+
+    if (data.notes) {
+      details.push({ label: 'Notes:', value: data.notes });
+    }
+
+    details.forEach(detail => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(detail.label, 20, y);
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(detail.value), 60, y);
+      y += lineSpacing;
     });
+
+    // Divider
+    y += 5;
+    doc.line(20, y, pageWidth - 20, y);
+    y += 15;
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setTextColor(149, 165, 166);
+    doc.text('Thank you for your payment!', pageWidth / 2, y, { align: 'center' });
+    doc.text('This is a computer-generated receipt.', pageWidth / 2, y + 5, { align: 'center' });
+
+    // Save PDF
+    const filename = `Receipt_${data.transactionId || 'Payment'}.pdf`;
+    doc.save(filename);
+    this.showNotification('Receipt downloaded', 'success');
   }
 
   // --- User Access Management (Mocked) ---
@@ -1021,5 +1236,37 @@ export class TraffiquizService {
    */
   public deleteUser(userId: string, role?: string): Observable<any> {
     return this.http.post(this.url + 'users/delete', { id: userId, role: role });
+  }
+
+  /**
+   * Deletes the current user's account (requires password confirmation)
+   * @param userId The ID of the user
+   * @param password The user's password for confirmation
+   */
+  public deleteAccount(userId: string, password: string): Observable<any> {
+    return this.http.post(`${this.url}account/delete`, { userId, password }).pipe(
+      tap(() => {
+        this.logout();
+      }),
+      catchError(error => {
+        this.showNotification('Failed to delete account. Check password.', 'error');
+        throw error;
+      })
+    );
+  }
+
+  /**
+   * Sends a message to another user
+   * @param recipientId The ID of the message recipient
+   * @param senderId The ID of the message sender
+   * @param message The message content
+   * @returns An observable that emits the API response
+   */
+  public sendMessage(recipientId: string, senderId: string, message: string): Observable<any> {
+    return this.http.post(`${this.url}messages/send`, {
+      recipientId,
+      senderId,
+      message
+    });
   }
 }

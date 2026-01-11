@@ -14,10 +14,10 @@ export class ButtonConfigService {
     students: [
       { name: 'Add Student', icon: 'person_add', action: 'addStudent' }
     ],
-	instructors: [
+    instructors: [
       { name: 'Add Instructor', icon: 'person_add', action: 'addInstructor' },
-	  { name: 'Add Specialization', icon: 'specialization_add', action: 'addSpecialization' },
-	  { name: 'Add Certification', icon: 'certification_add', action: 'addCertification' }
+      { name: 'Add Specialization', icon: 'specialization_add', action: 'addSpecialization' },
+      { name: 'Add Certification', icon: 'certification_add', action: 'addCertification' }
     ],
     exams: [
       { name: 'Create Exam', icon: 'post_add', action: 'createExam' },
@@ -26,39 +26,38 @@ export class ButtonConfigService {
   });
 
   // Role Specific Overrides
-  private roleOverrides = signal<Record<string, Record<string, Partial<SectionButton>[]>>>({
+  private roleOverrides = signal<Record<string, Record<string, SectionButton[]>>>({
     student: {
       questions: [
-        { name:'Practice Test', action:'practiceTest'}
+        { name: 'Practice Test', action: 'practiceTest' }
       ]
     },
     instructor: {
       exams: [
-        { name: 'Review Exams', action: 'reviewExams'}
+        { name: 'Review Exams', action: 'reviewExams' }
       ]
     }
   });
 
   getButtons(menu: string, role: string) {
-    const baseButtons = this.buttonConfig()[menu] || [];
-    const overrides = this.roleOverrides()[role]?.[menu] || [];
-
-    return [
-      ...baseButtons,
-      ...overrides.map(override => {
-        const base = baseButtons.find(b => b.action === override.action) || {};
-        return { ...base, ...override } as SectionButton;
-      })
-    ];
+    if (role === 'admin') {
+      const baseButtons = this.buttonConfig()[menu] || [];
+      // Check for specific overrides if any (e.g. customized admin buttons)
+      const overrides = this.roleOverrides()[role]?.[menu] || [];
+      // Merge strategy could be implemented here, but for now base is Admin
+      return baseButtons;
+    }
+    // Non-admins get only their overrides
+    return this.roleOverrides()[role]?.[menu] || [];
   }
 
   // Update button configurations dynamically
   updateButtonConfig(config: Record<string, SectionButton[]>) {
-    this.buttonConfig.update(current => ({ ...current, ...config}));
+    this.buttonConfig.update(current => ({ ...current, ...config }));
   }
 
-  updateRoleOverrides(overrides: Record<string, Record<string, Partial<SectionButton>[]>>) {
-    this.roleOverrides.update(current => ({ ...current, ...overrides}));
+  updateRoleOverrides(overrides: Record<string, Record<string, SectionButton[]>>) {
+    this.roleOverrides.update(current => ({ ...current, ...overrides }));
   }
 
   constructor() { }

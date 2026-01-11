@@ -135,17 +135,9 @@ export class LessonService {
         const updated = [...this.lessons$.getValue(), newLesson];
         this.lessons$.next(updated);
       }),
-      catchError(() => {
-        // Mock success for demo
-        const newLesson = {
-          id: Date.now(),
-          status: 'pending',
-          studentCount: 1,
-          ...payload,
-          createdAt: new Date().toISOString()
-        } as Lesson;
-        this.lessons$.next([...this.lessons$.getValue(), newLesson]);
-        return of(newLesson);
+      catchError((error) => {
+        this.trafQuiz.showNotification('Failed to create lesson: ' + (error.error?.message || error.message), 'error');
+        throw error; // Don't create mock data - propagate error
       })
     );
   }

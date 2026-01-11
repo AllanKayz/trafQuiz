@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, inject, ViewChild, AfterViewInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -41,8 +41,17 @@ export class VehiclesComponent implements AfterViewInit {
   private trafService = inject(TraffiquizService);
   private dialog = inject(MatDialog);
 
+  user = this.trafService.currentUser;
+  isAdmin = computed(() => this.user()?.role === 'admin');
+
   dataSource = new MatTableDataSource<Vehicle>([]);
-  displayedColumns: string[] = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
+  displayedColumnsSignal = computed(() => {
+    const base = ['registration', 'make', 'model', 'year', 'type', 'status'];
+    if (this.isAdmin()) base.push('actions');
+    return base;
+  });
+  // displayedColumns: string[] = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
+
   loading = false;
   error: string | null = null;
 
@@ -63,6 +72,7 @@ export class VehiclesComponent implements AfterViewInit {
   load() {
     this.loading = true;
     this.error = null;
+    // Note: service fetchVehicles calls API, API filters by role (Instructor sees only assigned).
     this.vehicleService.fetchVehicles().subscribe({
       next: (res) => {
         this.dataSource.data = res || [];

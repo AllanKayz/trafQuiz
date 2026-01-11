@@ -7,7 +7,7 @@ import { TraffiquizService } from '../traffiquiz.service';
 export class FormConfigService {
   private trafQuiz = inject(TraffiquizService);
 
-  private formConfigs = signal<Record<string, FormField[]>>({
+  public formConfigs = computed<Record<string, FormField[]>>(() => ({
     question: [
       {
         key: 'question',
@@ -204,15 +204,6 @@ export class FormConfigService {
         icon: 'calendar_today'
       },
       {
-        key: 'package',
-        label: 'Package',
-        type: 'select',
-        validators: [Validators.required],
-        options: this.getOptions('package'),
-        defaultValue: 0,
-        icon: 'inventory_2'
-      },
-      {
         key: 'password',
         label: 'Password',
         type: 'password',
@@ -365,6 +356,115 @@ export class FormConfigService {
         icon: 'note_add'
       }
     ],
+    'admin-payment': [
+      {
+        key: 'isNewStudent',
+        label: 'New Student Enrollment',
+        type: 'checkbox',
+        defaultValue: false,
+        hint: 'Check this if the student is not yet in the system.',
+        colspan: 2
+      },
+      {
+        key: 'studentId',
+        label: 'Select Existing Student',
+        type: 'select',
+        options: this.getOptions('student'),
+        icon: 'person',
+        hint: 'Only required for existing students.',
+        colspan: 2
+      },
+      {
+        key: 'firstName',
+        label: 'First Name',
+        type: 'text',
+        icon: 'person',
+        hint: 'Required for new students.'
+      },
+      {
+        key: 'lastName',
+        label: 'Last Name',
+        type: 'text',
+        icon: 'person_outline',
+        hint: 'Required for new students.'
+      },
+      {
+        key: 'email',
+        label: 'Email',
+        type: 'email',
+        icon: 'mail',
+        hint: 'Required for new students.'
+      },
+      {
+        key: 'phone',
+        label: 'Phone',
+        type: 'text',
+        icon: 'phone',
+        hint: 'Required for new students.'
+      },
+      {
+        key: 'username',
+        label: 'Username',
+        type: 'text',
+        icon: 'account_circle',
+        hint: 'Required for new students.'
+      },
+      {
+        key: 'password',
+        label: 'Password',
+        type: 'password',
+        icon: 'lock',
+        hint: 'Required for new students (Default: Student123!)',
+        defaultValue: 'Student123!'
+      },
+      {
+        key: 'address',
+        label: 'Address',
+        type: 'textarea',
+        icon: 'home',
+        colspan: 2,
+        hint: 'Required for new students.'
+      },
+      {
+        key: 'packageId',
+        label: 'Select Package',
+        type: 'select',
+        validators: [Validators.required],
+        options: this.getOptions('package'),
+        icon: 'inventory_2',
+        hint: 'Choose the lesson package.',
+        colspan: 2
+      },
+      {
+        key: 'amount',
+        label: 'Amount to Pay',
+        type: 'number',
+        validators: [Validators.required, Validators.min(1)],
+        icon: 'monetization_on',
+        hint: 'Verify the amount before proceeding.'
+      },
+      {
+        key: 'method',
+        label: 'Payment Method',
+        type: 'radio',
+        validators: [Validators.required],
+        options: [
+          { value: 'card', label: 'Credit/Debit Card' },
+          { value: 'ecocash', label: 'EcoCash' },
+          { value: 'onemoney', label: 'OneMoney' },
+          { value: 'cash', label: 'Cash' }
+        ],
+        defaultValue: 'card',
+        icon: 'payment'
+      },
+      {
+        key: 'notes',
+        label: 'Payment Notes (Optional)',
+        type: 'textarea',
+        colspan: 2,
+        icon: 'note_add'
+      }
+    ],
     'book-lesson': [
       {
         key: 'title',
@@ -409,8 +509,94 @@ export class FormConfigService {
         colspan: 2,
         icon: 'notes'
       }
+    ],
+    'admin-salary': [
+      {
+        key: 'instructorId',
+        label: 'Instructor',
+        type: 'select',
+        validators: [Validators.required],
+        options: this.getOptions('instructor'),
+        icon: 'person'
+      },
+      {
+        key: 'amount',
+        label: 'Salary Amount',
+        type: 'number',
+        validators: [Validators.required, Validators.min(1)],
+        icon: 'attach_money'
+      },
+      {
+        key: 'method',
+        label: 'Payment Method',
+        type: 'radio',
+        validators: [Validators.required],
+        options: [
+          { value: 'cash', label: 'Cash' },
+          { value: 'bank_transfer', label: 'Bank Transfer' },
+          { value: 'ecocash', label: 'EcoCash' }
+        ],
+        defaultValue: 'cash',
+        icon: 'payments'
+      },
+      {
+        key: 'notes',
+        label: 'Notes',
+        type: 'textarea',
+        colspan: 2,
+        icon: 'note'
+      }
+    ],
+    'admin-expense': [
+      {
+        key: 'category',
+        label: 'Expense Category',
+        type: 'select',
+        validators: [Validators.required],
+        options: [
+          { value: 'maintenance', label: 'Vehicle Maintenance' },
+          { value: 'fuel', label: 'Fuel' },
+          { value: 'tc_expense', label: 'T&C Expense' },
+          { value: 'other', label: 'Other' }
+        ],
+        icon: 'category'
+      },
+      {
+        key: 'vehicleId',
+        label: 'Associated Vehicle (Optional)',
+        type: 'select',
+        options: this.getOptions('vehicle'),
+        icon: 'directions_car'
+      },
+      {
+        key: 'amount',
+        label: 'Expense Amount',
+        type: 'number',
+        validators: [Validators.required, Validators.min(1)],
+        icon: 'attach_money'
+      },
+      {
+        key: 'method',
+        label: 'Payment Method',
+        type: 'radio',
+        validators: [Validators.required],
+        options: [
+          { value: 'cash', label: 'Cash' },
+          { value: 'bank_transfer', label: 'Bank Transfer' },
+          { value: 'card', label: 'Company Card' }
+        ],
+        defaultValue: 'cash',
+        icon: 'payments'
+      },
+      {
+        key: 'notes',
+        label: 'Notes/Description',
+        type: 'textarea',
+        colspan: 2,
+        icon: 'note'
+      }
     ]
-  });
+  }));
 
   packageData: any = this.trafQuiz.packages;
 
@@ -420,29 +606,41 @@ export class FormConfigService {
   }
 
   getOptions(feildKey: string) {
-    const pkgOptions = localStorage['packages'];
-    const questionCategories = localStorage['questionCategories'];
-    const specializationOptions = localStorage['specializations'];
-    const certificationOptions = localStorage['certifications'];
-
-    let specializationD = this.trafQuiz.specializations;
-
-    let options: any = [];
+    let options: any[] = [];
     switch (feildKey) {
       case 'category':
-        options = [{ value: 'rules', label: 'Traffic Rules' }, { value: 'signs', label: 'Road Signs' }, { value: 'safety', label: 'Safety' }];
+        options = [
+          { value: 'rules', label: 'Traffic Rules' },
+          { value: 'signs', label: 'Road Signs' },
+          { value: 'safety', label: 'Safety' }
+        ];
         break;
       case 'package':
-        options = JSON.parse(pkgOptions);
+        options = this.trafQuiz.packages();
         break;
       case 'specialization':
-        options = JSON.parse(specializationOptions);
+        options = this.trafQuiz.specializations();
         break;
       case 'certification':
-        options = JSON.parse(certificationOptions);
+        options = this.trafQuiz.certifications();
         break;
       case 'instructor':
-        options = this.trafQuiz.instructorsSignal().map(i => ({ value: i.id, label: i.firstName + ' ' + i.lastName }));
+        options = this.trafQuiz.instructorsSignal().map(i => ({
+          value: i.id,
+          label: i.firstName + ' ' + i.lastName
+        }));
+        break;
+      case 'student':
+        options = this.trafQuiz.studentsSignal().map(s => ({
+          value: s.id,
+          label: s.firstName + ' ' + s.lastName
+        }));
+        break;
+      case 'vehicle':
+        options = this.trafQuiz.vehiclesSignal().map(v => ({
+          value: v.id,
+          label: `${v.make} ${v.model} (${v.registration})`
+        }));
         break;
     }
 
@@ -454,16 +652,10 @@ export class FormConfigService {
   }
 
   updateFormConfig(formType: string, fields: FormField[]) {
-    this.formConfigs.update(configs => ({
-      ...configs,
-      [formType]: fields
-    }));
+    console.warn('updateFormConfig is disabled as formConfigs is now computed.');
   }
 
   addFieldToConfig(formType: string, field: FormField) {
-    this.formConfigs.update(configs => ({
-      ...configs,
-      [formType]: [...(configs[formType] || []), field]
-    }));
+    console.warn('addFieldToConfig is disabled as formConfigs is now computed.');
   }
 }

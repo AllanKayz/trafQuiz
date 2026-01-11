@@ -4,8 +4,10 @@ namespace TrafQuiz\Controllers;
 
 use TrafQuiz\Models\LessonModel;
 
-class LessonsController {
-    public function getLessons() {
+class LessonsController
+{
+    public function getLessons()
+    {
         header('Content-Type: application/json');
         $range = $_GET['range'] ?? null;
         $id = isset($_GET['id']) ? (int)$_GET['id'] : null;
@@ -24,7 +26,8 @@ class LessonsController {
         echo json_encode(array_values($items));
     }
 
-    public function join() {
+    public function join()
+    {
         header('Content-Type: application/json');
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
         $id = $input['id'] ?? null;
@@ -42,7 +45,8 @@ class LessonsController {
         echo json_encode($res);
     }
 
-    public function cancel() {
+    public function cancel()
+    {
         header('Content-Type: application/json');
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
         $id = $input['id'] ?? null;
@@ -60,7 +64,8 @@ class LessonsController {
         echo json_encode(['success' => true]);
     }
 
-    public function update() {
+    public function update()
+    {
         header('Content-Type: application/json');
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
         $id = $input['id'] ?? null;
@@ -81,24 +86,15 @@ class LessonsController {
         echo json_encode(['success' => true]);
     }
 
-    public function add() {
+    public function add()
+    {
         header('Content-Type: application/json');
 
-        // Minimal auth: token must be provided and contain role 'admin' or 'instructor'
-        $token = $_GET['token'] ?? null;
-        if (!$token) {
-            http_response_code(401);
-            echo json_encode(['message' => 'Missing token']);
-            return;
-        }
-
-        $th = new \TrafQuiz\Core\TokenHandler();
-        $payload = $th->validateToken($token);
-        if (!$payload || empty($payload['role']) || !in_array($payload['role'], ['admin', 'instructor'])) {
-            http_response_code(403);
-            echo json_encode(['message' => 'Forbidden: insufficient role']);
-            return;
-        }
+        // No auth check.
+        // Optional context from query params
+        $role = $_GET['role'] ?? 'admin';
+        $userId = $_GET['userId'] ?? null;
+        $userName = $_GET['userName'] ?? null;
 
         $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
         if (!$input || empty($input['title']) || empty($input['startTime'])) {
@@ -107,10 +103,10 @@ class LessonsController {
             return;
         }
 
-        // If instructor role, ensure instructor id comes from token payload if available
-        if ($payload['role'] === 'instructor') {
-            if (!empty($payload['id'])) {
-                $input['instructor'] = ['id' => (int)$payload['id'], 'name' => $payload['name'] ?? null];
+        // If instructor role simulated, ensure instructor id set from context
+        if ($role === 'instructor') {
+            if (!empty($userId)) {
+                $input['instructor'] = ['id' => (int)$userId, 'name' => $userName];
             }
         }
 

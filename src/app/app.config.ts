@@ -1,6 +1,7 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { authInterceptor } from './auth.interceptor';
 
 import { routes } from './app.routes';
 import { importProvidersFrom } from '@angular/core';
@@ -15,6 +16,6 @@ export const appConfig: ApplicationConfig = {
       { path: 'vehicles', loadComponent: () => import('./components/vehicles/vehicles.component').then(m => m.VehiclesComponent) }
     ]),
     provideAnimationsAsync(),
-    provideHttpClient()
+    provideHttpClient(withInterceptors([authInterceptor]))
   ]
 };

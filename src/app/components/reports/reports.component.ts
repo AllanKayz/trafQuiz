@@ -1,6 +1,7 @@
 import { Component, inject, signal, effect, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TraffiquizService, StudentProgress } from '../../traffiquiz.service';
+import { TraffiquizService } from '../../traffiquiz.service';
+import { StudentProgress } from '../../trafquiz';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';

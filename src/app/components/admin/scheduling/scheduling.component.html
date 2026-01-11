@@ -1,74 +1,78 @@
 <div class="scheduling-container fade-in">
-    <header class="page-header">
-        <div class="header-content">
-            <h1>Lesson & Vehicle Scheduling</h1>
-            <p>Manage lesson assignments and automatic vehicle allocation.</p>
-        </div>
-        <div class="header-actions">
-            <button mat-flat-button color="primary" (click)="autoAllocate()" [disabled]="loading">
-                <mat-icon>auto_awesome</mat-icon>
-                Auto-Allocate Vehicles
-            </button>
-            <button mat-icon-button (click)="loadData()" [disabled]="loading">
-                <mat-icon [class.rotating]="loading">refresh</mat-icon>
-            </button>
-        </div>
-    </header>
-
-    <div class="table-container mat-elevation-z1">
-        <mat-table [dataSource]="lessonDataSource" class="scheduling-table">
-
-            <ng-container matColumnDef="title">
-                <mat-header-cell *matHeaderCellDef> Lesson </mat-header-cell>
-                <mat-cell *matCellDef="let l">
-                    <div class="lesson-cell">
-                        <span class="title">{{l.title}}</span>
-                        <span class="subject">{{l.subject}}</span>
-                    </div>
-                </mat-cell>
-            </ng-container>
-
-            <ng-container matColumnDef="startTime">
-                <mat-header-cell *matHeaderCellDef> Time </mat-header-cell>
-                <mat-cell *matCellDef="let l"> {{l.startTime | date:'short'}} </mat-cell>
-            </ng-container>
-
-            <ng-container matColumnDef="instructor">
-                <mat-header-cell *matHeaderCellDef> Instructor </mat-header-cell>
-                <mat-cell *matCellDef="let l"> {{l.instructor.name}} </mat-cell>
-            </ng-container>
-
-            <ng-container matColumnDef="vehicle">
-                <mat-header-cell *matHeaderCellDef> Assigned Vehicle </mat-header-cell>
-                <mat-cell *matCellDef="let l">
-                    <mat-select [ngModel]="l.assignedVehicleId" (ngModelChange)="assignVehicle(l.id, $event)"
-                        placeholder="Assign Vehicle">
-                        <mat-option [value]="null">None</mat-option>
-                        <mat-option *ngFor="let v of vehicles()" [value]="v.id">
-                            {{v.make}} {{v.model}} ({{v.registration}})
-                        </mat-option>
-                    </mat-select>
-                </mat-cell>
-            </ng-container>
-
-            <ng-container matColumnDef="actions">
-                <mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
-                <mat-cell *matCellDef="let l">
-                    <button mat-icon-button color="primary" matTooltip="Edit Schedule">
-                        <mat-icon>edit_calendar</mat-icon>
-                    </button>
-                </mat-cell>
-            </ng-container>
-
-            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-            <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
-        </mat-table>
-        <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
-
-
-        <div *ngIf="lessonDataSource.data.length === 0" class="no-data">
-            <mat-icon>calendar_today</mat-icon>
-            <p>No lessons found.</p>
-        </div>
+  <header class="page-header">
+    <div class="header-content">
+      <h1>Lesson & Vehicle Scheduling</h1>
+      <p>Manage lesson assignments and automatic vehicle allocation.</p>
     </div>
+    <div class="header-actions">
+      <button mat-flat-button color="primary" (click)="autoAllocate()" [disabled]="loading">
+        <mat-icon>auto_awesome</mat-icon>
+        Auto-Allocate Vehicles
+      </button>
+      <button mat-icon-button (click)="loadData()" [disabled]="loading">
+        <mat-icon [class.rotating]="loading">refresh</mat-icon>
+      </button>
+    </div>
+  </header>
+
+  <div class="table-container mat-elevation-z1">
+    <mat-table [dataSource]="lessonDataSource" class="scheduling-table">
+
+      <ng-container matColumnDef="title">
+        <mat-header-cell *matHeaderCellDef> Lesson </mat-header-cell>
+        <mat-cell *matCellDef="let l">
+          <div class="lesson-cell">
+            <span class="title">{{l.title}}</span>
+            <span class="subject">{{l.subject}}</span>
+          </div>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="startTime">
+        <mat-header-cell *matHeaderCellDef> Time </mat-header-cell>
+        <mat-cell *matCellDef="let l"> {{l.startTime | date:'short'}} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="instructor">
+        <mat-header-cell *matHeaderCellDef> Instructor </mat-header-cell>
+        <mat-cell *matCellDef="let l"> {{l.instructor.name}} </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="vehicle">
+        <mat-header-cell *matHeaderCellDef> Assigned Vehicle </mat-header-cell>
+        <mat-cell *matCellDef="let l">
+          <mat-select [ngModel]="l.assignedVehicleId" (ngModelChange)="assignVehicle(l.id, $event)"
+            placeholder="Assign Vehicle">
+            <mat-option [value]="null">None</mat-option>
+            @for (v of vehicles(); track v) {
+              <mat-option [value]="v.id">
+                {{v.make}} {{v.model}} ({{v.registration}})
+              </mat-option>
+            }
+          </mat-select>
+        </mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
+        <mat-cell *matCellDef="let l">
+          <button mat-icon-button color="primary" matTooltip="Edit Schedule">
+            <mat-icon>edit_calendar</mat-icon>
+          </button>
+        </mat-cell>
+      </ng-container>
+
+      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+    </mat-table>
+    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
+
+    @if (lessonDataSource.data.length === 0) {
+      <div class="no-data">
+        <mat-icon>calendar_today</mat-icon>
+        <p>No lessons found.</p>
+      </div>
+    }
+  </div>
 </div>

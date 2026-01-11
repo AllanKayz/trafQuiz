@@ -11,19 +11,19 @@
     </div>
 
     <nav class="settings-nav">
-      <div class="nav-item" [class.active]="activeTab === 'profile'" (click)="activeTab = 'profile'">
+      <div class="nav-item" [class.active]="activeTab() === 'profile'" (click)="activeTab.set('profile')">
         <mat-icon>person_outline</mat-icon>
         <span>Profile</span>
       </div>
-      <div class="nav-item" [class.active]="activeTab === 'preferences'" (click)="activeTab = 'preferences'">
+      <div class="nav-item" [class.active]="activeTab() === 'preferences'" (click)="activeTab.set('preferences')">
         <mat-icon>tune</mat-icon>
         <span>Preferences</span>
       </div>
-      <div class="nav-item" [class.active]="activeTab === 'security'" (click)="activeTab = 'security'">
+      <div class="nav-item" [class.active]="activeTab() === 'security'" (click)="activeTab.set('security')">
         <mat-icon>lock_outline</mat-icon>
         <span>Security</span>
       </div>
-      <div class="nav-item danger" [class.active]="activeTab === 'account'" (click)="activeTab = 'account'">
+      <div class="nav-item danger" [class.active]="activeTab() === 'account'" (click)="activeTab.set('account')">
         <mat-icon>warning</mat-icon>
         <span>Account Zone</span>
       </div>
@@ -33,7 +33,7 @@
   <!-- Main Content Area -->
   <main class="settings-content">
 
-    @if (activeTab === 'profile') {
+    @if (activeTab() === 'profile') {
     <section class="settings-section fade-in">
       <div class="section-header">
         <h2>Personal Information</h2>
@@ -44,19 +44,19 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="half">
             <mat-label>First Name</mat-label>
-            <input matInput formControlName="firstName">
+            <input matInput formControlName="firstName" title="First Name">
             <mat-icon matSuffix>badge</mat-icon>
           </mat-form-field>
           <mat-form-field appearance="outline" class="half">
             <mat-label>Last Name</mat-label>
-            <input matInput formControlName="lastName">
+            <input matInput formControlName="lastName" title="Last Name">
           </mat-form-field>
         </div>
 
         <div class="form-row">
           <mat-form-field appearance="outline" class="full">
             <mat-label>Email Address</mat-label>
-            <input matInput type="email" formControlName="email">
+            <input matInput type="email" formControlName="email" title="Email">
             <mat-icon matSuffix>mail</mat-icon>
           </mat-form-field>
         </div>
@@ -64,16 +64,16 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full">
             <mat-label>Phone Number</mat-label>
-            <input matInput formControlName="phone">
+            <input matInput formControlName="phone" title="Phone">
             <mat-icon matSuffix>phone</mat-icon>
           </mat-form-field>
         </div>
 
         <div class="form-actions">
-          @if (saving) {
+          @if (saving()) {
           <mat-progress-bar mode="indeterminate"></mat-progress-bar>
           }
-          <button mat-flat-button color="primary" [disabled]="saving || profileForm.invalid">
+          <button type="submit" mat-flat-button color="primary" [disabled]="saving() || profileForm.invalid">
             Save Changes
           </button>
         </div>
@@ -81,7 +81,7 @@
     </section>
     }
 
-    @if (activeTab === 'preferences') {
+    @if (activeTab() === 'preferences') {
     <section class="settings-section fade-in">
       <div class="section-header">
         <h2>App Preferences</h2>
@@ -126,13 +126,13 @@
         </div>
 
         <div class="form-actions">
-          <button mat-flat-button color="primary">Save Preferences</button>
+          <button type="submit" mat-flat-button color="primary">Save Preferences</button>
         </div>
       </form>
     </section>
     }
 
-    @if (activeTab === 'security') {
+    @if (activeTab() === 'security') {
     <section class="settings-section fade-in">
       <div class="section-header">
         <h2>Security Settings</h2>
@@ -146,7 +146,7 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full">
             <mat-label>New Password</mat-label>
-            <input matInput type="password" formControlName="password">
+            <input matInput type="password" formControlName="password" title="New Password">
             <mat-icon matSuffix>lock</mat-icon>
           </mat-form-field>
         </div>
@@ -154,13 +154,13 @@
         <div class="form-row">
           <mat-form-field appearance="outline" class="full">
             <mat-label>Confirm New Password</mat-label>
-            <input matInput type="password" formControlName="confirmPassword">
+            <input matInput type="password" formControlName="confirmPassword" title="Confirm New Password">
             <mat-icon matSuffix>lock_reset</mat-icon>
           </mat-form-field>
         </div>
 
         <div class="form-actions">
-          <button mat-flat-button color="primary" [disabled]="!profileForm.value.password">
+          <button type="submit" mat-flat-button color="primary" [disabled]="!profileForm.value.password">
             Update Password
           </button>
         </div>
@@ -168,7 +168,7 @@
     </section>
     }
 
-    @if (activeTab === 'account') {
+    @if (activeTab() === 'account') {
     <section class="settings-section fade-in">
       <div class="section-header danger">
         <h2>Delete Account</h2>
@@ -180,7 +180,7 @@
         <div class="danger-content">
           <h4>This action is irreversible</h4>
           <p>All your data, lessons, and history will be permanently erased. Please be certain.</p>
-          <button mat-stroked-button color="warn" (click)="deleteAccount()">
+          <button type="button" mat-stroked-button color="warn" (click)="deleteAccount()">
             Unknown Consequences: Delete Account
           </button>
         </div>

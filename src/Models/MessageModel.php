@@ -27,21 +27,27 @@ class MessageModel {
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public static function sendMessage($conversationId, $senderId, $senderName, $text) {
+    public static function sendMessage($conversationId, $senderId, $senderName, $text, $type = 'text', $attachment = []) {
         $db = new Database();
         $conn = $db->getConnection();
         
         $conn->beginTransaction();
         try {
             // 1. Insert message
-            $sql = "INSERT INTO messages (conversation_id, sender_id, sender_name, text, timestamp) 
-                    VALUES (:cid, :sid, :sname, :txt, NOW())";
+            $sql = "INSERT INTO messages (conversation_id, sender_id, sender_name, text, type, attachment_url, attachment_name, attachment_type, duration, call_status, timestamp) 
+                    VALUES (:cid, :sid, :sname, :txt, :type, :a_url, :a_name, :a_type, :dur, :c_stat, NOW())";
             $stmt = $conn->prepare($sql);
             $stmt->execute([
                 ':cid' => $conversationId,
                 ':sid' => $senderId,
                 ':sname' => $senderName,
-                ':txt' => $text
+                ':txt' => $text,
+                ':type' => $type,
+                ':a_url' => $attachment['url'] ?? null,
+                ':a_name' => $attachment['name'] ?? null,
+                ':a_type' => $attachment['type'] ?? null,
+                ':dur' => $attachment['duration'] ?? null,
+                ':c_stat' => $attachment['call_status'] ?? null
             ]);
             
             // 2. Update conversation last_message_at

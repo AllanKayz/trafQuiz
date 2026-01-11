@@ -7,6 +7,31 @@ use PDO;
 
 class Exam
 {
+    public static function checkEligibility($userId)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        // 1. Get Student ID
+        $stmt = $conn->prepare("SELECT id FROM students WHERE user_id = :uid");
+        $stmt->execute([':uid' => $userId]);
+        $student = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$student) {
+            return false; // Not a student
+        }
+
+        // 2. Check for functionality "paid up" - check for at least one completed payment
+        // Alternatively, check active status. 
+        // Let's require BOTH active status and at least one completed payment to be strict.
+
+        $stmt2 = $conn->prepare("SELECT COUNT(*) as count FROM payments WHERE student_id = :sid AND status = 'completed'");
+        $stmt2->execute([':sid' => $student['id']]);
+        $payments = $stmt2->fetch(PDO::FETCH_ASSOC)['count'];
+
+        return $payments > 0;
+    }
+
     public static function getExam()
     {
         $questions_id = [];

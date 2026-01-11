@@ -6,9 +6,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatDialog } from '@angular/material/dialog';
 import { LessonService } from '../../../services/lesson.service';
 import { TraffiquizService } from '../../../traffiquiz.service';
 import { Lesson } from '../../../models/lesson';
+import { DynamicFormComponent } from '../../../widgets/dynamic-form/dynamic-form.component';
 
 @Component({
   selector: 'app-schedule',
@@ -20,6 +22,7 @@ import { Lesson } from '../../../models/lesson';
 export class ScheduleComponent {
   private lessonService = inject(LessonService);
   private trafService = inject(TraffiquizService);
+  private dialog = inject(MatDialog);
 
   user = this.trafService.currentUser;
   myLessons = signal<Lesson[]>([]);
@@ -92,12 +95,30 @@ export class ScheduleComponent {
   }
 
   reschedule(lesson: Lesson) {
-    const newDate = prompt('Enter new date/time (YYYY-MM-DD HH:mm):', lesson.startTime);
-    if (newDate) {
-      this.lessonService.patchLesson(lesson.id, { startTime: new Date(newDate).toISOString() }).subscribe(() => {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '400px',
+      data: {
+        title: 'Reschedule Lesson',
+        submitText: 'Update',
+        fields: [
+          {
+            name: 'startTime',
+            label: 'New Date & Time',
+            type: 'datetime-local',
+            required: true,
+            value: lesson.startTime
+          }
+        ]
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      this.lessonService.patchLesson(lesson.id, { startTime: new Date(data.startTime).toISOString() }).subscribe(() => {
+        dialogRef.close();
+        this.trafService.showNotification('Lesson rescheduled', 'success');
         this.refreshSchedule();
       });
-    }
+    });
   }
 
   messageStudent(lesson: Lesson) {

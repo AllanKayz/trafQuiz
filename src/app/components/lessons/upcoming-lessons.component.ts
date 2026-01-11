@@ -134,10 +134,24 @@ export class UpcomingLessonsComponent implements OnInit {
 
   decline(lesson: Lesson | null) {
     if (!lesson) return;
-    const reason = prompt('Reason for declining?');
-    if (reason === null) return;
-    this.lessonService.declineLesson(lesson.id, reason).subscribe(() => {
-      this.loadLessons();
+
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '400px',
+      data: {
+        title: 'Decline Lesson Request',
+        submitText: 'Submit',
+        fields: [
+          { name: 'reason', label: 'Reason for declining', type: 'textarea', required: true }
+        ]
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      this.lessonService.declineLesson(lesson.id, data.reason).subscribe(() => {
+        this.loadLessons();
+        dialogRef.close();
+        this.service.showNotification('Lesson request declined', 'info');
+      });
     });
   }
 
@@ -160,10 +174,33 @@ export class UpcomingLessonsComponent implements OnInit {
 
   message(lesson: Lesson | null) {
     if (!lesson) return;
-    // In future open messages modal; for now open prompt
-    const msg = prompt(`Message to ${lesson.instructor.name}`);
-    if (!msg) return;
-    // TODO: wire to MessagesService
-    this.service.showNotification(`Message sent (mock): ${msg}`, 'success');
+
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '500px',
+      data: {
+        title: `Message ${lesson.instructor.name}`,
+        submitText: 'Send',
+        fields: [
+          { name: 'message', label: 'Your message', type: 'textarea', required: true }
+        ]
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      // Send message via MessagesController
+      this.service.sendMessage(
+        String(lesson.instructor.id),
+        String(this.user()?.id),
+        data.message
+      ).subscribe({
+        next: () => {
+          dialogRef.close();
+          this.service.showNotification('Message sent successfully', 'success');
+        },
+        error: () => {
+          this.service.showNotification('Failed to send message', 'error');
+        }
+      });
+    });
   }
 }

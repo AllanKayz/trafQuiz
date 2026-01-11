@@ -17,25 +17,31 @@
     </div>
 
     <mat-list class="conv-list">
-      @for (c of filteredConversations(); track c.id) {
-      <mat-list-item (click)="openConversation(c)" [class.active-item]="selectedConversation()?.id === c.id">
+      @for (item of displayList(); track item.id) {
+      <mat-list-item (click)="openConversation(item)" [class.active-item]="selectedConversation()?.id === item.id">
         <div matListItemAvatar class="avatar-container">
           <div class="avatar">
-            {{ getInitials(c.name) }}
+            {{ getInitials(item.name) }}
           </div>
-          <div class="status-dot" [class.offline]="c.id % 3 === 0"></div>
+          <div class="status-dot" [class.offline]="item.id % 3 === 0"></div>
         </div>
         <div matListItemTitle class="conv-info">
           <div class="conv-title-row">
-            <span class="conv-name">{{ c.name }}</span>
-            <span class="conv-time">{{ formatTime(c.lastTime || '') }}</span>
+            <span class="conv-name">{{ item.name }}</span>
+            <span class="conv-time">
+              @if (item.displayType === 'conversation') {
+              {{ formatTime(item.lastTime || '') }}
+              } @else {
+              <span class="role-tag">{{ item.role | titlecase }}</span>
+              }
+            </span>
           </div>
           <div class="conv-last-msg">
-            {{ c.lastMessage }}
+            {{ item.lastMessage }}
           </div>
         </div>
-        @if (c.unread && c.unread > 0) {
-        <div matListItemMeta class="unread-badge">{{ c.unread }}</div>
+        @if (item.unread && item.unread > 0) {
+        <div matListItemMeta class="unread-badge">{{ item.unread }}</div>
         }
       </mat-list-item>
       }
@@ -58,9 +64,11 @@
         <div class="header-status">Online</div>
       </div>
       <div class="header-actions">
-        <button mat-icon-button matTooltip="Voice Call"><mat-icon>phone</mat-icon></button>
-        <button mat-icon-button matTooltip="Video Call"><mat-icon>videocam</mat-icon></button>
-        <button mat-icon-button matTooltip="Details"><mat-icon>info</mat-icon></button>
+        <button mat-icon-button (click)="initiateCall(false)"
+          matTooltip="Voice Call"><mat-icon>phone</mat-icon></button>
+        <button mat-icon-button (click)="initiateCall(true)"
+          matTooltip="Video Call"><mat-icon>videocam</mat-icon></button>
+        <button mat-icon-button (click)="toggleRecipientInfo()" matTooltip="Details"><mat-icon>info</mat-icon></button>
       </div>
     </header>
 
@@ -72,10 +80,40 @@
         }
         <div class="msg-content">
           <div class="msg-bubble">
-            <div class="msg-text">{{ m.body }}</div>
+            @if (m.type === 'image') {
+            <div class="msg-image">
+              <img [src]="'http://localhost:84/trafQuiz/public/' + ($any(m).attachment_url)" alt="image"
+                (click)="openImage($any(m).attachment_url!)">
+            </div>
+            } @else if (m.type === 'file') {
+            <div class="msg-file">
+              <mat-icon>insert_drive_file</mat-icon>
+              <div class="file-details">
+                <span class="file-name">{{ $any(m).attachment_name }}</span>
+                <a [href]="'http://localhost:84/trafQuiz/public/' + ($any(m).attachment_url)" download
+                  class="download-link">Download</a>
+              </div>
+            </div>
+            } @else if (m.type === 'voice') {
+            <div class="msg-voice">
+              <audio controls>
+                <source [src]="'http://localhost:84/trafQuiz/public/' + ($any(m).attachment_url)" type="audio/webm">
+              </audio>
+            </div>
+            } @else if (m.type === 'call') {
+            <div class="msg-call" [class.missed]="$any(m).call_status === 'missed'">
+              <mat-icon>{{ $any(m).call_status === 'missed' ? 'phone_missed' : 'phone_callback' }}</mat-icon>
+              <span>{{ m.text }}</span>
+            </div>
+            } @else {
+            <div class="msg-text">{{ m.text }}</div>
+            }
           </div>
           <div class="msg-meta">
             {{ formatTime(m.timestamp) }}
+            @if (m.outgoing) {
+            <mat-icon class="status-icon" [class.read]="m.is_read">{{ m.is_read ? 'done_all' : 'done' }}</mat-icon>
+            }
           </div>
         </div>
       </div>
@@ -84,10 +122,14 @@
 
     <footer class="chat-footer">
       <div class="footer-tools">
-        <button mat-icon-button class="tool-btn" matTooltip="Attach files">
+        <input type="file" #fileInput (change)="onFileSelected($event, 'file')" class="hidden-input" title="file">
+        <input type="file" #imageInput (change)="onFileSelected($event, 'image')" accept="image/*" class="hidden-input"
+          title="image">
+
+        <button mat-icon-button class="tool-btn" (click)="fileInput.click()" matTooltip="Attach files">
           <mat-icon>attach_file</mat-icon>
         </button>
-        <button mat-icon-button class="tool-btn" matTooltip="Send Image">
+        <button mat-icon-button class="tool-btn" (click)="imageInput.click()" matTooltip="Send Image">
           <mat-icon>image</mat-icon>
         </button>
         <button mat-icon-button class="tool-btn" matTooltip="Insert Emoji">
@@ -102,8 +144,9 @@
         </div>
 
         <div class="reply-actions">
-          <button mat-icon-button class="tool-btn voice-btn" matTooltip="Voice Message">
-            <mat-icon>mic</mat-icon>
+          <button mat-icon-button class="tool-btn voice-btn" [class.recording]="isRecordingSignal()"
+            (mousedown)="startRecording()" (mouseup)="stopRecording()" matTooltip="Hold to record voice message">
+            <mat-icon>{{ isRecordingSignal() ? 'stop' : 'mic' }}</mat-icon>
           </button>
           <button mat-flat-button color="primary" class="send-btn" [disabled]="!reply.trim()" (click)="sendReply()"
             matTooltip="Send Message">
@@ -112,6 +155,46 @@
         </div>
       </div>
     </footer>
+
+    <!-- Recipient Info Drawer -->
+    @if (showRecipientInfo()) {
+    <aside class="recipient-info-sidebar">
+      <div class="info-header">
+        <button mat-icon-button (click)="showRecipientInfo.set(false)"><mat-icon>close</mat-icon></button>
+        <h3>User Info</h3>
+      </div>
+
+      <div class="info-body">
+        <div class="info-avatar-large">
+          {{ getInitials(selectedConversation()?.name || '') }}
+        </div>
+        <h2>{{ selectedConversation()?.name }}</h2>
+        <p class="info-role">{{ recipientData()?.role | titlecase }}</p>
+
+        <div class="info-section">
+          <div class="info-item">
+            <mat-icon>mail</mat-icon>
+            <div class="item-text">
+              <label>Email</label>
+              <span>{{ recipientData()?.email || 'N/A' }}</span>
+            </div>
+          </div>
+          <div class="info-item">
+            <mat-icon>phone</mat-icon>
+            <div class="item-text">
+              <label>Phone</label>
+              <span>{{ recipientData()?.phone || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-actions-list">
+          <button mat-button color="warn"><mat-icon>block</mat-icon> Block User</button>
+          <button mat-button><mat-icon>delete_outline</mat-icon> Clear Chat</button>
+        </div>
+      </div>
+    </aside>
+    }
     } @else {
     <div class="chat-placeholder">
       <div class="placeholder-illustration">

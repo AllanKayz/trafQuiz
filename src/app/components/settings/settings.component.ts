@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -35,8 +35,8 @@ export class SettingsComponent {
 
   profileForm: FormGroup;
   prefsForm: FormGroup;
-  saving = false;
-  activeTab = 'profile';
+  saving = signal(false);
+  activeTab = signal('profile');
 
   constructor() {
     const raw = this.service.getRawUser() || {};
@@ -85,15 +85,15 @@ export class SettingsComponent {
       payload.password = this.profileForm.value.password;
     }
 
-    this.saving = true;
+    this.saving.set(true);
     this.service.updateProfile(payload).subscribe({
       next: () => {
         this.service.showNotification('Profile updated', 'success');
-        this.saving = false;
+        this.saving.set(false);
       },
       error: () => {
         this.service.showNotification('Unable to save profile', 'error');
-        this.saving = false;
+        this.saving.set(false);
       }
     });
   }
@@ -105,10 +105,54 @@ export class SettingsComponent {
   }
 
   deleteAccount() {
-    this.service.showConfirm('Are you sure you want to permanently delete your account?', 'DELETE').subscribe(() => {
-      // Mock account deletion logic
-      this.service.showNotification('Account deletion requested', 'info');
+    // Use openAlertDialog for critical action requiring explicit acknowledgment
+    const dialogRef = this.service.openAlertDialog({
+      title: 'Delete Account',
+      message: 'Are you absolutely sure? This action cannot be undone and will permanently delete all your data.',
+      type: 'error',
+      buttons: [
+        { text: 'Cancel', value: 'cancel', color: 'primary' },
+        { text: 'Delete My Account', value: 'confirm', color: 'warn' }
+      ]
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === 'confirm') {
+        // Open password confirmation dialog
+        const dialogConfig = {
+          width: '400px',
+          data: {
+            title: 'Confirm with Password',
+            submitText: 'Delete Account',
+            fields: [
+              { name: 'password', label: 'Enter your password', type: 'password', required: true }
+            ]
+          }
+        };
+
+        // Import DynamicFormComponent and MatDialog
+        import('../../widgets/dynamic-form/dynamic-form.component').then(({ DynamicFormComponent }) => {
+          import('@angular/material/dialog').then(({ MatDialog }) => {
+            const dialog = inject(MatDialog);
+            const passwordDialogRef = dialog.open(DynamicFormComponent, dialogConfig);
+
+            passwordDialogRef.componentInstance.submitted.subscribe((data: any) => {
+              const user = this.service.getRawUser();
+              this.service.deleteAccount(user?.id, data.password).subscribe({
+                next: () => {
+                  passwordDialogRef.close();
+                  this.service.showNotification('Account deleted successfully', 'info');
+                  // Service already logs out user
+                },
+                error: () => {
+                  this.service.showNotification('Failed to delete account. Check password.', 'error');
+                }
+              });
+            });
+          });
+        });
+      }
     });
   }
-}
 
+}

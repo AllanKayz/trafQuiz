@@ -5,10 +5,12 @@
       <p>Monitor and manage company vehicles and maintenance status.</p>
     </div>
     <div class="header-actions">
+      @if (isAdmin()) {
       <button mat-flat-button color="primary" (click)="openAdd(vehicleTemplate)">
         <mat-icon>add_directions_car</mat-icon>
         Add Vehicle
       </button>
+      }
       <button mat-icon-button (click)="load()" [disabled]="loading" matTooltip="Refresh Data">
         <mat-icon [class.rotating]="loading">refresh</mat-icon>
       </button>
@@ -81,8 +83,8 @@
         </mat-cell>
       </ng-container>
 
-      <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: displayedColumns;"></mat-row>
+      <mat-header-row *matHeaderRowDef="displayedColumnsSignal()"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: displayedColumnsSignal();"></mat-row>
     </mat-table>
     <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
 

@@ -7,6 +7,43 @@ use PDO;
 
 class Dashboard
 {
+    // Dashboard Statistics
+    public static function getDashboardStats()
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        // 1. Total Students
+        $stmt = $conn->query("SELECT COUNT(*) as count FROM students");
+        $totalStudents = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+        // 2. Active Students
+        $stmt = $conn->query("SELECT COUNT(*) as count FROM students WHERE status = 'active'");
+        $activeStudents = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+        // 3. Monthly Revenue (Current Month)
+        $stmt = $conn->query("SELECT SUM(amount) as revenue FROM payments WHERE status = 'completed' AND MONTH(payment_date) = MONTH(CURRENT_DATE()) AND YEAR(payment_date) = YEAR(CURRENT_DATE())");
+        $monthlyRevenue = $stmt->fetch(PDO::FETCH_ASSOC)['revenue'] ?? 0;
+
+        // 4. Exams Today
+        // Assuming 'exams' table has start_time
+        $stmt = $conn->query("SELECT COUNT(*) as count FROM exams WHERE DATE(start_time) = CURRENT_DATE()");
+        $examsToday = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+        // 5. System Alerts (Mock logic or check logs/issues table if exists)
+        // For now, let's say "Maintenance" vehicles are alerts
+        $stmt = $conn->query("SELECT COUNT(*) as count FROM vehicles WHERE status = 'maintenance'");
+        $alerts = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+        return [
+            'total_students' => $totalStudents,
+            'active_students' => $activeStudents,
+            'monthly_revenue' => $monthlyRevenue,
+            'exams_today' => $examsToday,
+            'system_alerts' => $alerts
+        ];
+    }
+
     // Manage User Data
     public static function addUser($username, $password, $role, $firstName = null, $lastName = null, $email = null, $phone = null)
     {
@@ -144,15 +181,31 @@ class Dashboard
     }
 
     // Manage Student Data
-    public static function getStudents()
+    public static function getStudents($instructorId = null)
     {
         $db = new Database();
-        // Join with users table to get name and email
-        $sql = 'SELECT s.id, CONCAT(u.first_name, " ", u.last_name) as name, u.email, u.phone, s.address, s.status, s.created_at AS enrollmentDate 
+        $conn = $db->getConnection();
+
+        $sql = 'SELECT s.id, u.id AS userId, CONCAT(u.first_name, " ", u.last_name) as name, u.email, u.phone, s.address, s.status, s.created_at AS enrollmentDate 
                 FROM students s 
                 JOIN users u ON s.user_id = u.id';
-        $stmt = $db->getConnection()->prepare($sql);
-        $stmt->execute();
+
+        if ($instructorId) {
+            // Filter by lessons assignment
+            // Use DISTINCT to avoid duplicates if multiple lessons exist
+            $sql = 'SELECT DISTINCT s.id, u.id AS userId, CONCAT(u.first_name, " ", u.last_name) as name, u.email, u.phone, s.address, s.status, s.created_at AS enrollmentDate 
+                    FROM students s 
+                    JOIN users u ON s.user_id = u.id
+                    JOIN lessons l ON s.id = l.student_id
+                    WHERE l.instructor_id = :instId';
+
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([':instId' => $instructorId]);
+        } else {
+            $stmt = $conn->prepare($sql);
+            $stmt->execute();
+        }
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -294,7 +347,7 @@ class Dashboard
     {
         $db = new Database();
         // Join users to get profile data
-        $sql = 'SELECT i.id, CONCAT(u.first_name, " ", u.last_name) as name, u.email, u.phone, i.license_number, s.specialization, c.certification, i.experience, i.availability, i.created_at, u.username 
+        $sql = 'SELECT i.id, u.id AS userId, CONCAT(u.first_name, " ", u.last_name) as name, u.email, u.phone, i.license_number, s.specialization, c.certification, i.experience, i.availability, i.created_at, u.username 
                 FROM instructors i 
                 INNER JOIN specialization s ON i.specialization_id = s.id 
                 INNER JOIN certification c ON i.certification_id = c.id 

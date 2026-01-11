@@ -15,6 +15,8 @@ use TrafQuiz\Controllers\QuestionController;
 use TrafQuiz\Controllers\VehiclesController;
 use TrafQuiz\Controllers\MessagesController;
 use TrafQuiz\Controllers\NotificationsController;
+use TrafQuiz\Controllers\StudentsController;
+use TrafQuiz\Controllers\FinancesController;
 
 header("Access-Control-Allow-Origin: *"); //Allows all origins
 header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS"); //Allow specific HTTP methods
@@ -51,6 +53,18 @@ $router->addRoute('GET', '/trafQuiz/public/api/time', function () {
 
 $router->addRoute('GET', '/trafQuiz/public/api/admin', function () {
        (new AdminController())->getAllData();
+});
+
+$router->addRoute('GET', '/trafQuiz/public/api/admin/getAllData', function () {
+       (new AdminController())->getAllData();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/admin/autoAllocateExams', function () {
+       (new AdminController())->autoAllocateExams();
+});
+
+$router->addRoute('GET', '/trafQuiz/public/api/admin/getExamStats', function () {
+       (new AdminController())->getExamStats();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/timeupdate', function () {
@@ -224,8 +238,48 @@ $router->addRoute('POST', '/trafQuiz/public/api/messages/send', function () {
        (new MessagesController())->sendMessage();
 });
 
+$router->addRoute('POST', '/trafQuiz/public/api/messages/upload', function () {
+       (new MessagesController())->uploadAttachment();
+});
+
+$router->addRoute('GET', '/trafQuiz/public/api/messages/recipient', function () {
+       (new MessagesController())->getRecipientInfo();
+});
+
 $router->addRoute('POST', '/trafQuiz/public/api/admin/auto-allocate', function () {
        (new AdminController())->autoAllocateSchedules();
+});
+
+// Student Progress API
+$router->addRoute('GET', '/trafQuiz/public/api/students/progress', function () {
+       (new StudentsController())->getProgress();
+});
+
+// Financial APIs
+$router->addRoute('GET', '/trafQuiz/public/api/finances/transactions', function () {
+       (new FinancesController())->getTransactions();
+});
+
+$router->addRoute('GET', '/trafQuiz/public/api/finances/stats', function () {
+       (new FinancesController())->getStatistics();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/finances/salary', function () {
+       (new FinancesController())->processSalary();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/finances/expense', function () {
+       (new FinancesController())->recordExpense();
+});
+
+// Account deletion
+$router->addRoute('POST', '/trafQuiz/public/api/account/delete', function () {
+       (new StudentsController())->deleteAccount();
+});
+
+// Fix payment endpoint (add alias for frontend compatibility)
+$router->addRoute('POST', '/trafQuiz/public/api/payment', function () {
+       (new PaymentsController())->process();
 });
 
 

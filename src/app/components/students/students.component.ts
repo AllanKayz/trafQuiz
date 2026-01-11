@@ -32,7 +32,7 @@ export class StudentsComponent {
 	private dialog = inject(MatDialog);
 	private formConfig = inject(FormConfigService);
 
-	user = this.trafQuizService.currentUser();
+	user = this.trafQuizService.currentUser;
 	menuName = 'students'; // Current menu identifier
 
 	// Table Configurations
@@ -45,15 +45,23 @@ export class StudentsComponent {
 		{ key: 'status', header: 'Status', type: 'text', width: '40px' }
 	]);
 
-	tableActions = signal<string[]>(['edit', 'delete', 'activate']);
+	// Computed Actions based on Role
+	tableActions = computed(() => {
+		const role = this.user()?.role;
+		if (role === 'admin') {
+			return ['edit', 'delete', 'activate'];
+		}
+		return []; // Instructors: Read-only
+	});
 
 	// Get data from service
 	tableData: any = this.trafQuizService.tableStudents;
 
 	//Get buttons based on user role and current menu
 	buttons = computed(() => {
-		if (!this.user) return [];
-		return this.buttonService.getButtons(this.menuName, this.user.role);
+		const user = this.user();
+		if (!user) return [];
+		return this.buttonService.getButtons(this.menuName, user.role);
 	});
 
 	widgetsSignal = this.trafQuizService.userStudentWidgets;

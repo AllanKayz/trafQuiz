@@ -30,6 +30,9 @@ export class DashboardComponent {
   constructor() {
     if (!this.isLoggedIn()) {
       this.router.navigate(['/login']);
+    } else {
+      // Fetch dynamic data
+      this.trafQuizService.fetchDashboardStats();
     }
   }
 
