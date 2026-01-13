@@ -7,87 +7,87 @@
     </div>
     <div class="header-actions">
       @if (!isAdmin()) {
-        <button mat-flat-button color="primary" (click)="makePayment()">Make Payment</button>
+      <button mat-flat-button color="primary" (click)="makePayment()">Make Payment</button>
       } @else {
-        <button mat-flat-button color="primary" (click)="makeAdminPayment()">Process Student Payment</button>
-        <button mat-flat-button color="accent" (click)="processSalary()">
-          <mat-icon>payments</mat-icon> Pay Salary
-        </button>
-        <button mat-stroked-button (click)="recordExpense()">
-          <mat-icon>receipt_long</mat-icon> Record Expense
-        </button>
+      <button mat-flat-button color="primary" (click)="makeAdminPayment()">Process Student Payment</button>
+      <button mat-flat-button color="accent" (click)="processSalary()">
+        <mat-icon>payments</mat-icon> Pay Salary
+      </button>
+      <button mat-stroked-button (click)="recordExpense()">
+        <mat-icon>receipt_long</mat-icon> Record Expense
+      </button>
       }
     </div>
   </header>
 
   <!-- Admin: Financial Overview -->
   @if (isAdmin() && stats(); as data) {
-    <section class="stats-overview">
-      <mat-card class="stat-card revenue">
-        <div class="stat-icon">
-          <mat-icon>monetization_on</mat-icon>
-        </div>
-        <div class="stat-content">
-          <span class="label">Total Revenue</span>
-          <span class="value">${{data.totalRevenue | number}}</span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card expense">
-        <div class="stat-icon">
-          <mat-icon>money_off</mat-icon>
-        </div>
-        <div class="stat-content">
-          <span class="label">Total Expenses</span>
-          <span class="value">${{data.totalExpenses | number}}</span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card profit">
-        <div class="stat-icon">
-          <mat-icon>account_balance</mat-icon>
-        </div>
-        <div class="stat-content">
-          <span class="label">Net Profit</span>
-          <span class="value">${{data.netProfit | number}}</span>
-        </div>
-      </mat-card>
-
-      <mat-card class="stat-card projection">
-        <div class="stat-icon">
-          <mat-icon>trending_up</mat-icon>
-        </div>
-        <div class="stat-content">
-          <span class="label">Monthly Projection</span>
-          <span class="value">${{data.projectedRevenue | number}}</span>
-        </div>
-      </mat-card>
-    </section>
-
-    <!-- Projections Chart -->
-    <mat-card class="chart-container">
-      <div class="chart-header">
-        <h3>Revenue vs Expenses Trend</h3>
-        <span class="badge">Last 6 Months</span>
+  <section class="stats-overview">
+    <mat-card class="stat-card revenue">
+      <div class="stat-icon">
+        <mat-icon>monetization_on</mat-icon>
       </div>
-      <div class="projections-chart">
-        @for (label of data.chartData.labels; track label; let i = $index) {
-          <div class="chart-column">
-            <div class="bars-wrapper">
-              <!-- Revenue Bar -->
-              <div class="bar revenue-bar" [style.height.px]="(data.chartData.revenue[i] / 30)"
-                [title]="'Rev: $' + data.chartData.revenue[i]">
-              </div>
-              <!-- Expense Bar -->
-              <div class="bar expense-bar" [style.height.px]="(data.chartData.expenses[i] / 30)"
-                [title]="'Exp: $' + data.chartData.expenses[i]">
-              </div>
-            </div>
-            <span class="x-label">{{label}}</span>
-          </div>
-        }
+      <div class="stat-content">
+        <span class="label">Total Revenue</span>
+        <span class="value">${{data.totalRevenue | number}}</span>
       </div>
     </mat-card>
+
+    <mat-card class="stat-card expense">
+      <div class="stat-icon">
+        <mat-icon>money_off</mat-icon>
+      </div>
+      <div class="stat-content">
+        <span class="label">Total Expenses</span>
+        <span class="value">${{data.totalExpenses | number}}</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card profit">
+      <div class="stat-icon">
+        <mat-icon>account_balance</mat-icon>
+      </div>
+      <div class="stat-content">
+        <span class="label">Net Profit</span>
+        <span class="value">${{data.netProfit | number}}</span>
+      </div>
+    </mat-card>
+
+    <mat-card class="stat-card projection">
+      <div class="stat-icon">
+        <mat-icon>trending_up</mat-icon>
+      </div>
+      <div class="stat-content">
+        <span class="label">Monthly Projection</span>
+        <span class="value">${{data.projectedRevenue | number}}</span>
+      </div>
+    </mat-card>
+  </section>
+
+  <!-- Projections Chart -->
+  <mat-card class="chart-container">
+    <div class="chart-header">
+      <h3>Revenue vs Expenses Trend</h3>
+      <span class="badge">Last 6 Months</span>
+    </div>
+    <div class="projections-chart">
+      @for (label of data.chartData.labels; track label; let i = $index) {
+      <div class="chart-column">
+        <div class="bars-wrapper">
+          <!-- Revenue Bar -->
+          <div class="bar revenue-bar" [style.height.px]="(data.chartData.revenue[i] / 30)"
+            [title]="'Rev: $' + data.chartData.revenue[i]">
+          </div>
+          <!-- Expense Bar -->
+          <div class="bar expense-bar" [style.height.px]="(data.chartData.expenses[i] / 30)"
+            [title]="'Exp: $' + data.chartData.expenses[i]">
+          </div>
+        </div>
+        <span class="x-label">{{label}}</span>
+      </div>
+      }
+    </div>
+  </mat-card>
   }
 
   <!-- Transaction History (Shared) -->
@@ -98,138 +98,155 @@
         <mat-label>Search transactions...</mat-label>
         <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
           placeholder="Name, ID, Vehicle or Notes...">
-          <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
-      </div>
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+    </div>
 
-      @if (isLoading()) {
-        <mat-progress-bar mode="indeterminate"></mat-progress-bar>
-      }
-
-      <table mat-table [dataSource]="transactionDataSource" class="transactions-table">
-        <!-- ID Column -->
-        <ng-container matColumnDef="id">
-          <th mat-header-cell *matHeaderCellDef> ID </th>
-          <td mat-cell *matCellDef="let element"> {{element.id}} </td>
-        </ng-container>
-
-        <!-- Transaction ID Column -->
-        <ng-container matColumnDef="transactionId">
-          <th mat-header-cell *matHeaderCellDef> Txn ID </th>
-          <td mat-cell *matCellDef="let element">
-            <code class="txn-code">{{element.transaction_id}}</code>
-          </td>
-        </ng-container>
-
-        <!-- Type Column -->
-        <ng-container matColumnDef="type">
-          <th mat-header-cell *matHeaderCellDef> Type </th>
-          <td mat-cell *matCellDef="let element">
-            <span class="type-badge" [class]="element.type">{{element.type | titlecase}}</span>
-          </td>
-        </ng-container>
-
-        <!-- Entity Column (Admin Only) -->
-        <ng-container matColumnDef="entityName">
-          <th mat-header-cell *matHeaderCellDef> Entity </th>
-          <td mat-cell *matCellDef="let element"> {{element.entity_name}} </td>
-        </ng-container>
-
-        <!-- Date Column -->
-        <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef> Date </th>
-          <td mat-cell *matCellDef="let element"> {{element.date | date:'mediumDate'}} </td>
-        </ng-container>
-
-        <!-- Description Column -->
-        <ng-container matColumnDef="description">
-          <th mat-header-cell *matHeaderCellDef> Description </th>
-          <td mat-cell *matCellDef="let element">
-            {{element.description | titlecase}}
-            @if (element.notes) {
-              <small class="txn-notes">({{element.notes}})</small>
-            }
-          </td>
-        </ng-container>
-
-        <!-- Amount Column -->
-        <ng-container matColumnDef="amount">
-          <th mat-header-cell *matHeaderCellDef> Amount </th>
-          <td mat-cell *matCellDef="let element" class="amount-cell" [class.expense]="element.type === 'expense'">
-            {{ element.type === 'expense' ? '-' : '+' }}${{element.amount | number:'1.2-2'}}
-          </td>
-        </ng-container>
-
-        <!-- Status Column -->
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef> Status </th>
-          <td mat-cell *matCellDef="let element">
-            <span class="status-badge" [class]="element.status">{{element.status | titlecase}}</span>
-          </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: tableColumns;"></tr>
-      </table>
-
-      <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
-
-
-      @if (!isLoading() && transactionDataSource.data.length === 0) {
-        <div class="empty-state">
-          <p>No transactions found.</p>
-        </div>
-      }
-    </mat-card>
-
-    <!-- Admin: Package Management -->
-    @if (isAdmin()) {
-      <section class="packages-management">
-        <div class="section-title">
-          <mat-icon>inventory_2</mat-icon>
-          <h2>Lesson Package Management</h2>
-        </div>
-
-        <div class="packages-grid">
-          @for (pkg of packages(); track pkg.id) {
-            <mat-card class="package-card" [class.editing]="editingPackageId() === pkg.id">
-              @if (editingPackageId() === pkg.id) {
-                <div class="edit-mode">
-                  <div class="package-header">
-                    <span class="edit-title">Edit {{pkg.package}}</span>
-                  </div>
-                  <div class="edit-fields">
-                    <mat-form-field appearance="outline">
-                      <mat-label>Package Name</mat-label>
-                      <input matInput [(ngModel)]="editBuffer().package" title="Package">
-                    </mat-form-field>
-
-                    <mat-form-field appearance="outline">
-                      <mat-label>Price ($)</mat-label>
-                      <input matInput type="number" [(ngModel)]="editBuffer().amount" title="Amount">
-                      <span matPrefix>$&nbsp;</span>
-                    </mat-form-field>
-                  </div>
-                  <div class="edit-actions">
-                    <button mat-button (click)="cancelEdit()">Cancel</button>
-                    <button mat-flat-button color="primary" (click)="savePackage()">Save Changes</button>
-                  </div>
-                </div>
-              } @else {
-                <div class="view-mode">
-                  <div class="package-info">
-                    <span class="pkg-name">{{pkg.package}}</span>
-                    <span class="pkg-price">${{pkg.amount | number}}</span>
-                  </div>
-                  <button mat-icon-button (click)="startEdit(pkg)" matTooltip="Edit Pricing">
-                    <mat-icon>edit_calendar</mat-icon>
-                  </button>
-                </div>
-              }
-            </mat-card>
-          }
-        </div>
-      </section>
+    @if (isLoading()) {
+    <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
-  </div>
+    <table mat-table [dataSource]="transactionDataSource" class="transactions-table">
+      <!-- ID Column -->
+      <ng-container matColumnDef="id">
+        <th mat-header-cell *matHeaderCellDef> ID </th>
+        <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+      </ng-container>
+
+      <!-- Transaction ID Column -->
+      <ng-container matColumnDef="transactionId">
+        <th mat-header-cell *matHeaderCellDef> Txn ID </th>
+        <td mat-cell *matCellDef="let element">
+          <code class="txn-code">{{element.transaction_id}}</code>
+        </td>
+      </ng-container>
+
+      <!-- Type Column -->
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef> Type </th>
+        <td mat-cell *matCellDef="let element">
+          <span class="type-badge" [class]="element.type">{{element.type | titlecase}}</span>
+        </td>
+      </ng-container>
+
+      <!-- Entity Column (Admin Only) -->
+      <ng-container matColumnDef="entityName">
+        <th mat-header-cell *matHeaderCellDef> Entity </th>
+        <td mat-cell *matCellDef="let element"> {{element.entity_name}} </td>
+      </ng-container>
+
+      <!-- Date Column -->
+      <ng-container matColumnDef="date">
+        <th mat-header-cell *matHeaderCellDef> Date </th>
+        <td mat-cell *matCellDef="let element"> {{element.date | date:'mediumDate'}} </td>
+      </ng-container>
+
+      <!-- Description Column -->
+      <ng-container matColumnDef="description">
+        <th mat-header-cell *matHeaderCellDef> Description </th>
+        <td mat-cell *matCellDef="let element">
+          {{element.description | titlecase}}
+          @if (element.notes) {
+          <small class="txn-notes">({{element.notes}})</small>
+          }
+        </td>
+      </ng-container>
+
+      <!-- Amount Column -->
+      <ng-container matColumnDef="amount">
+        <th mat-header-cell *matHeaderCellDef> Amount </th>
+        <td mat-cell *matCellDef="let element" class="amount-cell" [class.expense]="element.type === 'expense'">
+          {{ element.type === 'expense' ? '-' : '+' }}${{element.amount | number:'1.2-2'}}
+        </td>
+      </ng-container>
+
+      <!-- Status Column -->
+      <ng-container matColumnDef="status">
+        <th mat-header-cell *matHeaderCellDef> Status </th>
+        <td mat-cell *matCellDef="let element">
+          <span class="status-badge" [class]="element.status">{{element.status | titlecase}}</span>
+        </td>
+      </ng-container>
+
+      <!-- Actions Column -->
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef> Actions </th>
+        <td mat-cell *matCellDef="let element">
+          @if (element.status === 'pending' && isAdmin()) {
+          <button mat-icon-button (click)="approvePayment(element.id, 'completed')" matTooltip="Approve Full"
+            style="color: #10b981;">
+            <mat-icon>check_circle</mat-icon>
+          </button>
+          <button mat-icon-button (click)="approvePayment(element.id, 'partial')" matTooltip="Mark as Partial"
+            style="color: #f59e0b;">
+            <mat-icon>timelapse</mat-icon>
+          </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: tableColumns;"></tr>
+    </table>
+
+    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
+
+    @if (!isLoading() && transactionDataSource.data.length === 0) {
+    <div class="empty-state">
+      <p>No transactions found.</p>
+    </div>
+    }
+  </mat-card>
+
+  <!-- Admin: Package Management -->
+  @if (isAdmin()) {
+  <section class="packages-management">
+    <div class="section-title">
+      <mat-icon>inventory_2</mat-icon>
+      <h2>Lesson Package Management</h2>
+    </div>
+
+    <div class="packages-grid">
+      @for (pkg of packages(); track pkg.id) {
+      <mat-card class="package-card" [class.editing]="editingPackageId() === pkg.id">
+        @if (editingPackageId() === pkg.id) {
+        <div class="edit-mode">
+          <div class="package-header">
+            <span class="edit-title">Edit {{pkg.package}}</span>
+          </div>
+          <div class="edit-fields">
+            <mat-form-field appearance="outline">
+              <mat-label>Package Name</mat-label>
+              <input matInput [(ngModel)]="editBuffer().package" title="Package">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Price ($)</mat-label>
+              <input matInput type="number" [(ngModel)]="editBuffer().amount" title="Amount">
+              <span matPrefix>$&nbsp;</span>
+            </mat-form-field>
+          </div>
+          <div class="edit-actions">
+            <button mat-button (click)="cancelEdit()">Cancel</button>
+            <button mat-flat-button color="primary" (click)="savePackage()">Save Changes</button>
+          </div>
+        </div>
+        } @else {
+        <div class="view-mode">
+          <div class="package-info">
+            <span class="pkg-name">{{pkg.package}}</span>
+            <span class="pkg-price">${{pkg.amount | number}}</span>
+          </div>
+          <button mat-icon-button (click)="startEdit(pkg)" matTooltip="Edit Pricing">
+            <mat-icon>edit_calendar</mat-icon>
+          </button>
+        </div>
+        }
+      </mat-card>
+      }
+    </div>
+  </section>
+  }
+
+</div>

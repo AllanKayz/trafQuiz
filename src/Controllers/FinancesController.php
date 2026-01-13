@@ -104,7 +104,7 @@ class FinancesController
                         SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
                         COUNT(*) as total_transactions
                     FROM payments 
-                    WHERE status = 'completed'";
+                    WHERE status IN ('completed', 'partial')";
 
             $stmt = $conn->query($sql);
             $overview = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -118,7 +118,7 @@ class FinancesController
                         SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income,
                         SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
                     FROM payments 
-                    WHERE status = 'completed' 
+                    WHERE status IN ('completed', 'partial') 
                         AND payment_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
                     GROUP BY DATE_FORMAT(payment_date, '%Y-%m')
                     ORDER BY month DESC";

@@ -55,7 +55,7 @@ export class FinancesComponent implements AfterViewInit {
 
   // Table Columns
   displayedColumns: string[] = ['id', 'date', 'transactionId', 'description', 'amount', 'status'];
-  adminColumns: string[] = ['date', 'type', 'entityName', 'transactionId', 'description', 'amount', 'status'];
+  adminColumns: string[] = ['date', 'type', 'entityName', 'transactionId', 'description', 'amount', 'status', 'actions'];
 
   constructor() {
     effect(() => {
@@ -170,7 +170,7 @@ export class FinancesComponent implements AfterViewInit {
     });
 
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
-      this.service.processPayment(data).subscribe(res => {
+      this.service.processPayment({ ...data, status: 'completed' }).subscribe(res => {
         if (res && res.success) {
           dialogRef.close();
           this.loadData();
@@ -224,6 +224,14 @@ export class FinancesComponent implements AfterViewInit {
           this.loadData();
         }
       });
+    });
+  }
+
+  approvePayment(id: number, status: string) {
+    this.service.approvePayment(id, status).subscribe(res => {
+      if (res && res.success) {
+        this.loadData();
+      }
     });
   }
 }

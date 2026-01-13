@@ -85,12 +85,14 @@ class PaymentsController
             return;
         }
 
+        $status = $input['status'] ?? 'pending';
+
         try {
             $db = new Database();
             $conn = $db->getConnection();
 
             $sql = "INSERT INTO payments (student_id, amount, transaction_id, package_id, method, status, payment_date) 
-                    VALUES (:sid, :amt, :txid, :pid, :meth, 'completed', NOW())";
+                    VALUES (:sid, :amt, :txid, :pid, :meth, :stat, NOW())";
 
             $stmt = $conn->prepare($sql);
             $stmt->execute([
@@ -98,7 +100,8 @@ class PaymentsController
                 ':amt' => $amount,
                 ':txid' => $transactionId,
                 ':pid' => $packageId,
-                ':meth' => $method
+                ':meth' => $method,
+                ':stat' => $status
             ]);
 
             echo json_encode([
@@ -110,6 +113,35 @@ class PaymentsController
         } catch (\Exception $e) {
             http_response_code(500);
             echo json_encode(['message' => 'Payment recording failed: ' . $e->getMessage()]);
+        }
+    }
+
+    public function approve()
+    {
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        $id = $input['id'] ?? null;
+        $status = $input['status'] ?? 'completed';
+
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Missing payment ID']);
+            return;
+        }
+
+        try {
+            $db = new Database();
+            $conn = $db->getConnection();
+
+            $sql = "UPDATE payments SET status = :status WHERE id = :id";
+            $stmt = $conn->prepare($sql);
+            $stmt->execute([':status' => $status, ':id' => $id]);
+
+            echo json_encode(['success' => true, 'message' => 'Payment status updated to ' . $status]);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'message' => 'Failed to update payment: ' . $e->getMessage()]);
         }
     }
 }

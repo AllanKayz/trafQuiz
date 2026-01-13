@@ -345,7 +345,13 @@ export class TraffiquizService {
     localStorage.setItem('user', JSON.stringify(updated));
     this.userSignal.set(this.formatUser(updated));
 
-    return this.http.post(this.url + 'updateuser', updated).pipe(
+    // Ensure ID is present for the backend to identify the user
+    const backendPayload = { ...payload };
+    if (!backendPayload.id && raw.id) {
+      backendPayload.id = raw.id;
+    }
+
+    return this.http.post(this.url + 'updateuser', backendPayload).pipe(
       tap((res) => res),
       catchError((err) => {
         console.warn('Profile update failed; saved locally', err);
@@ -1010,6 +1016,18 @@ export class TraffiquizService {
       }),
       catchError(err => {
         this.showNotification('Payment processing failed', 'error');
+        return of(null);
+      })
+    );
+  }
+
+  approvePayment(paymentId: number, status: string): Observable<any> {
+    return this.http.post(this.url + 'payments/approve', { id: paymentId, status }).pipe(
+      tap((res: any) => {
+        if (res.success) this.showNotification(`Payment ${status} successfully`, 'success');
+      }),
+      catchError(err => {
+        this.showNotification('Failed to update payment status', 'error');
         return of(null);
       })
     );

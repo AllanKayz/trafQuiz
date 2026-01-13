@@ -73,16 +73,23 @@ export class SettingsComponent {
       }
     }
 
-    const payload: any = {
-      username: this.profileForm.value.username,
-      firstname: this.profileForm.value.firstName,
-      lastname: this.profileForm.value.lastName,
-      email: this.profileForm.value.email,
-      phone: this.profileForm.value.phone
-    };
+    const payload: any = {};
+    const formControls = this.profileForm.controls;
+
+    // Only include fields that have been modified
+    if (formControls['username'].dirty) payload.username = formControls['username'].value;
+    if (formControls['firstName'].dirty) payload.firstName = formControls['firstName'].value;
+    if (formControls['lastName'].dirty) payload.lastName = formControls['lastName'].value;
+    if (formControls['email'].dirty) payload.email = formControls['email'].value;
+    if (formControls['phone'].dirty) payload.phone = formControls['phone'].value;
 
     if (this.profileForm.value.changePassword) {
       payload.password = this.profileForm.value.password;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      this.service.showNotification('No changes made', 'info');
+      return;
     }
 
     this.saving.set(true);

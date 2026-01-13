@@ -224,6 +224,9 @@ $router->addRoute('POST', '/trafQuiz/public/api/vehicles/delete', function () {
 $router->addRoute('POST', '/trafQuiz/public/api/payments/process', function () {
        (new PaymentsController())->process();
 });
+$router->addRoute('POST', '/trafQuiz/public/api/payments/approve', function () {
+       (new PaymentsController())->approve();
+});
 
 // Messaging API
 $router->addRoute('GET', '/trafQuiz/public/api/conversations', function () {
