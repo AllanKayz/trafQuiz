@@ -20,7 +20,7 @@ import { jsPDF } from 'jspdf';
 export class TraffiquizService {
 
   private http: HttpClient = inject(HttpClient);
-  private url = 'http://localhost:84/trafQuiz/public/api/';
+  private url = 'http://localhost:3000/api/';
   public alert = inject(MatDialog);
 
   // Convert user data to signal for reactive user state management.
