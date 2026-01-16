@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 11, 2026 at 01:23 PM
+-- Generation Time: Jan 13, 2026 at 06:48 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -68,6 +68,13 @@ CREATE TABLE `conversations` (
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `conversations`
+--
+
+INSERT INTO `conversations` (`id`, `title`, `participant_ids`, `last_message_at`, `created_at`, `updated_at`) VALUES
+(1, NULL, '[1,2]', '2026-01-13 19:43:56', '2026-01-11 22:36:13', '2026-01-13 19:43:56');
 
 -- --------------------------------------------------------
 
@@ -185,9 +192,26 @@ CREATE TABLE `messages` (
   `sender_id` int(11) NOT NULL,
   `sender_name` varchar(255) DEFAULT NULL,
   `text` text NOT NULL,
+  `type` enum('text','image','file','voice','call') DEFAULT 'text',
+  `attachment_url` varchar(255) DEFAULT NULL,
+  `attachment_name` varchar(255) DEFAULT NULL,
+  `attachment_type` varchar(100) DEFAULT NULL,
+  `duration` int(11) DEFAULT NULL,
+  `call_status` enum('missed','completed','declined') DEFAULT NULL,
   `timestamp` datetime DEFAULT current_timestamp(),
   `is_read` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `messages`
+--
+
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `sender_name`, `text`, `type`, `attachment_url`, `attachment_name`, `attachment_type`, `duration`, `call_status`, `timestamp`, `is_read`) VALUES
+(3, 1, 1, 'Demo User', 'testing hi', 'text', NULL, NULL, NULL, NULL, NULL, '2026-01-11 22:36:15', 0),
+(4, 1, 1, 'Demo User', 'hi', 'text', NULL, NULL, NULL, NULL, NULL, '2026-01-11 22:43:43', 0),
+(5, 1, 1, 'admin admin', 'hi', 'text', NULL, NULL, NULL, NULL, NULL, '2026-01-11 22:55:58', 0),
+(6, 1, 1, 'admin admin', 'hi, testing messaging', 'text', NULL, NULL, NULL, NULL, NULL, '2026-01-12 10:51:40', 0),
+(7, 1, 1, 'admin admin', 'back and forth messages', 'text', NULL, NULL, NULL, NULL, NULL, '2026-01-13 19:43:56', 0);
 
 -- --------------------------------------------------------
 
@@ -221,7 +245,7 @@ INSERT INTO `packages` (`id`, `package`, `description`, `amount`) VALUES
 
 CREATE TABLE `payments` (
   `id` int(11) NOT NULL,
-  `student_id` int(11) NOT NULL,
+  `student_id` int(11) DEFAULT NULL,
   `instructor_id` int(11) DEFAULT NULL,
   `vehicle_id` int(11) DEFAULT NULL,
   `amount` decimal(10,2) NOT NULL,
@@ -230,7 +254,7 @@ CREATE TABLE `payments` (
   `payment_date` datetime DEFAULT current_timestamp(),
   `transaction_id` varchar(100) NOT NULL,
   `created_at` datetime DEFAULT current_timestamp(),
-  `status` enum('pending','completed','failed') DEFAULT 'completed',
+  `status` enum('pending','completed','failed','partial') DEFAULT 'pending',
   `package_id` int(11) DEFAULT NULL,
   `method` varchar(50) DEFAULT NULL,
   `notes` text DEFAULT NULL
@@ -244,7 +268,11 @@ INSERT INTO `payments` (`id`, `student_id`, `instructor_id`, `vehicle_id`, `amou
 (1, 1, NULL, NULL, 10.00, 'income', 'student_payment', '2026-01-11 00:26:26', 'TXN-6962D20E6A9F0', '2026-01-11 00:26:26', 'completed', NULL, 'cash', NULL),
 (2, 1, NULL, NULL, 2.00, 'income', 'student_payment', '2026-01-11 00:48:47', 'TXN-6962D74B52D77', '2026-01-11 00:48:47', 'completed', NULL, 'ecocash', NULL),
 (3, 1, NULL, NULL, 3.00, 'income', 'student_payment', '2026-01-11 00:49:08', 'TXN-6962D7607C5CB', '2026-01-11 00:49:08', 'completed', NULL, 'card', NULL),
-(4, 1, NULL, NULL, 10.00, 'income', 'student_payment', '2026-01-11 12:07:23', 'TXN-696376598A17D', '2026-01-11 12:07:23', 'completed', 4, 'cash', NULL);
+(4, 1, NULL, NULL, 10.00, 'income', 'student_payment', '2026-01-11 12:07:23', 'TXN-696376598A17D', '2026-01-11 12:07:23', 'completed', 4, 'cash', NULL),
+(8, NULL, 2, NULL, 5.00, 'expense', 'salary', '2026-01-11 18:33:50', 'SAL-6963D0EE3FBDC', '2026-01-11 18:33:50', 'completed', NULL, 'ecocash', ''),
+(9, NULL, NULL, 2, 2.00, 'expense', 'fuel', '2026-01-11 18:34:30', 'EXP-6963D1164E5D1', '2026-01-11 18:34:30', 'completed', NULL, 'card', ''),
+(10, 4, NULL, NULL, 30.00, 'income', 'student_payment', '2026-01-11 19:11:26', 'TXN-6963D9BC0A3F2', '2026-01-11 19:11:26', 'completed', 5, 'ecocash', NULL),
+(11, 1, NULL, NULL, 5.00, 'income', 'student_payment', '2026-01-13 19:30:00', 'TXN-6966811418B3F', '2026-01-13 19:30:00', 'partial', NULL, 'ecocash', NULL);
 
 -- --------------------------------------------------------
 
@@ -2190,7 +2218,7 @@ ALTER TABLE `certification`
 -- AUTO_INCREMENT for table `conversations`
 --
 ALTER TABLE `conversations`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `exams`
@@ -2226,7 +2254,7 @@ ALTER TABLE `license_keys`
 -- AUTO_INCREMENT for table `messages`
 --
 ALTER TABLE `messages`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `packages`
@@ -2238,7 +2266,7 @@ ALTER TABLE `packages`
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `questions`

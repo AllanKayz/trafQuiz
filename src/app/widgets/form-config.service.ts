@@ -595,6 +595,94 @@ export class FormConfigService {
         colspan: 2,
         icon: 'note'
       }
+    ],
+    'admin-create-lesson': [
+      {
+        key: 'title',
+        label: 'Lesson Title',
+        type: 'text',
+        validators: [Validators.required],
+        placeholder: 'e.g., Defensive Driving 101',
+        icon: 'title',
+        colspan: 2
+      },
+      {
+        key: 'subject',
+        label: 'Subject',
+        type: 'select',
+        validators: [Validators.required],
+        options: [
+          { value: 'Practical', label: 'Practical driving' },
+          { value: 'Traffic Rules', label: 'Traffic Rules' },
+          { value: 'Safety', label: 'Safety' },
+          { value: 'Theory', label: 'Theory' }
+        ],
+        icon: 'subject'
+      },
+      {
+        key: 'type',
+        label: 'Lesson Type',
+        type: 'select',
+        validators: [Validators.required],
+        options: [
+          { value: 'group', label: 'Group Session' },
+          { value: 'individual', label: 'Private/Individual' }
+        ],
+        defaultValue: 'group',
+        icon: 'groups'
+      },
+      {
+        key: 'startTime',
+        label: 'Date & Time',
+        type: 'date',
+        validators: [Validators.required],
+        icon: 'calendar_today'
+      },
+      {
+        key: 'durationMinutes',
+        label: 'Duration (Minutes)',
+        type: 'number',
+        validators: [Validators.required, Validators.min(15)],
+        defaultValue: 60,
+        icon: 'timer'
+      },
+      {
+        key: 'instructorId',
+        label: 'Instructor',
+        type: 'select',
+        validators: [Validators.required],
+        options: this.getOptions('instructor'),
+        icon: 'person'
+      },
+      {
+        key: 'assignedVehicleId',
+        label: 'Vehicle (Optional)',
+        type: 'select',
+        options: this.getOptions('vehicle'),
+        icon: 'directions_car'
+      },
+      {
+        key: 'location',
+        label: 'Location',
+        type: 'text',
+        placeholder: 'Room 2, Parking Lot, etc.',
+        icon: 'location_on'
+      },
+      {
+        key: 'capacity',
+        label: 'Max Students',
+        type: 'number',
+        validators: [Validators.min(1)],
+        defaultValue: 1,
+        icon: 'group_add'
+      },
+      {
+        key: 'notes',
+        label: 'Additional Notes',
+        type: 'textarea',
+        colspan: 2,
+        icon: 'notes'
+      }
     ]
   }));
 

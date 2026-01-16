@@ -15,6 +15,7 @@ export interface Lesson {
   studentCount: number;
   capacity?: number;
   assignedVehicleId?: number;
+  vehicle?: { id: number; make: string; model: string; licensePlate: string; };
   vehicleType?: 'car' | 'motorcycle' | 'truck';
   notes?: string;
   resources?: Array<{ title: string; url: string }>;

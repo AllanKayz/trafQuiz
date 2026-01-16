@@ -276,6 +276,14 @@
     color: #ef4444;
 }
 
+.btn-approve {
+    color: #10b981;
+}
+
+.btn-partial {
+    color: #f59e0b;
+}
+
 .empty-state {
     padding: 48px;
     text-align: center;
@@ -480,7 +488,7 @@
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .search-field {
         width: 100%;
     }

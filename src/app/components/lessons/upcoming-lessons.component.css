@@ -182,6 +182,14 @@
   border-bottom: 1px solid var(--border-color);
 }
 
+.empty-state-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #e2e8f0;
+  margin-bottom: 16px;
+}
+
 .title-row {
   display: flex;
   justify-content: space-between;
@@ -302,6 +310,11 @@
   margin: 0 0 24px 0;
   font-size: 0.95rem;
   border: 1px solid var(--border-color);
+}
+
+.btn-allocate {
+  background-color: #6366f1 !important;
+  color: white !important;
 }
 
 .meeting-card {

@@ -21,6 +21,26 @@ class LessonModel
         }
     }
 
+    private static function parseDate($dateStr)
+    {
+        if (empty($dateStr) || $dateStr === '0000-00-00 00:00:00' || $dateStr === '0000-00-00') {
+            return null;
+        }
+        try {
+            return (new \DateTime($dateStr))->format(DATE_ATOM);
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    private static function normalizeId($id)
+    {
+        if (is_array($id) && isset($id['id'])) {
+            $id = $id['id'];
+        }
+        return (isset($id) && is_numeric($id) && (int)$id > 0) ? (int)$id : null;
+    }
+
     private static function mapRowToArray($row)
     {
         $instructorName = trim(($row['instructor_first_name'] ?? '') . ' ' . ($row['instructor_last_name'] ?? ''));
@@ -36,17 +56,23 @@ class LessonModel
         }
 
         return [
-            'id' => (int)$row['id'],
-            'title' => $row['title'],
+            'id' => (int)($row['id'] ?? 0),
+            'title' => $row['title'] ?? 'Untitled',
             'subject' => $row['subject'] ?? null,
-            'startTime' => (new \DateTime($row['start_time']))->format(DATE_ATOM),
-            'endTime' => !empty($row['end_time']) ? (new \DateTime($row['end_time']))->format(DATE_ATOM) : null,
+            'startTime' => self::parseDate($row['start_time'] ?? null),
+            'endTime' => self::parseDate($row['end_time'] ?? null),
             'durationMinutes' => isset($row['duration_minutes']) ? (int)$row['duration_minutes'] : null,
             'instructor' => [
                 'id' => isset($row['instructor_id']) ? (int)$row['instructor_id'] : null,
                 'name' => !empty($instructorName) ? $instructorName : null,
                 'avatarUrl' => $row['instructor_avatar'] ?? null,
             ],
+            'vehicle' => !empty($row['vehicle_id_ref']) ? [
+                'id' => (int)$row['vehicle_id_ref'],
+                'make' => $row['vehicle_make'] ?? '',
+                'model' => $row['vehicle_model'] ?? '',
+                'licensePlate' => $row['vehicle_license_plate'] ?? '',
+            ] : null,
             'location' => $row['location'] ?? null,
             'onlineLink' => $row['online_link'] ?? null,
             'status' => $row['status'] ?? 'upcoming',
@@ -59,8 +85,8 @@ class LessonModel
             'type' => $row['type'] ?? 'group',
             'assignedVehicleId' => isset($row['assigned_vehicle_id']) ? (int)$row['assigned_vehicle_id'] : null,
             'vehicleType' => $vehicleType,
-            'createdAt' => !empty($row['created_at']) ? (new \DateTime($row['created_at']))->format(DATE_ATOM) : null,
-            'updatedAt' => !empty($row['updated_at']) ? (new \DateTime($row['updated_at']))->format(DATE_ATOM) : null,
+            'createdAt' => self::parseDate($row['created_at'] ?? null),
+            'updatedAt' => self::parseDate($row['updated_at'] ?? null),
         ];
     }
 
@@ -69,17 +95,19 @@ class LessonModel
         $conn = self::getConnection();
         if (!$conn) return [];
 
-        // Updated query to JOIN instructors->users and students->users
+        // Updated query to JOIN instructors->users, students->users, and vehicles
         $sql = 'SELECT l.*, 
                        iu.first_name AS instructor_first_name, iu.last_name AS instructor_last_name, iu.avatar AS instructor_avatar,
                        su.first_name AS student_first_name, su.last_name AS student_last_name,
-                       p.package AS package_name
+                       p.package AS package_name,
+                       v.id AS vehicle_id_ref, v.make AS vehicle_make, v.model AS vehicle_model, v.registration AS vehicle_license_plate
                 FROM lessons l
                 LEFT JOIN instructors i ON l.instructor_id = i.id
                 LEFT JOIN users iu ON i.user_id = iu.id
                 LEFT JOIN students s ON l.student_id = s.id
                 LEFT JOIN users su ON s.user_id = su.id
-                LEFT JOIN packages p ON s.package_id = p.id';
+                LEFT JOIN packages p ON s.package_id = p.id
+                LEFT JOIN vehicles v ON l.assigned_vehicle_id = v.id';
 
         $params = [];
 
@@ -126,13 +154,15 @@ class LessonModel
         $sql = 'SELECT l.*, 
                        iu.first_name AS instructor_first_name, iu.last_name AS instructor_last_name, iu.avatar AS instructor_avatar,
                        su.first_name AS student_first_name, su.last_name AS student_last_name,
-                       p.package AS package_name
+                       p.package AS package_name,
+                       v.id AS vehicle_id_ref, v.make AS vehicle_make, v.model AS vehicle_model, v.registration AS vehicle_license_plate
                 FROM lessons l
                 LEFT JOIN instructors i ON l.instructor_id = i.id
                 LEFT JOIN users iu ON i.user_id = iu.id
                 LEFT JOIN students s ON l.student_id = s.id
                 LEFT JOIN users su ON s.user_id = su.id
                 LEFT JOIN packages p ON s.package_id = p.id
+                LEFT JOIN vehicles v ON l.assigned_vehicle_id = v.id
                 WHERE l.id = :id LIMIT 1';
 
         $stmt = $conn->prepare($sql);
@@ -202,8 +232,13 @@ class LessonModel
             if (!in_array($dbCol, $allowedDB)) continue;
 
             $sets[] = "$dbCol = :$k";
-            if ($k === 'resources') $params[":$k"] = json_encode($v);
-            else $params[":$k"] = $v;
+            if ($k === 'resources') {
+                $params[":$k"] = json_encode($v);
+            } elseif (in_array($dbCol, ['assigned_vehicle_id', 'instructor_id', 'student_id'])) {
+                $params[":$k"] = self::normalizeId($v);
+            } else {
+                $params[":$k"] = $v;
+            }
         }
         if (empty($sets)) return false;
 
@@ -264,12 +299,12 @@ class LessonModel
 
         $stmt = $conn->prepare($sql);
         $params = [
-            ':title' => $payload['title'],
+            ':title' => $payload['title'] ?? 'Untitled',
             ':subject' => $payload['subject'] ?? null,
-            ':startTime' => $payload['startTime'],
+            ':startTime' => $payload['startTime'] ?? date('Y-m-d H:i:s'),
             ':endTime' => $payload['endTime'] ?? null,
             ':durationMinutes' => $payload['durationMinutes'] ?? null,
-            ':instructor_id' => $payload['instructor']['id'] ?? null,
+            ':instructor_id' => self::normalizeId($payload['instructor'] ?? ($payload['instructor_id'] ?? null)),
             ':location' => $payload['location'] ?? null,
             ':onlineLink' => $payload['onlineLink'] ?? null,
             ':status' => $payload['status'] ?? 'upcoming',
@@ -277,9 +312,9 @@ class LessonModel
             ':capacity' => $payload['capacity'] ?? null,
             ':notes' => $payload['notes'] ?? null,
             ':resources' => !empty($payload['resources']) ? json_encode($payload['resources']) : null,
-            ':student_id' => $payload['studentId'] ?? null,
+            ':student_id' => self::normalizeId($payload['studentId'] ?? ($payload['student_id'] ?? null)),
             ':type' => $payload['type'] ?? 'group',
-            ':assigned_vehicle_id' => $payload['assignedVehicleId'] ?? null
+            ':assigned_vehicle_id' => self::normalizeId($payload['assignedVehicleId'] ?? ($payload['assigned_vehicle_id'] ?? null))
         ];
 
         $stmt->execute($params);

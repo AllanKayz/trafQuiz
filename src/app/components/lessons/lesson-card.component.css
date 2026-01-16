@@ -62,8 +62,29 @@
 }
 
 .meta {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #64748b;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.instructor {
+  font-weight: 500;
+  color: #475569;
+}
+
+.vehicle {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.selected .instructor {
+  color: #fff;
+}
+
+.selected .vehicle {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .title-row {

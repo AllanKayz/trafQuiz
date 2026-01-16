@@ -5,6 +5,10 @@
       <p>Manage lesson assignments and automatic vehicle allocation.</p>
     </div>
     <div class="header-actions">
+      <button mat-flat-button color="accent" (click)="openCreateLessonDialog()" [disabled]="loading">
+        <mat-icon>add</mat-icon>
+        Create Lesson
+      </button>
       <button mat-flat-button color="primary" (click)="autoAllocate()" [disabled]="loading">
         <mat-icon>auto_awesome</mat-icon>
         Auto-Allocate Vehicles
@@ -45,9 +49,9 @@
             placeholder="Assign Vehicle">
             <mat-option [value]="null">None</mat-option>
             @for (v of vehicles(); track v) {
-              <mat-option [value]="v.id">
-                {{v.make}} {{v.model}} ({{v.registration}})
-              </mat-option>
+            <mat-option [value]="v.id">
+              {{v.make}} {{v.model}} ({{v.registration}})
+            </mat-option>
             }
           </mat-select>
         </mat-cell>
@@ -69,10 +73,10 @@
 
 
     @if (lessonDataSource.data.length === 0) {
-      <div class="no-data">
-        <mat-icon>calendar_today</mat-icon>
-        <p>No lessons found.</p>
-      </div>
+    <div class="no-data">
+      <mat-icon>calendar_today</mat-icon>
+      <p>No lessons found.</p>
+    </div>
     }
   </div>
 </div>

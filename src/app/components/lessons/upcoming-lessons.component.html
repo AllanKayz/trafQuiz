@@ -10,7 +10,7 @@
         <mat-icon>search</mat-icon>
         <input type="text" placeholder="Search lessons..." [(ngModel)]="q" />
       </div>
-      <select [(ngModel)]="range" (change)="onRangeChange()">
+      <select [(ngModel)]="range" (change)="onRangeChange()" title="Select date range">
         <option value="today">Today</option>
         <option value="7days">Next 7 days</option>
         <option value="week">This week</option>
@@ -30,13 +30,9 @@
       <div class="list-header">
         <h3>Lesson List</h3>
       </div>
-      <ul>
-        @for (l of filteredLessons(); track l.id) {
-        <li (click)="selectLesson(l)" tabindex="0" (keyup.enter)="selectLesson(l)">
-          <app-lesson-card [lesson]="l" [selected]="selectedLesson?.id === l.id"></app-lesson-card>
-        </li>
-        }
-      </ul>
+      <ul>@for (l of filteredLessons(); track l.id) {<li (click)="selectLesson(l)" tabindex="0"
+          (keyup.enter)="selectLesson(l)"><app-lesson-card [lesson]="l"
+            [selected]="selectedLesson?.id === l.id"></app-lesson-card></li>}</ul>
       @if (lessons.length === 0) {
       <div class="empty">No upcoming lessons found.</div>
       }
@@ -107,6 +103,19 @@
               </span>
             </div>
           </div>
+
+          @if (selectedLesson.vehicle) {
+          <div class="meta-item">
+            <div class="meta-icon">
+              <mat-icon>directions_car</mat-icon>
+            </div>
+            <div class="meta-content">
+              <span class="meta-label">Assigned Vehicle</span>
+              <span class="meta-value">{{ selectedLesson.vehicle.make }} {{ selectedLesson.vehicle.model }} ({{
+                selectedLesson.vehicle.licensePlate }})</span>
+            </div>
+          </div>
+          }
         </div>
       </div>
 
@@ -145,6 +154,12 @@
 
           <!-- Instructor/Admin Actions -->
           @if (isInstructor() || isAdmin()) {
+          @if (isAdmin()) {
+          <button class="btn btn-primary btn-allocate" (click)="allocate(selectedLesson)">
+            <mat-icon>assignment_ind</mat-icon>
+            Allocate
+          </button>
+          }
           @if (selectedLesson.status === 'pending') {
           <button class="btn btn-primary" (click)="approve(selectedLesson)">
             <mat-icon>check</mat-icon>
@@ -172,8 +187,7 @@
     </section>
     } @else {
     <div class="detail empty-state">
-      <mat-icon
-        style="font-size: 64px; width: 64px; height: 64px; color: #e2e8f0; margin-bottom: 16px;">event</mat-icon>
+      <mat-icon class="empty-state-icon">event</mat-icon>
       <p>Select a lesson from the list to view details.</p>
     </div>
     }

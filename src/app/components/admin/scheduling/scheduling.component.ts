@@ -6,17 +6,32 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { LessonService } from '../../../services/lesson.service';
 import { VehicleService } from '../../../services/vehicle.service';
 import { TraffiquizService } from '../../../traffiquiz.service';
 import { Lesson } from '../../../models/lesson';
 import { Vehicle } from '../../../models/vehicle';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { DynamicFormComponent } from '../../../widgets/dynamic-form/dynamic-form.component';
+import { FormConfigService } from '../../../widgets/form-config.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatNativeDateModule } from '@angular/material/core';
 
 @Component({
     selector: 'app-scheduling',
     standalone: true,
-    imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatTableModule, MatPaginatorModule, MatSelectModule, MatSnackBarModule],
+    imports: [
+        CommonModule,
+        FormsModule,
+        MatButtonModule,
+        MatIconModule,
+        MatTableModule,
+        MatPaginatorModule,
+        MatSelectModule,
+        MatDialogModule,
+        MatTooltipModule,
+        MatNativeDateModule
+    ],
     templateUrl: './scheduling.component.html',
     styleUrls: ['./scheduling.component.css']
 })
@@ -24,7 +39,8 @@ export class SchedulingComponent implements AfterViewInit {
     private lessonService = inject(LessonService);
     private vehicleService = inject(VehicleService);
     private trafService = inject(TraffiquizService);
-    private snackBar = inject(MatSnackBar);
+    private dialog = inject(MatDialog);
+    private formConfig = inject(FormConfigService);
 
     lessonDataSource = new MatTableDataSource<Lesson>([]);
     vehicles = signal<Vehicle[]>([]);
@@ -59,7 +75,7 @@ export class SchedulingComponent implements AfterViewInit {
     autoAllocate() {
         this.loading = true;
         this.lessonService.autoAllocateSchedules().subscribe(res => {
-            this.snackBar.open(res.message, 'Close', { duration: 3000 });
+            this.trafService.showNotification(res.message, 'success');
             this.loadData();
         });
     }
@@ -67,7 +83,53 @@ export class SchedulingComponent implements AfterViewInit {
     assignVehicle(lessonId: number, vehicleId: any) {
         if (!vehicleId) return;
         this.lessonService.patchLesson(lessonId, { assignedVehicleId: vehicleId }).subscribe(() => {
-            this.snackBar.open('Vehicle assigned', 'Close', { duration: 2000 });
+            this.trafService.showNotification('Vehicle assigned', 'success');
+        });
+    }
+
+    openCreateLessonDialog() {
+        const dialogRef = this.dialog.open(DynamicFormComponent, {
+            width: '600px',
+            data: {
+                title: 'Create New Lesson',
+                submitText: 'Create Lesson',
+                fields: this.formConfig.getFormConfig('admin-create-lesson'),
+                initialData: {
+                    type: 'group',
+                    durationMinutes: 60,
+                    capacity: 1
+                }
+            }
+        });
+
+        dialogRef.componentInstance.submitted.subscribe((data: any) => {
+            const instructor = this.trafService.instructorsSignal().find(i => i.id === data.instructorId);
+
+            // Format Date to YYYY-MM-DD HH:mm:ss for SQL
+            let formattedStartTime = data.startTime;
+            if (data.startTime instanceof Date) {
+                const pad = (n: number) => n < 10 ? '0' + n : n;
+                const d = data.startTime;
+                formattedStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+            }
+
+            const payload: any = {
+                ...data,
+                startTime: formattedStartTime,
+                instructor: {
+                    id: data.instructorId,
+                    name: instructor ? `${instructor.firstName} ${instructor.lastName}` : 'Unknown'
+                }
+            };
+
+            // Remove instructorId from root payload as backend expects matches for its keys or specific mapping
+            delete payload.instructorId;
+
+            this.lessonService.addLesson(payload).subscribe(() => {
+                this.trafService.showNotification('Lesson created successfully', 'success');
+                dialogRef.close();
+                this.loadData();
+            });
         });
     }
 }

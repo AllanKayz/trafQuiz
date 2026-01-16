@@ -9,6 +9,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { FormConfigService } from '../../widgets/form-config.service';
@@ -27,6 +29,8 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
     MatProgressBarModule,
     MatFormFieldModule,
     MatInputModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     FormsModule
   ],
   templateUrl: './finances.component.html',
@@ -62,7 +66,7 @@ export class FinancesComponent implements AfterViewInit {
       this.user();
       this.searchQuery();
       this.loadData();
-    }, { allowSignalWrites: true });
+    });
   }
 
   ngAfterViewInit() {

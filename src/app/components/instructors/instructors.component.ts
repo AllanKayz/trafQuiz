@@ -3,7 +3,6 @@ import { Validators } from '@angular/forms';
 
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TraffiquizService } from '../../traffiquiz.service';
 import { Router } from '@angular/router';
 import { ButtonConfigService } from '../../widgets/button-config.service';
@@ -17,7 +16,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 @Component({
 	selector: 'app-instructors',
 	standalone: true,
-	imports: [MatDialogModule, MatSnackBarModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
+	imports: [MatDialogModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
 	templateUrl: './instructors.component.html',
 	styleUrls: ['./instructors.component.css']
 })
@@ -28,7 +27,6 @@ export class InstructorsComponent {
 	private trafQuizService = inject(TraffiquizService);
 	private buttonService = inject(ButtonConfigService);
 	private router = inject(Router);
-	private snackBar = inject(MatSnackBar);
 	private dialog = inject(MatDialog);
 	private formConfig = inject(FormConfigService);
 
@@ -201,12 +199,12 @@ export class InstructorsComponent {
 
 		action.subscribe({
 			next: (res) => {
-				this.snackBar.open(`Certification ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
+				this.trafQuizService.showNotification(`Certification ${id ? 'updated' : 'added'} successfully`, 'success');
 				this.trafQuizService.getSpecializations();
 			},
 			error: (err) => {
 				console.log(err);
-				this.snackBar.open('Error saving certification', 'Close', { duration: 3000 });
+				this.trafQuizService.showNotification('Error saving certification', 'error');
 			}
 		});
 	}
@@ -240,12 +238,12 @@ export class InstructorsComponent {
 
 		action.subscribe({
 			next: (res) => {
-				this.snackBar.open(`Specialization ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
+				this.trafQuizService.showNotification(`Specialization ${id ? 'updated' : 'added'} successfully`, 'success');
 				this.trafQuizService.getSpecializations();
 			},
 			error: (err) => {
 				console.log(err);
-				this.snackBar.open('Error saving specialization', 'Close', { duration: 3000 });
+				this.trafQuizService.showNotification('Error saving specialization', 'error');
 			}
 		});
 	}

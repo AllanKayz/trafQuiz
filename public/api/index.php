@@ -23,6 +23,46 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS"); //Allow
 header("Access-Control-Allow-Headers: Content-Type, Authorization"); //Allow Specific Headers
 header("Content-Type: application/json");
 
+// Global Error and Exception Handling
+set_exception_handler(function ($e) {
+       if (ob_get_length()) ob_clean();
+       http_response_code(500);
+       echo json_encode([
+              "success" => false,
+              "message" => "Internal Server Error",
+              "error" => $e->getMessage()
+       ]);
+       exit();
+});
+
+set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+       if (!(error_reporting() & $errno)) return;
+       if ($errno === E_USER_ERROR || $errno === E_RECOVERABLE_ERROR) {
+              if (ob_get_length()) ob_clean();
+              http_response_code(500);
+              echo json_encode([
+                     "success" => false,
+                     "message" => "Critical Error",
+                     "error" => $errstr
+              ]);
+              exit();
+       }
+       return true;
+});
+
+register_shutdown_function(function () {
+       $error = error_get_last();
+       if ($error !== NULL && in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+              if (ob_get_length()) ob_clean();
+              http_response_code(500);
+              echo json_encode([
+                     "success" => false,
+                     "message" => "Fatal Error",
+                     "error" => $error['message']
+              ]);
+       }
+});
+
 $router = new Router;
 
 //API Routes

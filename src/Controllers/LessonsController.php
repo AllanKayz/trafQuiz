@@ -110,7 +110,16 @@ class LessonsController
             }
         }
 
-        $new = LessonModel::add($input);
-        echo json_encode($new);
+        try {
+            $new = LessonModel::add($input);
+            echo json_encode($new);
+        } catch (\Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Failed to add lesson',
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

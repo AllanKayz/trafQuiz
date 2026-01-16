@@ -1,211 +1,84 @@
 @if (isAdmin()) {
-  <div class="container p-4 exam-container">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-      <div>
-        <h1 class="text-3xl font-extrabold text-gradient-blue m-0">Exam Management</h1>
-        <p class="text-muted mt-1">Monitor performance and schedule upcoming sessions</p>
-      </div>
-      <button mat-stroked-button color="primary" (click)="loadStats()" [disabled]="isLoading()">
-        <mat-icon [class.animate-spin]="isLoading()">refresh</mat-icon>
-        Refresh Data
-      </button>
-    </div>
-    <!-- Stats Row -->
-    @if (stats(); as s) {
-      <div class="grid grid-cols-3 md:grid-cols-3 gap-6 mb-8">
-        <mat-card class="stats-card bg-glass-green">
-          <mat-card-content class="p-6">
-            <div class="flex flex-col">
-              <span class="text-sm font-semibold text-green-600 uppercase tracking-wider">Overall Pass Rate</span>
-              <h2 class="text-4xl font-black mt-2 text-gradient-green">{{ passRate }}%</h2>
-              <mat-progress-bar mode="determinate" [value]="passRate"
-              class="h-2 rounded-full mt-4"></mat-progress-bar>
-              <p class="text-xs text-muted mt-4 flex items-center gap-1">
-                <mat-icon class="text-xs Scale-75">analytics</mat-icon>
-                {{ s.pass_count }} Candidates Passed
-              </p>
-            </div>
-            <mat-icon class="stats-icon">check_circle</mat-icon>
-          </mat-card-content>
-        </mat-card>
-        <mat-card class="stats-card bg-glass-blue">
-          <mat-card-content class="p-6">
-            <div class="flex flex-col">
-              <span class="text-sm font-semibold text-blue-600 uppercase tracking-wider">Recent Engagement</span>
-              <h2 class="text-4xl font-black mt-2 text-gradient-blue">
-                {{ recentExams().length > 0 ? recentExams()[0].candidates : 0 }}
-              </h2>
-              <div class="h-2 w-full bg-blue-200 rounded-full mt-4 overflow-hidden">
-                <div class="h-full bg-blue-600 w-2/3"></div>
-              </div>
-              <p class="text-xs text-muted mt-4 flex items-center gap-1">
-                <mat-icon class="text-xs Scale-75">group</mat-icon>
-                Candidates in last session
-              </p>
-            </div>
-            <mat-icon class="stats-icon">people</mat-icon>
-          </mat-card-content>
-        </mat-card>
-        <mat-card class="stats-card bg-glass-purple">
-          <mat-card-content class="p-6">
-            <div class="flex flex-col">
-              <span class="text-sm font-semibold text-purple-600 uppercase tracking-wider">Total Sessions</span>
-              <h2 class="text-4xl font-black mt-2 text-gradient-purple">{{ recentExams().length }}</h2>
-              <div class="h-2 w-full bg-purple-200 rounded-full mt-4 overflow-hidden">
-                <div class="h-full bg-purple-600 w-1/2"></div>
-              </div>
-              <p class="text-xs text-muted mt-4 flex items-center gap-1">
-                <mat-icon class="text-xs Scale-75">event_note</mat-icon>
-                Recorded Exam Sessions
-              </p>
-            </div>
-            <mat-icon class="stats-icon">history_edu</mat-icon>
-          </mat-card-content>
-        </mat-card>
-      </div>
-    }
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Auto Allocation -->
-      <div class="lg:col-span-1">
-        <mat-card class="allocation-card h-full">
-          <mat-card-header class="pb-4">
-            <mat-card-title class="text-xl font-bold">Smart Allocation</mat-card-title>
-            <mat-card-subtitle>Automatically assign students to slots</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content class="pt-4">
-            <form [formGroup]="autoAllocateForm" (ngSubmit)="onAutoAllocate()" class="flex flex-col gap-6">
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Session Date</mat-label>
-                <input matInput [matDatepicker]="picker" formControlName="date" title="Exam Date">
-                <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
-                <mat-datepicker #picker></mat-datepicker>
-                <mat-hint>Choose the date for the exam session</mat-hint>
-              </mat-form-field>
-              <mat-form-field appearance="outline" class="w-full">
-                <mat-label>Maximum Capacity</mat-label>
-                <input matInput type="number" formControlName="capacity" placeholder="e.g. 50"
-                  title="Capacity">
-                  <mat-icon matPrefix class="mr-2 text-muted">groups</mat-icon>
-                  <mat-hint>Max students for this session</mat-hint>
-                </mat-form-field>
-                <button mat-flat-button color="primary" class="w-full py-6 rounded-xl text-lg font-bold"
-                  type="submit" [disabled]="autoAllocateForm.invalid || isAllocating()">
-                  @if (!isAllocating()) {
-                    <mat-icon class="mr-2">bolt</mat-icon>
-                  }
-                  @if (isAllocating()) {
-                    <mat-progress-spinner diameter="24" mode="indeterminate"
-                    class="mr-2 inline-block align-middle"></mat-progress-spinner>
-                  }
-                  {{ isAllocating() ? 'Allocating...' : 'Run Allocation' }}
-                </button>
-              </form>
-              <div class="mt-8 p-4 bg-amber-50 rounded-lg border border-amber-100 flex gap-3">
-                <mat-icon class="text-amber-500">info_outline</mat-icon>
-                <p class="text-sm text-amber-700 m-0">
-                  Smart allocation prioritizes students who have completed all lessons and have the oldest
-                  registration dates.
-                </p>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-        <!-- Recent Exams Table -->
-        <div class="lg:col-span-2">
-          <mat-card class="table-card h-full">
-            <mat-card-header class="flex justify-between items-center pb-4">
-              <div>
-                <mat-card-title class="text-xl font-bold">Session History</mat-card-title>
-                <mat-card-subtitle>Review and manage previous exam sessions</mat-card-subtitle>
-              </div>
-            </mat-card-header>
-            <mat-card-content>
-              <mat-form-field appearance="outline" class="search-field mt-4">
-                <mat-label>Filter sessions</mat-label>
-                <input matInput [formControl]="searchControl" placeholder="Search by name or date...">
-                <mat-icon matPrefix>search</mat-icon>
-              </mat-form-field>
-              <div class="overflow-x-auto">
-                <table mat-table [dataSource]="filteredExams()" class="w-full">
-                  <ng-container matColumnDef="name">
-                    <th mat-header-cell *matHeaderCellDef> Session details </th>
-                    <td mat-cell *matCellDef="let element">
-                      <div class="flex flex-col py-2">
-                        <span class="font-bold text-main">{{element.name}}</span>
-                        <span class="text-xs text-muted">{{element.start_time |
-                        date:'mediumTime'}}</span>
-                      </div>
-                    </td>
-                  </ng-container>
-                  <ng-container matColumnDef="date">
-                    <th mat-header-cell *matHeaderCellDef> Date </th>
-                    <td mat-cell *matCellDef="let element"> {{element.start_time | date:'mediumDate'}} </td>
-                  </ng-container>
-                  <ng-container matColumnDef="candidates">
-                    <th mat-header-cell *matHeaderCellDef> Attendance </th>
-                    <td mat-cell *matCellDef="let element">
-                      <div class="flex items-center gap-2">
-                        <mat-icon class="text-sm text-muted">person</mat-icon>
-                        {{element.candidates}} students
-                      </div>
-                    </td>
-                  </ng-container>
-                  <ng-container matColumnDef="status">
-                    <th mat-header-cell *matHeaderCellDef> Status </th>
-                    <td mat-cell *matCellDef="let element">
-                      <span class="status-badge" [ngClass]="'status-' + getExamStatus(element)">
-                        {{ getExamStatus(element) }}
-                      </span>
-                    </td>
-                  </ng-container>
-                  <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef class="text-right"> Actions </th>
-                    <td mat-cell *matCellDef="let element" class="text-right">
-                      <button mat-icon-button class="action-btn" matTooltip="View Details">
-                        <mat-icon>visibility</mat-icon>
-                      </button>
-                      <button mat-icon-button class="action-btn" color="primary"
-                        matTooltip="Download Results" (click)="downloadResults(element)">
-                        <mat-icon>download</mat-icon>
-                      </button>
-                    </td>
-                  </ng-container>
-                  <tr mat-header-row *matHeaderRowDef="['name', 'date', 'candidates', 'status', 'actions']">
-                  </tr>
-                  <tr mat-row
-                    *matRowDef="let row; columns: ['name', 'date', 'candidates', 'status', 'actions'];"
-                  class="hover:bg-gray-50 transition-colors"></tr>
-                </table>
-                @if (filteredExams().length === 0) {
-                  <div class="flex flex-col items-center py-12">
-                    <mat-icon class="text-6xl text-gray-200">event_busy</mat-icon>
-                    <p class="text-muted mt-4">No exam sessions found matching your search.</p>
-                  </div>
-                }
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
-      </div>
-    </div>
+<section>
+  <app-sectionheader [header]="header" [content]="content" [buttons]="buttons()"
+    (buttonClicked)="handleButtonAction($event)" />
+</section>
+<section class="widgets-grid mb-8">
+  @for (widget of widgets(); track widget) {
+  <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" [icon]="widget.icon" />
   }
+</section>
+
+<div class="container p-4 exam-container">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Auto Allocation -->
+    <div class="lg:col-span-1">
+      <mat-card class="allocation-card h-full">
+        <mat-card-header class="pb-4">
+          <mat-card-title class="text-xl font-bold">Smart Allocation</mat-card-title>
+          <mat-card-subtitle>Automatically assign students to slots</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content class="pt-4">
+          <form [formGroup]="autoAllocateForm" (ngSubmit)="onAutoAllocate()" class="flex flex-col gap-6">
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Session Date</mat-label>
+              <input matInput [matDatepicker]="picker" formControlName="date" title="Exam Date">
+              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+              <mat-hint>Choose the date for the exam session</mat-hint>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Maximum Capacity</mat-label>
+              <input matInput type="number" formControlName="capacity" placeholder="e.g. 50" title="Capacity">
+              <mat-icon matPrefix class="mr-2 text-muted">groups</mat-icon>
+              <mat-hint>Max students for this session</mat-hint>
+            </mat-form-field>
+            <button mat-flat-button color="primary" class="w-full py-6 rounded-xl text-lg font-bold" type="submit"
+              [disabled]="autoAllocateForm.invalid || isAllocating()">
+              @if (!isAllocating()) {
+              <mat-icon class="mr-2">bolt</mat-icon>
+              }
+              @if (isAllocating()) {
+              <mat-progress-spinner diameter="24" mode="indeterminate"
+                class="mr-2 inline-block align-middle"></mat-progress-spinner>
+              }
+              {{ isAllocating() ? 'Allocating...' : 'Run Allocation' }}
+            </button>
+          </form>
+          <div class="mt-8 p-4 bg-amber-50 rounded-lg border border-amber-100 flex gap-3">
+            <mat-icon class="text-amber-500">info_outline</mat-icon>
+            <p class="text-sm text-amber-700 m-0">
+              Smart allocation prioritizes students who have completed all lessons and have the oldest
+              registration dates.
+            </p>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div> </div>
+  </div>
+  <!-- Recent Exams Table -->
+  <section class="questions-table pt-3">
+    <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="tableActions()"
+      [filterPlaceholder]="'Search questions...'" (rowAction)="handleTableAction($event)"></app-table>
+  </section>
+}
 
   <!-- Unauthorized State -->
   @if (!isAdmin()) {
-    <div class="container p-4 min-h-[60vh] flex flex-col items-center justify-center h-full">
-      <div
-        class="bg-white p-12 rounded-3xl shadow-2xl border border-gray-100 flex flex-col items-center max-w-md text-center">
-        <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
-          <mat-icon class="text-5xl text-red-500">lock</mat-icon>
-        </div>
-        <h2 class="text-2xl font-black text-gray-900 m-0">Authorized Access Only</h2>
-        <p class="text-gray-500 mt-4 leading-relaxed">
-          This module is reserved for system administrators. Please contact support if you require access to exam
-          management.
-        </p>
-        <button mat-flat-button color="primary" class="mt-8 px-8 py-2 rounded-full" (click)="service.logout()">
-          Back to Dashboard
-        </button>
+  <div class="container p-4 min-h-[60vh] flex flex-col items-center justify-center h-full">
+    <div
+      class="bg-white p-12 rounded-3xl shadow-2xl border border-gray-100 flex flex-col items-center max-w-md text-center">
+      <div class="w-24 h-24 bg-red-50 rounded-full flex items-center justify-center mb-6">
+        <mat-icon class="text-5xl text-red-500">lock</mat-icon>
       </div>
+      <h2 class="text-2xl font-black text-gray-900 m-0">Authorized Access Only</h2>
+      <p class="text-gray-500 mt-4 leading-relaxed">
+        This module is reserved for system administrators. Please contact support if you require access to exam
+        management.
+      </p>
+      <button mat-flat-button color="primary" class="mt-8 px-8 py-2 rounded-full" (click)="service.logout()">
+        Back to Dashboard
+      </button>
     </div>
+  </div>
   }

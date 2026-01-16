@@ -1,6 +1,5 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, input, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 import { TraffiquizService } from '../../traffiquiz.service';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -16,6 +15,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { FormControl } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { SectionheaderComponent } from "../../widgets/sectionheader/sectionheader.component";
+import { ButtonConfigService } from '../../widgets/button-config.service';
+import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
+import { TableComponent, TableColumn } from '../../widgets/table/table.component';
 
 @Component({
   selector: 'app-exams',
@@ -33,35 +36,71 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
     MatTableModule,
     MatProgressBarModule,
     MatProgressSpinnerModule,
-    MatTooltipModule
+    MatTooltipModule,
+    SectionheaderComponent,
+    StatCardComponent,
+    TableComponent
   ],
   templateUrl: './exams.component.html',
   styleUrl: './exams.component.css'
 })
 export class ExamsComponent implements OnInit {
+  header = 'Exams Management';
+  content = 'Monitor performance and schedule upcoming sessions.';
+
   public service = inject(TraffiquizService);
+  private buttonService = inject(ButtonConfigService);
   private fb = inject(FormBuilder);
 
   user = this.service.currentUser;
   isAdmin = computed(() => this.user()?.role === 'admin');
+  menuName = 'exams';
 
-  stats = signal<any>(null);
-  recentExams = signal<any[]>([]);
+  stats = this.service.examStats;
+  recentExams = computed(() => this.stats()?.recent_exams || []);
   searchControl = new FormControl('');
   isLoading = signal(false);
   isAllocating = signal(false);
 
   filteredExams = computed(() => {
-    const query = this.searchControl.value?.toLowerCase() || '';
-    const exams = this.recentExams();
-    if (!query) return exams;
-    return exams.filter(e =>
-      e.name?.toLowerCase().includes(query) ||
-      e.start_time?.toLowerCase().includes(query)
-    );
+    return this.recentExams();
   });
 
   autoAllocateForm: FormGroup;
+
+  //Get buttons based on user role and current menu
+  buttons = computed(() => {
+    const user = this.user();
+    if (!user) return [];
+    return this.buttonService.getButtons(this.menuName, user.role);
+  });
+
+  widgetsSignal = this.service.userExamWidgets;
+  widgets = input<any[]>(this.widgetsSignal());
+
+  // Table Configurations
+  tableColumns = signal<TableColumn[]>([
+    { key: 'name', header: 'Session Details', type: 'text' },
+    { key: 'start_time', header: 'Date', type: 'date' },
+    { key: 'candidates', header: 'Attendance', type: 'number' },
+    { key: 'status', header: 'Status', type: 'text' }
+  ]);
+
+  // Computed Actions based on Role
+  tableActions = computed(() => {
+    const role = this.user()?.role;
+    if (role === 'admin') {
+      return ['view', 'download'];
+    }
+    return []; // Instructors: Read-only
+  });
+
+  tableData = computed(() => {
+    return this.recentExams().map((exam: any) => ({
+      ...exam,
+      status: this.getExamStatus(exam)
+    }));
+  });
 
   constructor() {
     this.autoAllocateForm = this.fb.group({
@@ -74,23 +113,12 @@ export class ExamsComponent implements OnInit {
     if (this.isAdmin()) {
       this.loadStats();
     }
-
-    this.searchControl.valueChanges.pipe(
-      debounceTime(300),
-      distinctUntilChanged()
-    ).subscribe(() => {
-      // Logic handled by computed signal
-    });
   }
 
   loadStats() {
     this.isLoading.set(true);
     this.service.getExamStatistics().subscribe({
       next: (data) => {
-        if (data.detailed) {
-          this.stats.set(data.detailed);
-          this.recentExams.set(data.detailed.recent_exams || []);
-        }
         this.isLoading.set(false);
       },
       error: (err) => {
@@ -98,6 +126,35 @@ export class ExamsComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  handleButtonAction(action: string) {
+    switch (action) {
+      case 'createExam':
+        this.service.showNotification('Create Exam functionality coming soon', 'info');
+        break;
+      case 'sheduleExam':
+        this.service.showNotification('Schedule Exam functionality coming soon', 'info');
+        break;
+      case 'refreshStats':
+        this.loadStats();
+        break;
+    }
+  }
+
+  handleTableAction(event: { action: string, item: any }) {
+    const exam = event.item;
+
+    if (!exam) return;
+
+    switch (event.action) {
+      case 'view':
+        this.service.showNotification(`Viewing details for ${exam.name}`, 'info');
+        break;
+      case 'download':
+        this.downloadResults(exam);
+        break;
+    }
   }
 
   onAutoAllocate() {
@@ -137,11 +194,4 @@ export class ExamsComponent implements OnInit {
     // Implementation for downloading PDF would go here
   }
 
-  // Helper getters
-  get passRate() {
-    const s = this.stats();
-    if (!s) return 0;
-    const total = (Number(s.pass_count) || 0) + (Number(s.fail_count) || 0);
-    return total === 0 ? 0 : Math.round((Number(s.pass_count) / total) * 100);
-  }
 }

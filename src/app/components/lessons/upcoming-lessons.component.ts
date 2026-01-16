@@ -124,6 +124,72 @@ export class UpcomingLessonsComponent implements OnInit {
     });
   }
 
+  allocate(lesson: Lesson) {
+    if (!this.isAdmin()) return;
+
+    // Fetch dependencies if not already loaded
+    if (this.service.instructorsSignal().length === 0) this.service.fetchInstructors();
+    if (this.service.vehiclesSignal().length === 0) this.service.fetchVehicles();
+    if (this.service.studentsSignal().length === 0) this.service.fetchStudents();
+
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '500px',
+      data: {
+        title: 'Manual Allocation',
+        submitText: 'Update Allocation',
+        fields: [
+          {
+            name: 'instructorId',
+            label: 'Instructor',
+            type: 'select',
+            required: true,
+            options: this.service.instructorsSignal().map(i => ({ value: i.id, label: `${i.firstName} ${i.lastName}` }))
+          },
+          {
+            name: 'assignedVehicleId',
+            label: 'Vehicle',
+            type: 'select',
+            required: false,
+            options: this.service.vehiclesSignal().map(v => ({ value: v.id, label: `${v.make} ${v.model} (${v.license_plate})` }))
+          },
+          {
+            name: 'studentId',
+            label: 'Student',
+            type: 'select',
+            required: false,
+            options: this.service.studentsSignal().map(s => ({ value: s.id, label: `${s.firstName} ${s.lastName}` }))
+          },
+          {
+            name: 'status',
+            label: 'Status',
+            type: 'select',
+            required: true,
+            options: [
+              { value: 'upcoming', label: 'Upcoming' },
+              { value: 'confirmed', label: 'Confirmed' },
+              { value: 'pending', label: 'Pending' },
+              { value: 'cancelled', label: 'Cancelled' }
+            ]
+          }
+        ],
+        initialData: {
+          instructorId: lesson.instructor.id,
+          assignedVehicleId: lesson.assignedVehicleId,
+          studentId: lesson.studentId,
+          status: lesson.status
+        }
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data: any) => {
+      this.lessonService.patchLesson(lesson.id, data).subscribe(() => {
+        dialogRef.close();
+        this.loadLessons();
+        this.service.showNotification('Lesson allocation updated successfully.', 'success');
+      });
+    });
+  }
+
   approve(lesson: Lesson | null) {
     if (!lesson) return;
     this.lessonService.approveLesson(lesson.id).subscribe(() => {

@@ -10,7 +10,6 @@ import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dial
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
 @Component({
     selector: 'app-user-access',
@@ -26,8 +25,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
         MatSelectModule,
         MatFormFieldModule,
         FormsModule,
-        ReactiveFormsModule,
-        MatSnackBarModule
+        ReactiveFormsModule
     ],
     templateUrl: './user-access.component.html',
     styleUrl: './user-access.component.css'
@@ -35,7 +33,6 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 export class UserAccessComponent implements AfterViewInit {
     service = inject(TraffiquizService);
     dialog = inject(MatDialog);
-    snackBar = inject(MatSnackBar);
 
     userDataSource = new MatTableDataSource<any>([]);
     displayedColumns: string[] = ['name', 'email', 'role', 'status', 'actions'];
@@ -78,7 +75,7 @@ export class UserAccessComponent implements AfterViewInit {
         if (form.valid) {
             const newUser = form.value;
             this.service.addUser(newUser).subscribe(() => {
-                this.snackBar.open('User created successfully', 'Close', { duration: 3000 });
+                this.service.showNotification('User created successfully', 'success');
                 this.loadUsers();
                 dialogRef.close();
             });
@@ -88,7 +85,7 @@ export class UserAccessComponent implements AfterViewInit {
     onPasswordChanged(dialogRef: MatDialogRef<any>, userId: string, pass: string) {
         if (pass) {
             this.service.updateUserPassword(userId, pass).subscribe(() => {
-                this.snackBar.open('Password updated', 'Close', { duration: 3000 });
+                this.service.showNotification('Password updated', 'success');
                 dialogRef.close();
             });
         }

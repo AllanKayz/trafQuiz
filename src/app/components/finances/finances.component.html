@@ -174,11 +174,11 @@
         <td mat-cell *matCellDef="let element">
           @if (element.status === 'pending' && isAdmin()) {
           <button mat-icon-button (click)="approvePayment(element.id, 'completed')" matTooltip="Approve Full"
-            style="color: #10b981;">
+            class="btn-approve">
             <mat-icon>check_circle</mat-icon>
           </button>
           <button mat-icon-button (click)="approvePayment(element.id, 'partial')" matTooltip="Mark as Partial"
-            style="color: #f59e0b;">
+            class="btn-partial">
             <mat-icon>timelapse</mat-icon>
           </button>
           }

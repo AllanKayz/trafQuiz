@@ -1,9 +1,7 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { Validators } from '@angular/forms';
-
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TraffiquizService } from '../../traffiquiz.service';
 import { Router } from '@angular/router';
 import { ButtonConfigService } from '../../widgets/button-config.service';
@@ -17,7 +15,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 @Component({
 	selector: 'app-students',
 	standalone: true,
-	imports: [MatDialogModule, MatSnackBarModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
+	imports: [MatDialogModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
 	templateUrl: './students.component.html',
 	styleUrls: ['./students.component.css']
 })
@@ -28,7 +26,6 @@ export class StudentsComponent {
 	private trafQuizService = inject(TraffiquizService);
 	private buttonService = inject(ButtonConfigService);
 	private router = inject(Router);
-	private snackBar = inject(MatSnackBar);
 	private dialog = inject(MatDialog);
 	private formConfig = inject(FormConfigService);
 

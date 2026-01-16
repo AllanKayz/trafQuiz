@@ -7,7 +7,6 @@ import { ApiResponse, Question } from '../../trafquiz';
 import { ButtonConfigService } from '../../widgets/button-config.service';
 import { Router } from '@angular/router';
 import { TableColumn, TableComponent } from "../../widgets/table/table.component";
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { QuestionFormComponent } from '../../widgets/question-form/question-form.component';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
@@ -18,7 +17,7 @@ import { CATEGORY_FORM_FIELDS } from '../../widgets/dynamic-form/category.config
 @Component({
 	selector: 'app-questions',
 	standalone: true,
-	imports: [SectionheaderComponent, StatCardComponent, TableComponent, MatSnackBarModule, MatDialogModule],
+	imports: [SectionheaderComponent, StatCardComponent, TableComponent, MatDialogModule],
 	templateUrl: './questions.component.html',
 	styleUrl: './questions.component.css'
 })
@@ -29,7 +28,6 @@ export class QuestionsComponent {
 	private trafQuizService = inject(TraffiquizService);
 	private buttonService = inject(ButtonConfigService);
 	private router = inject(Router);
-	private snackBar = inject(MatSnackBar);
 	private dialog = inject(MatDialog);
 	private formConfig = inject(FormConfigService);
 
@@ -180,10 +178,10 @@ export class QuestionsComponent {
 
 		action.subscribe({
 			next: () => {
-				this.snackBar.open(`Question ${id ? 'updated' : 'added'} successfully`, 'Close', { duration: 3000 });
+				this.trafQuizService.showNotification(`Question ${id ? 'updated' : 'added'} successfully`, 'success');
 				this.trafQuizService.fetchQuestions();
 			},
-			error: () => this.snackBar.open('Error saving question', 'Close', { duration: 3000 })
+			error: () => this.trafQuizService.showNotification('Error saving question', 'error')
 		});
 	}
 

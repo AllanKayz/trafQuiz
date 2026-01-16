@@ -1,10 +1,9 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { catchError, map, tap } from 'rxjs/operators';
+import { catchError, map, tap, filter } from 'rxjs/operators';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse, StudentProgress } from './trafquiz';
 import { jsPDF } from 'jspdf';
 
@@ -23,7 +22,6 @@ export class TraffiquizService {
   private http: HttpClient = inject(HttpClient);
   private url = 'http://localhost:84/trafQuiz/public/api/';
   public alert = inject(MatDialog);
-  private snackBar = inject(MatSnackBar);
 
   // Convert user data to signal for reactive user state management.
   private userSignal = signal<any>(null);
@@ -37,18 +35,20 @@ export class TraffiquizService {
    * @param duration The duration in milliseconds (default: 4000).
    */
   public showNotification(message: string, type: 'success' | 'error' | 'info' = 'info', duration: number = 4000) {
-    let panelClass = '';
-    switch (type) {
-      case 'success': panelClass = 'success-snackbar'; break;
-      case 'error': panelClass = 'error-snackbar'; break;
-      case 'info': panelClass = 'info-snackbar'; break;
-    }
+    const titles = {
+      success: 'Success',
+      error: 'Error',
+      info: 'Information'
+    };
 
-    this.snackBar.open(message, 'Close', {
-      duration: duration,
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      panelClass: [panelClass]
+    this.alert.open(AlertComponent, {
+      width: '400px',
+      data: {
+        title: titles[type] || 'Notification',
+        message: message,
+        type: type,
+        buttons: [{ text: 'OK', value: 'ok', color: type === 'error' ? 'warn' : 'primary' }]
+      }
     });
   }
 
@@ -58,12 +58,23 @@ export class TraffiquizService {
    * @param action The action label (e.g., 'DELETE').
    * @returns An observable that emits when the action is clicked.
    */
-  public showConfirm(message: string, action: string = 'CONFIRM'): Observable<void> {
-    return this.snackBar.open(message, action, {
-      duration: 10000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
-    }).onAction();
+  public showConfirm(message: string, actionLabel: string = 'CONFIRM', title: string = 'Confirmation Required'): Observable<any> {
+    const dialogRef = this.alert.open(AlertComponent, {
+      width: '400px',
+      data: {
+        title: title,
+        message: message,
+        type: 'warning',
+        buttons: [
+          { text: 'Cancel', value: 'cancel', color: 'warn' },
+          { text: actionLabel, value: 'confirm', color: 'primary' }
+        ]
+      }
+    });
+
+    return dialogRef.afterClosed().pipe(
+      filter(result => result === 'confirm')
+    );
   }
 
   // Writable signals for managing collections of data.
@@ -112,6 +123,8 @@ export class TraffiquizService {
   /** Configuration for the widgets displayed on the dashboard for different user roles. */
   /** Signal to store dynamic dashboard stats from backend. */
   public dashboardStats = signal<any>(null);
+  /** Signal to store dynamic exam stats from backend. */
+  public examStats = signal<any>(null);
 
   /** Configuration for the widgets, updated dynamically. */
   private widgetsConfig = {
@@ -185,6 +198,15 @@ export class TraffiquizService {
     ]
   }
 
+  /** Configuration for the widgets displayed on the exams panel. */
+  examWidgetConfig = {
+    admin: [
+      { id: 'analytics', title: 'Overall Pass Rate', data: '0', footer: 'Candidates Passed', icon: 'check_circle' },
+      { id: 'group', title: 'Recent Engagement', data: '0', footer: 'Candidates in last session', icon: 'people' },
+      { id: 'history_edu', title: 'Total Sessions', data: '0', footer: 'Recorded Exam Sessions', icon: 'history_edu' },
+    ]
+  }
+
   /** A computed signal that returns the widgets for the current user's role. */
   /** A computed signal that returns the widgets for the current user's role with real data. */
   public userWidgets = computed(() => {
@@ -230,6 +252,30 @@ export class TraffiquizService {
   public userInstructorWidgets = computed(() => {
     const user = this.userSignal();
     return user ? this.instructorWidgetConfig[user.role as keyof typeof this.instructorWidgetConfig] : [];
+  });
+
+  /** A computed signal that returns the exams widgets for the current user's role. */
+  public userExamWidgets = computed(() => {
+    const user = this.userSignal();
+    const role: 'admin' | 'instructor' | 'student' = user?.role || 'student';
+    if (role !== 'admin') return [];
+
+    const stats = this.examStats();
+    return this.examWidgetConfig.admin.map(w => {
+      if (!stats) return w;
+      switch (w.id) {
+        case 'analytics':
+          const total = (Number(stats.pass_count) || 0) + (Number(stats.fail_count) || 0);
+          const rate = total === 0 ? 0 : Math.round((Number(stats.pass_count) / total) * 100);
+          return { ...w, data: rate + '%', footer: `${stats.pass_count} Candidates Passed` };
+        case 'group':
+          const recent = stats.recent_exams?.[0]?.candidates || 0;
+          return { ...w, data: recent, footer: 'Candidates in last session' };
+        case 'history_edu':
+          return { ...w, data: stats.recent_exams?.length || 0, footer: 'Recorded Exam Sessions' };
+        default: return w;
+      }
+    });
   });
 
   /** A computed signal that transforms the questions data into a format suitable for display in a table. */
@@ -893,7 +939,13 @@ export class TraffiquizService {
    * Gets detailed exam statistics.
    */
   getExamStatistics(): Observable<any> {
-    return this.http.get(this.url + 'admin/getExamStats');
+    return this.http.get(this.url + 'admin/getExamStats').pipe(
+      tap((data: any) => {
+        if (data.detailed) {
+          this.examStats.set(data.detailed);
+        }
+      })
+    );
   }
 
   /**
