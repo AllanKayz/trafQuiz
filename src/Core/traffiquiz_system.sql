@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jan 13, 2026 at 06:48 PM
+-- Generation Time: Jan 16, 2026 at 05:07 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -167,6 +167,13 @@ CREATE TABLE `lessons` (
   `created_at` datetime DEFAULT current_timestamp(),
   `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `lessons`
+--
+
+INSERT INTO `lessons` (`id`, `title`, `subject`, `start_time`, `end_time`, `duration_minutes`, `instructor_id`, `student_id`, `assigned_vehicle_id`, `location`, `online_link`, `status`, `student_count`, `capacity`, `notes`, `resources`, `type`, `created_at`, `updated_at`) VALUES
+(7, 'Provisional 101', 'Theory', '2026-01-15 00:00:00', NULL, 60, 2, NULL, NULL, 'Room 2', NULL, 'upcoming', 1, 7, 'manotes', NULL, 'group', '2026-01-14 00:11:29', '2026-01-14 00:16:11');
 
 -- --------------------------------------------------------
 
@@ -2028,7 +2035,7 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `first_name`, `last_name`, `email`, `phone`, `avatar`, `reset_token`, `reset_expires`, `created_at`, `updated_at`) VALUES
 (1, 'admin', '$2y$10$j8KHrniTKtPcVga7/7HHUeFiPsC3vouihT6HFS85W/AhaAjTay6NG', 'admin', 'admin', 'admin', 'admin@gmail.com', NULL, NULL, NULL, NULL, '2026-01-10 09:21:06', '2026-01-10 09:21:06'),
 (2, 'student', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'student', 'student', 'student', 'successchibayamagora@gmail.com', '+263782408596', NULL, NULL, NULL, '2026-01-10 09:21:06', '2026-01-11 00:35:28'),
-(3, 'allankayz', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'instructor', 'Allan', 'Kanyemba', 'allankanyemba@gmail.com', '+263774833890', NULL, NULL, NULL, '2026-01-10 09:21:06', '2026-01-11 00:06:56'),
+(3, 'instructor', '$2y$10$mdCKQTJdXgPiTOpPbId1Mu1znniMET5nYfw5vKkc1Ds3PtvvC6roG', 'instructor', 'Allan', 'Kanyemba', 'allankanyemba@mail.com', '774833890', NULL, NULL, NULL, '2026-01-10 09:21:06', '2026-01-16 17:48:35'),
 (51, 'testone', '$2y$10$mmhxXlh7Pjv6pCHXmJ/xS.U8iqL9XLVizo8nQmW6u9P2ZI85WxtJ2', 'student', 'Test', 'Two', 'testone@mail.com', '+263774833890', NULL, NULL, NULL, '2026-01-10 13:38:16', '2026-01-10 19:42:41'),
 (52, 'joseph', '$2y$10$BVcCDu51bM8SNPLgy4ZE4OCGL7nOQF6JA1KwQUBb.hpDLnWnG6gUK', 'instructor', 'Joseph', 'Dzimiri', 'josephdzimiri@gmail.com', '+263782408596', NULL, NULL, NULL, '2026-01-10 14:59:17', '2026-01-10 19:41:54');
 
@@ -2242,7 +2249,7 @@ ALTER TABLE `instructors`
 -- AUTO_INCREMENT for table `lessons`
 --
 ALTER TABLE `lessons`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `license_keys`
