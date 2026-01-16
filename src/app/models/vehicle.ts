@@ -8,5 +8,7 @@ export interface Vehicle {
   status?: string;
   notes?: string;
   assignedInstructorId?: number;
+  mileage?: number;
+  fuelLevel?: number;
   createdAt?: string;
 }

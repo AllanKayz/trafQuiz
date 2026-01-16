@@ -8,40 +8,109 @@ use PDO;
 class Dashboard
 {
     // Dashboard Statistics
-    public static function getDashboardStats()
+    public static function getDashboardStats($role = 'admin', $userId = null)
     {
         $db = new Database();
         $conn = $db->getConnection();
 
-        // 1. Total Students
-        $stmt = $conn->query("SELECT COUNT(*) as count FROM students");
-        $totalStudents = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+        if ($role === 'admin') {
+            // 1. Total Students
+            $stmt = $conn->query("SELECT COUNT(*) as count FROM students");
+            $totalStudents = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-        // 2. Active Students
-        $stmt = $conn->query("SELECT COUNT(*) as count FROM students WHERE status = 'active'");
-        $activeStudents = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            // 2. Active Students
+            $stmt = $conn->query("SELECT COUNT(*) as count FROM students WHERE status = 'active'");
+            $activeStudents = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-        // 3. Monthly Revenue (Current Month)
-        $stmt = $conn->query("SELECT SUM(amount) as revenue FROM payments WHERE status = 'completed' AND MONTH(payment_date) = MONTH(CURRENT_DATE()) AND YEAR(payment_date) = YEAR(CURRENT_DATE())");
-        $monthlyRevenue = $stmt->fetch(PDO::FETCH_ASSOC)['revenue'] ?? 0;
+            // 3. Monthly Revenue (Current Month)
+            $stmt = $conn->query("SELECT SUM(amount) as revenue FROM payments WHERE status = 'completed' AND MONTH(payment_date) = MONTH(CURRENT_DATE()) AND YEAR(payment_date) = YEAR(CURRENT_DATE())");
+            $monthlyRevenue = $stmt->fetch(PDO::FETCH_ASSOC)['revenue'] ?? 0;
 
-        // 4. Exams Today
-        // Assuming 'exams' table has start_time
-        $stmt = $conn->query("SELECT COUNT(*) as count FROM exams WHERE DATE(start_time) = CURRENT_DATE()");
-        $examsToday = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            // 4. Exams Today
+            $stmt = $conn->query("SELECT COUNT(*) as count FROM exams WHERE DATE(start_time) = CURRENT_DATE()");
+            $examsToday = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-        // 5. System Alerts (Mock logic or check logs/issues table if exists)
-        // For now, let's say "Maintenance" vehicles are alerts
-        $stmt = $conn->query("SELECT COUNT(*) as count FROM vehicles WHERE status = 'maintenance'");
-        $alerts = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            // 5. System Alerts (Maintenance vehicles + Open Issues)
+            $stmt = $conn->query("SELECT COUNT(*) as count FROM vehicles WHERE status = 'maintenance'");
+            $maintCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
 
-        return [
-            'total_students' => $totalStudents,
-            'active_students' => $activeStudents,
-            'monthly_revenue' => $monthlyRevenue,
-            'exams_today' => $examsToday,
-            'system_alerts' => $alerts
-        ];
+            $stmt = $conn->query("SELECT COUNT(*) as count FROM vehicle_issues WHERE status = 'open'");
+            $issueCount = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+            $alerts = $maintCount + $issueCount;
+
+            return [
+                'total_students' => $totalStudents,
+                'active_students' => $activeStudents,
+                'monthly_revenue' => (float)$monthlyRevenue,
+                'exams_today' => $examsToday,
+                'system_alerts' => $alerts
+            ];
+        } else if ($role === 'student' && $userId) {
+            // Get studentId
+            $stmt = $conn->prepare("SELECT id FROM students WHERE user_id = :uid");
+            $stmt->execute([':uid' => $userId]);
+            $student = $stmt->fetch(PDO::FETCH_ASSOC);
+            $studentId = $student ? $student['id'] : null;
+
+            if (!$studentId) return [];
+
+            // 1. Lessons Attended
+            $stmt = $conn->prepare("SELECT COUNT(*) as count FROM lessons WHERE student_id = :sid AND status = 'completed'");
+            $stmt->execute([':sid' => $studentId]);
+            $lessonsAttended = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+            // 2. Success Rate (Exams passed)
+            $stmt = $conn->prepare("SELECT AVG(score) as avg_score, COUNT(*) as exam_count FROM student_exams WHERE student_id = :sid AND score IS NOT NULL");
+            $stmt->execute([':sid' => $studentId]);
+            $examStats = $stmt->fetch(PDO::FETCH_ASSOC);
+            $avgScore = $examStats['avg_score'] ?? 0;
+            $examCount = $examStats['exam_count'] ?? 0;
+
+            // 3. Upcoming Lessons
+            $stmt = $conn->prepare("SELECT COUNT(*) as count FROM lessons WHERE student_id = :sid AND status = 'scheduled' AND start_time > NOW()");
+            $stmt->execute([':sid' => $studentId]);
+            $upcomingLessons = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+            return [
+                'lessons_attended' => $lessonsAttended,
+                'success_rate' => round($avgScore, 1),
+                'exams_taken' => $examCount,
+                'upcoming_lessons' => $upcomingLessons
+            ];
+        } else if ($role === 'instructor' && $userId) {
+            // Get instructorId
+            $stmt = $conn->prepare("SELECT id FROM instructors WHERE user_id = :uid");
+            $stmt->execute([':uid' => $userId]);
+            $instructor = $stmt->fetch(PDO::FETCH_ASSOC);
+            $instructorId = $instructor ? $instructor['id'] : null;
+
+            if (!$instructorId) return [];
+
+            // 1. Assigned Students
+            $stmt = $conn->prepare("SELECT COUNT(DISTINCT student_id) as count FROM lessons WHERE instructor_id = :iid");
+            $stmt->execute([':iid' => $instructorId]);
+            $assignedStudents = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+            // 2. Lessons Today
+            $stmt = $conn->prepare("SELECT COUNT(*) as count FROM lessons WHERE instructor_id = :iid AND DATE(start_time) = CURRENT_DATE()");
+            $stmt->execute([':iid' => $instructorId]);
+            $lessonsToday = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+            // 3. Vehicle Issues (Open issues reported by this instructor or for their assigned vehicles?)
+            // For now, let's say issues they reported.
+            $stmt = $conn->prepare("SELECT COUNT(*) as count FROM vehicle_issues WHERE instructor_id = :iid AND status IN ('open', 'in_progress')");
+            $stmt->execute([':iid' => $instructorId]);
+            $openIssues = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+            return [
+                'assigned_students' => $assignedStudents,
+                'lessons_today' => $lessonsToday,
+                'vehicle_issues' => $openIssues,
+                'reports_pending' => 0 // Mock for now
+            ];
+        }
+
+        return [];
     }
 
     // Manage User Data

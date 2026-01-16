@@ -1,4 +1,4 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
+import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map, tap, filter } from 'rxjs/operators';
@@ -24,7 +24,7 @@ export class TraffiquizService {
   public alert = inject(MatDialog);
 
   // Convert user data to signal for reactive user state management.
-  private userSignal = signal<any>(null);
+  public userSignal = signal<any>(null);
   /** A computed signal that exposes the current user's data. */
   public currentUser = computed(() => this.userSignal());
 
@@ -99,6 +99,19 @@ export class TraffiquizService {
   /** Signal for user's theme preference. */
   public themePreference = signal<'light' | 'dark' | 'system'>('system');
 
+  /**
+   * Simulates sending a push notification to the user.
+   * @param title Notification title
+   * @param message Notification body
+   */
+  public sendPushNotification(title: string, message: string) {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, { body: message, icon: '/assets/logo.png' });
+    } else {
+      this.showNotification(`${title}: ${message}`, 'info');
+    }
+  }
+
   /** Signal for the effectively active theme (true for dark, false for light). */
   public darkMode = signal<boolean>(false);
 
@@ -136,16 +149,16 @@ export class TraffiquizService {
       { id: 'alerts', title: 'System Alerts', data: '...', footer: 'Requires Attention', type: 'warn' }
     ],
     instructor: [
-      { title: 'Next Lesson', data: '14:00', footer: 'Today' }, // Placeholder, needs specific endpoint
-      { title: 'Pending Reports', data: 3, footer: 'To Review' },
-      { title: 'Vehicle Status', data: 'OK', footer: 'Assigned Car' },
-      { title: 'Students', data: 12, footer: 'Active' }
+      { id: 'next_lesson', title: 'Lessons Today', data: '...', footer: 'Today' },
+      { id: 'pending_reports', title: 'Pending Reports', data: '...', footer: 'To Review' },
+      { id: 'vehicle_issues', title: 'Vehicle Issues', data: '...', footer: 'Active Issues', type: 'warn' },
+      { id: 'students', title: 'Assigned Students', data: '...', footer: 'Total' }
     ],
     student: [
-      { title: 'Next Lesson', data: 'Wed, 10:00 AM', footer: 'With John Doe' },
-      { title: 'Days to Exam', data: 14, footer: 'Countdown' },
-      { title: 'Recent Score', data: '85%', footer: 'Road Signs Quiz' },
-      { title: 'Completed', data: '6/10', footer: 'Lessons' }
+      { id: 'lessons', title: 'Lessons Attended', data: '...', footer: 'Completed' },
+      { id: 'success_rate', title: 'Success Rate', data: '...', footer: 'Average Score' },
+      { id: 'exams_taken', title: 'Exams Taken', data: '...', footer: 'Total' },
+      { id: 'upcoming', title: 'Upcoming Lessons', data: '...', footer: 'Scheduled' }
     ]
   }
 
@@ -214,15 +227,37 @@ export class TraffiquizService {
     const role: 'admin' | 'instructor' | 'student' = user?.role || 'student';
     let widgets = this.widgetsConfig[role] || [];
 
-    // Merge real stats if available (Admin mostly)
+    // Merge real stats if available
     const stats = this.dashboardStats();
-    if (role === 'admin' && stats) {
+    if (!stats) return widgets;
+
+    if (role === 'admin') {
       return this.widgetsConfig.admin.map(w => {
         switch (w.id) {
           case 'students': return { ...w, data: stats.total_students || 0 };
           case 'revenue': return { ...w, data: '$' + (stats.monthly_revenue || 0) };
           case 'exams': return { ...w, data: stats.exams_today || 0 };
           case 'alerts': return { ...w, data: stats.system_alerts || 0 };
+          default: return w;
+        }
+      });
+    } else if (role === 'student') {
+      return this.widgetsConfig.student.map(w => {
+        switch (w.id) {
+          case 'lessons': return { ...w, data: stats.lessons_attended || 0 };
+          case 'success_rate': return { ...w, data: (stats.success_rate || 0) + '%' };
+          case 'exams_taken': return { ...w, data: stats.exams_taken || 0 };
+          case 'upcoming': return { ...w, data: stats.upcoming_lessons || 0 };
+          default: return w;
+        }
+      });
+    } else if (role === 'instructor') {
+      return this.widgetsConfig.instructor.map(w => {
+        switch (w.id) {
+          case 'next_lesson': return { ...w, data: stats.lessons_today || 0 };
+          case 'pending_reports': return { ...w, data: stats.reports_pending || 0 };
+          case 'vehicle_issues': return { ...w, data: stats.vehicle_issues || 0 };
+          case 'students': return { ...w, data: stats.assigned_students || 0 };
           default: return w;
         }
       });
@@ -348,6 +383,38 @@ export class TraffiquizService {
   constructor() {
     this.initializeUser();
     this.initializeTheme();
+
+    // Automatically fetch relevant data when user logins or state changes
+    effect(() => {
+      const user = this.userSignal();
+      if (user) {
+        this.fetchDashboardStats();
+        if (user.role === 'admin' || user.role === 'instructor') {
+          this.fetchQuestions();
+          this.fetchStudents();
+          this.fetchInstructors();
+          this.getPackages();
+          this.getSpecializations();
+          this.getCertifications();
+        }
+      }
+    });
+
+    this.startPolling();
+  }
+
+  /** Starts a polling interval to refresh dashboard stats every 30 seconds. */
+  private startPolling() {
+    setInterval(() => {
+      const user = this.userSignal();
+      if (user) {
+        this.fetchDashboardStats();
+        // Also refresh other key data periodically
+        if (user.role === 'admin') {
+          this.getExamStatistics().subscribe();
+        }
+      }
+    }, 30000); // 30 seconds
   }
 
   private loadCache(key: string, defaultValue: any): any {
@@ -682,12 +749,15 @@ export class TraffiquizService {
     return this.http.post(this.url + 'questions/update', question);
   }
 
-  // Students CRUD
   /**
    * Fetches all students from the API.
    */
   fetchStudents() {
-    this.http.get<studentApiResponse[]>(this.url + 'students').subscribe({
+    const user = this.userSignal();
+    const role = user?.role || 'student';
+    const userId = user?.id || '';
+
+    this.http.get<studentApiResponse[]>(this.url + `students?role=${role}&userId=${userId}`).subscribe({
       next: (students) => {
         //this.studentsSignal.set([students]);
         this.studentsSignal.set(students.map(item => item));
@@ -918,7 +988,11 @@ export class TraffiquizService {
    * Fetches dashboard statistics from the backend.
    */
   fetchDashboardStats() {
-    this.http.get<any>(this.url + 'admin/getAllData').subscribe({
+    const user = this.userSignal();
+    const role = user?.role || 'student';
+    const userId = user?.id || '';
+
+    this.http.get<any>(this.url + `admin/getAllData?role=${role}&userId=${userId}`).subscribe({
       next: (data) => {
         if (data.stats) {
           this.dashboardStats.set(data.stats);

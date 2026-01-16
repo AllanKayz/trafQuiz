@@ -186,4 +186,22 @@ class StudentModel
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    /**
+     * Get students assigned to an instructor (via lessons)
+     */
+    public static function getByInstructor($instructorId)
+    {
+        $db = new Database();
+        $conn = $db->getConnection();
+
+        $sql = "SELECT DISTINCT s.* FROM students s 
+                JOIN lessons l ON s.id = l.student_id 
+                WHERE l.instructor_id = :iid 
+                ORDER BY s.firstName ASC";
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([':iid' => $instructorId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

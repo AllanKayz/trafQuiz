@@ -41,6 +41,9 @@ body.dark-theme {
     --mat-menu-container-color: #0f172a;
     --mat-dialog-container-color: #0f172a;
     --mat-select-panel-background-color: #0f172a;
+    --mat-form-field-container-placeholder-text-color: rgba(255, 255, 255, 0.5);
+    --mat-form-field-container-label-text-color: var(--text-muted);
+    --mat-form-field-state-layer-color: rgba(255, 255, 255, 0.1);
     color: var(--text-main);
 }
 
@@ -71,6 +74,21 @@ body {
 
 .mat-mdc-form-field-input-control {
     color: var(--text-main) !important;
+}
+
+body.dark-theme .mat-mdc-form-field-label,
+body.dark-theme .mat-mdc-form-field-hint {
+    color: var(--text-muted) !important;
+}
+
+body.dark-theme .mat-mdc-form-field-focus-indicator {
+    background-color: var(--primary-color) !important;
+}
+
+body.dark-theme .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__leading,
+body.dark-theme .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__notch,
+body.dark-theme .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__trailing {
+    border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Global Material Table Theming Overrides */

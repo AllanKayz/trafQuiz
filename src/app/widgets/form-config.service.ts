@@ -669,19 +669,58 @@ export class FormConfigService {
         icon: 'location_on'
       },
       {
-        key: 'capacity',
-        label: 'Max Students',
-        type: 'number',
-        validators: [Validators.min(1)],
-        defaultValue: 1,
-        icon: 'group_add'
-      },
-      {
         key: 'notes',
         label: 'Additional Notes',
         type: 'textarea',
         colspan: 2,
         icon: 'notes'
+      }
+    ],
+    'vehicle-issue': [
+      {
+        key: 'description',
+        label: 'Issue Description',
+        type: 'textarea',
+        validators: [Validators.required],
+        colspan: 2,
+        icon: 'report_problem',
+        hint: 'Describe the problem in detail.'
+      },
+      {
+        key: 'severity',
+        label: 'Severity',
+        type: 'select',
+        validators: [Validators.required],
+        options: [
+          { value: 'low', label: 'Low - Minor issue, safe to drive' },
+          { value: 'medium', label: 'Medium - Needs attention soon' },
+          { value: 'high', label: 'High - Critical, unsafe to drive' }
+        ],
+        defaultValue: 'low',
+        icon: 'priority_high'
+      }
+    ],
+    'vehicle-log': [
+      {
+        key: 'mileage',
+        label: 'Current Mileage (km)',
+        type: 'number',
+        validators: [Validators.required, Validators.min(0)],
+        icon: 'speed'
+      },
+      {
+        key: 'fuelLevel',
+        label: 'Fuel Level (%)',
+        type: 'number',
+        validators: [Validators.required, Validators.min(0), Validators.max(100)],
+        icon: 'local_gas_station'
+      },
+      {
+        key: 'notes',
+        label: 'Notes',
+        type: 'textarea',
+        colspan: 2,
+        icon: 'edit_note'
       }
     ]
   }));

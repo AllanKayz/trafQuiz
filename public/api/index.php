@@ -243,9 +243,29 @@ $router->addRoute('POST', '/trafQuiz/public/api/lessons/add', function () {
        (new LessonsController())->add();
 });
 
-// Vehicles API (simple JSON-backed for development)
+// Vehicles API
 $router->addRoute('GET', '/trafQuiz/public/api/vehicles', function () {
        (new VehiclesController())->getVehicles();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/report-issue', function () {
+       (new VehiclesController())->reportIssue();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/log-activity', function () {
+       (new VehiclesController())->logActivity();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/add', function () {
+       (new VehiclesController())->add();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/update', function () {
+       (new VehiclesController())->update();
+});
+
+$router->addRoute('POST', '/trafQuiz/public/api/vehicles/delete', function () {
+       (new VehiclesController())->delete();
 });
 
 $router->addRoute('POST', '/trafQuiz/public/api/vehicles/add', function () {

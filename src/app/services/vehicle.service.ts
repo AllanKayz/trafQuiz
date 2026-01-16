@@ -8,11 +8,23 @@ import { TraffiquizService } from '../traffiquiz.service';
 export class VehicleService {
   private vehicles$ = new BehaviorSubject<Vehicle[]>([]);
   private base = 'http://localhost:84/trafQuiz/public/api/vehicles';
-  //private base = '/trafQuiz/public/api/vehicles';
 
   constructor(private http: HttpClient, private trafService: TraffiquizService) {
-    // Try to load from API, fallback to mock data on error
     this.fetchVehicles().subscribe({ error: () => this.loadMock() });
+  }
+
+  fetchVehicles(role?: string, userId?: string | number): Observable<Vehicle[]> {
+    let url = this.base;
+    if (role && userId) {
+      url += `?role=${role}&userId=${userId}`;
+    }
+    return this.http.get<Vehicle[]>(url).pipe(
+      tap(vs => this.vehicles$.next(vs)),
+      catchError((err) => {
+        this.trafService.showNotification('Vehicle API fetch failed; falling back to mock', 'info');
+        return of([] as Vehicle[]);
+      })
+    );
   }
 
   private loadMock() {
@@ -24,18 +36,28 @@ export class VehicleService {
     this.vehicles$.next(mock);
   }
 
-  fetchVehicles(): Observable<Vehicle[]> {
-    return this.http.get<Vehicle[]>(this.base).pipe(
-      tap(vs => this.vehicles$.next(vs)),
+  getVehicles(): Observable<Vehicle[]> {
+    return this.vehicles$.asObservable();
+  }
+
+  reportIssue(issue: { vehicleId: number; instructorId: number; description: string; severity: string }): Observable<any> {
+    return this.http.post(this.base + '/report-issue', issue).pipe(
+      tap(() => this.trafService.showNotification('Issue reported successfully', 'success')),
       catchError((err) => {
-        this.trafService.showNotification('Vehicle API fetch failed; falling back to mock', 'info');
-        return of([] as Vehicle[]);
+        this.trafService.showNotification('Failed to report issue', 'error');
+        throw err;
       })
     );
   }
 
-  getVehicles(): Observable<Vehicle[]> {
-    return this.vehicles$.asObservable();
+  logActivity(log: { vehicleId: number; instructorId: number; mileage: number; fuelLevel: number; notes?: string }): Observable<any> {
+    return this.http.post(this.base + '/log-activity', log).pipe(
+      tap(() => this.trafService.showNotification('Log recorded successfully', 'success')),
+      catchError((err) => {
+        this.trafService.showNotification('Failed to record log', 'error');
+        throw err;
+      })
+    );
   }
 
   addVehicle(vehicle: Partial<Vehicle>): Observable<Vehicle> {

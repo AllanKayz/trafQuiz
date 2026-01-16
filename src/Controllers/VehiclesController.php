@@ -48,6 +48,18 @@ class VehiclesController
                 $stmtV->execute([':instId' => $instId]);
                 $vehicles = $stmtV->fetchAll(\PDO::FETCH_ASSOC);
 
+                // For instructors, let's append latest log data
+                foreach ($vehicles as &$veh) {
+                    $latestLog = \TrafQuiz\Models\VehicleLog::getLatest($veh['id']);
+                    if ($latestLog) {
+                        $veh['mileage'] = $latestLog['mileage'];
+                        $veh['fuelLevel'] = $latestLog['fuel_level'];
+                    } else {
+                        $veh['mileage'] = 0;
+                        $veh['fuelLevel'] = 100;
+                    }
+                }
+
                 echo json_encode($vehicles);
                 return;
             }
@@ -56,7 +68,46 @@ class VehiclesController
             return;
         }
 
-        echo json_encode(array_values(VehicleModel::all()));
+        $vehicles = array_values(VehicleModel::all());
+        echo json_encode($vehicles);
+    }
+
+    public function reportIssue()
+    {
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (empty($input['vehicleId']) || empty($input['instructorId']) || empty($input['description'])) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Missing vehicleId, instructorId, or description']);
+            return;
+        }
+
+        $ok = \TrafQuiz\Models\VehicleIssue::create($input);
+        if ($ok) {
+            echo json_encode(['success' => true, 'message' => 'Issue reported successfully']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['message' => 'Failed to report issue']);
+        }
+    }
+
+    public function logActivity()
+    {
+        header('Content-Type: application/json');
+        $input = json_decode(file_get_contents('php://input'), true);
+        if (empty($input['vehicleId']) || empty($input['instructorId']) || empty($input['mileage']) || !isset($input['fuelLevel'])) {
+            http_response_code(400);
+            echo json_encode(['message' => 'Missing required fields']);
+            return;
+        }
+
+        $ok = \TrafQuiz\Models\VehicleLog::create($input);
+        if ($ok) {
+            echo json_encode(['success' => true, 'message' => 'Log recorded successfully']);
+        } else {
+            http_response_code(500);
+            echo json_encode(['message' => 'Failed to record log']);
+        }
     }
 
     public function add()

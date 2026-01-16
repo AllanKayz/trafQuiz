@@ -2390,6 +2390,45 @@ ALTER TABLE `students`
 ALTER TABLE `student_exams`
   ADD CONSTRAINT `student_exams_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`),
   ADD CONSTRAINT `student_exams_ibfk_2` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`);
+--
+-- Table structure for table `vehicle_issues`
+--
+
+CREATE TABLE `vehicle_issues` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vehicle_id` int(11) NOT NULL,
+  `instructor_id` int(11) NOT NULL,
+  `description` text NOT NULL,
+  `severity` enum('low','medium','high','critical') DEFAULT 'low',
+  `status` enum('open','in_progress', 'resolved', 'closed') DEFAULT 'open',
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `vehicle_id` (`vehicle_id`),
+  KEY `instructor_id` (`instructor_id`),
+  CONSTRAINT `vehicle_issues_ibfk_1` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `vehicle_issues_ibfk_2` FOREIGN KEY (`instructor_id`) REFERENCES `instructors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `vehicle_logs`
+--
+
+CREATE TABLE `vehicle_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `vehicle_id` int(11) NOT NULL,
+  `instructor_id` int(11) NOT NULL,
+  `mileage` int(11) NOT NULL,
+  `fuel_level` int(11) NOT NULL,
+  `notes` text DEFAULT NULL,
+  `created_at` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `vehicle_id` (`vehicle_id`),
+  KEY `instructor_id` (`instructor_id`),
+  CONSTRAINT `vehicle_logs_ibfk_1` FOREIGN KEY (`vehicle_id`) REFERENCES `vehicles` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `vehicle_logs_ibfk_2` FOREIGN KEY (`instructor_id`) REFERENCES `instructors` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

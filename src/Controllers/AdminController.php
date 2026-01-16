@@ -298,11 +298,13 @@ class AdminController
 
 	public function getAllData()
 	{
-
+		header('Content-Type: application/json');
+		$role = $_GET['role'] ?? 'admin';
+		$userId = $_GET['userId'] ?? null;
 
 		$usersList = Dashboard::getUsers();
 		$examTimeframe = Dashboard::getExamTime();
-		$stats = Dashboard::getDashboardStats();
+		$stats = Dashboard::getDashboardStats($role, $userId);
 
 		$dashboardData = [
 			'userlist' => $usersList,
