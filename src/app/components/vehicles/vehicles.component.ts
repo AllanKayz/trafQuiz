@@ -49,7 +49,6 @@ export class VehiclesComponent implements AfterViewInit {
     const base = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
     return base;
   });
-  // displayedColumns: string[] = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
 
   loading = false;
   error: string | null = null;
@@ -59,6 +58,10 @@ export class VehiclesComponent implements AfterViewInit {
   // Form state for dialogs
   formVehicle: Partial<Vehicle> = {};
   isEditing = false;
+
+  // Logs/Issue Data
+  logData = { mileage: 0, fuelLevel: 0, notes: '' };
+  issueData = { description: '', severity: 'low' };
 
   constructor() {
     this.load();
@@ -142,6 +145,45 @@ export class VehiclesComponent implements AfterViewInit {
         },
         error: () => this.trafService.showNotification('Delete failed', 'error')
       });
+    });
+  }
+
+  openLog(v: Vehicle, template: any) {
+    this.formVehicle = { ...v };
+    this.logData = { mileage: 0, fuelLevel: 0, notes: '' };
+    this.dialog.open(template, { width: '400px' });
+  }
+
+  submitLog(dialogRef: any) {
+    const payload = {
+      vehicleId: this.formVehicle.id!,
+      instructorId: this.user()?.id!,
+      mileage: this.logData.mileage,
+      fuelLevel: this.logData.fuelLevel,
+      notes: this.logData.notes
+    };
+
+    this.vehicleService.logActivity(payload as any).subscribe(() => {
+      dialogRef.close();
+      this.load();
+    });
+  }
+
+  openIssue(v: Vehicle, template: any) {
+    this.formVehicle = { ...v };
+    this.issueData = { description: '', severity: 'low' };
+    this.dialog.open(template, { width: '400px' });
+  }
+
+  submitIssue(dialogRef: any) {
+    const payload = {
+      vehicleId: this.formVehicle.id!,
+      instructorId: this.user()?.id!,
+      description: this.issueData.description,
+      severity: this.issueData.severity
+    };
+    this.vehicleService.reportIssue(payload as any).subscribe(() => {
+      dialogRef.close();
     });
   }
 }

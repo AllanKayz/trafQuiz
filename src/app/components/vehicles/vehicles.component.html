@@ -174,3 +174,58 @@
     </mat-dialog-actions>
   </div>
 </ng-template>
+
+<!-- Log Activity Dialog -->
+<ng-template #logTemplate let-dialogRef>
+  <div class="dialog-container">
+    <h2 mat-dialog-title>Log Activity: {{formVehicle.registration}}</h2>
+    <mat-dialog-content class="dialog-content">
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Mileage (km)</mat-label>
+          <input matInput type="number" [(ngModel)]="logData.mileage" required>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Fuel Level (%)</mat-label>
+          <input matInput type="number" [(ngModel)]="logData.fuelLevel" required>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Notes</mat-label>
+          <textarea matInput [(ngModel)]="logData.notes" rows="3"></textarea>
+        </mat-form-field>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-flat-button color="primary" (click)="submitLog(dialogRef)">Save Log</button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
+
+<!-- Report Issue Dialog -->
+<ng-template #issueTemplate let-dialogRef>
+  <div class="dialog-container">
+    <h2 mat-dialog-title>Report Issue: {{formVehicle.registration}}</h2>
+    <mat-dialog-content class="dialog-content">
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Description</mat-label>
+          <textarea matInput [(ngModel)]="issueData.description" rows="3" required></textarea>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Severity</mat-label>
+          <mat-select [(ngModel)]="issueData.severity" required>
+            <mat-option value="low">Low</mat-option>
+            <mat-option value="medium">Medium</mat-option>
+            <mat-option value="high">High</mat-option>
+            <mat-option value="critical">Critical</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Cancel</button>
+      <button mat-flat-button color="warn" (click)="submitIssue(dialogRef)">Report Issue</button>
+    </mat-dialog-actions>
+  </div>
+</ng-template>
