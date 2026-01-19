@@ -183,15 +183,16 @@
       <div class="form-grid">
         <mat-form-field appearance="outline">
           <mat-label>Mileage (km)</mat-label>
-          <input matInput type="number" [(ngModel)]="logData.mileage" required>
+          <input matInput type="number" [(ngModel)]="logData.mileage" placeholder="Enter current mileage" required>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Fuel Level (%)</mat-label>
-          <input matInput type="number" [(ngModel)]="logData.fuelLevel" required>
+          <input matInput type="number" [(ngModel)]="logData.fuelLevel" placeholder="Enter fuel level percentage"
+            required>
         </mat-form-field>
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Notes</mat-label>
-          <textarea matInput [(ngModel)]="logData.notes" rows="3"></textarea>
+          <textarea matInput [(ngModel)]="logData.notes" rows="3" placeholder="Add any additional notes"></textarea>
         </mat-form-field>
       </div>
     </mat-dialog-content>
@@ -210,7 +211,8 @@
       <div class="form-grid">
         <mat-form-field appearance="outline" class="full-width">
           <mat-label>Description</mat-label>
-          <textarea matInput [(ngModel)]="issueData.description" rows="3" required></textarea>
+          <textarea matInput [(ngModel)]="issueData.description" rows="3" placeholder="Describe the issue in detail"
+            required></textarea>
         </mat-form-field>
         <mat-form-field appearance="outline">
           <mat-label>Severity</mat-label>
