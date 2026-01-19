@@ -1,41 +1,47 @@
-const { db } = require('../db');
+const { get, query, run, exec } = require('../db');
+const bcrypt = require('bcryptjs');
 
 class InstructorModel {
-    static all() {
-        const stmt = db.prepare(`
-            SELECT i.*, u.name, u.email, u.phone, u.profile_picture
+    static async all() {
+        return await query(`
+            SELECT i.*, u.username, u.first_name as firstName, u.last_name as lastName, u.email, u.phone, u.avatar as profilePicture
             FROM instructors i
             JOIN users u ON i.user_id = u.id
         `);
-        return stmt.all();
     }
 
-    static find(id) {
-         const stmt = db.prepare(`
-            SELECT i.*, u.name, u.email, u.phone, u.profile_picture
+    static async find(id) {
+        return await get(`
+            SELECT i.*, u.username, u.first_name as firstName, u.last_name as lastName, u.email, u.phone, u.avatar as profilePicture
             FROM instructors i
             JOIN users u ON i.user_id = u.id
             WHERE i.id = ?
-        `);
-        return stmt.get(id);
+        `, [id]);
     }
 
-    static create(data) {
-        const { name, email, password, phone, address, license_number, specialization_id, certification_id, experience } = data;
+    static async create(data) {
+        const { username, firstName, lastName, email, password, phone, address, license_number, specialization_id, certification_id, experience } = data;
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        return db.transaction(() => {
-             const userStmt = db.prepare('INSERT INTO users (name, email, password, role, phone, address) VALUES (?, ?, ?, ?, ?, ?)');
-             const info = userStmt.run(name, email, password, 'instructor', phone, address);
-             const userId = info.lastInsertRowid;
+        try {
+            await exec('BEGIN TRANSACTION');
+            const userInfo = await run(
+                'INSERT INTO users (username, first_name, last_name, email, password, role, phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [username, firstName, lastName, email, hashedPassword, 'instructor', phone]
+            );
+            const userId = userInfo.lastID;
 
-             const instStmt = db.prepare(`
+            const instInfo = await run(`
                 INSERT INTO instructors (user_id, license_number, specialization_id, certification_id, experience)
                 VALUES (?, ?, ?, ?, ?)
-             `);
-             const instInfo = instStmt.run(userId, license_number, specialization_id, certification_id, experience);
-             
-             return this.find(instInfo.lastInsertRowid);
-        })();
+            `, [userId, license_number, specialization_id, certification_id, experience]);
+            
+            await exec('COMMIT');
+            return await this.find(instInfo.lastID);
+        } catch (error) {
+            await exec('ROLLBACK');
+            throw error;
+        }
     }
 }
 

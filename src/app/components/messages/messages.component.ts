@@ -226,7 +226,15 @@ export class MessagesComponent {
     }
 
     openImage(url: string) {
-        window.open('http://localhost:84/trafQuiz/public/' + url, '_blank');
+        if (!url) return;
+        // In local mode, we might need a different way to open images
+        // For now, if it's a full URL use it, else try to handle it as local
+        if (url.startsWith('http') || url.startsWith('data:')) {
+            window.open(url, '_blank');
+        } else {
+            // Placeholder: Should ideally be handled via a custom protocol or relative path
+            console.log('Opening local image:', url);
+        }
     }
 
     sendReply() {

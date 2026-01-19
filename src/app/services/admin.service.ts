@@ -1,24 +1,28 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, from } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private base = 'http://localhost:84/trafQuiz/public/api/admin';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   seedLessons(count?: number, token?: string): Observable<any> {
-    const url = token ? `${this.base}/seed-lessons?token=${encodeURIComponent(token)}` : `${this.base}/seed-lessons`;
-    return this.http.post(url, { count });
+    return from(window.electronAPI.invoke('seed-lessons', { count }));
   }
 
   checkLessons(token?: string): Observable<any> {
-    const url = token ? `${this.base}/check-lessons?token=${encodeURIComponent(token)}` : `${this.base}/check-lessons`;
-    return this.http.get(url);
+    return from(window.electronAPI.invoke('check-lessons'));
   }
 
   getInstructors(): Observable<any> {
-    return this.http.get('http://localhost:84/trafQuiz/public/api/instructors');
+    return from(window.electronAPI.invoke('get-instructors')).pipe(
+      map((res: any) => {
+        if (res.success) return res.data;
+        throw new Error(res.message || 'Failed to fetch instructors');
+      })
+    );
   }
 }

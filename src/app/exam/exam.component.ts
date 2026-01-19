@@ -63,29 +63,25 @@ export class ExamComponent implements OnDestroy {
   constructor() {
     this.UserData = JSON.parse(localStorage['user']);
     this.examToken.set(this.UserData.token);
-    this.fetchDurationAndStartExam();
+    this.examToken.set(this.UserData.token);
+    this.startNewExam(); // Start immediately
 
-    // Watch for questions to be loaded
+    // Watch for questions to be loaded and start exam
     effect(() => {
-      if (this.questions().length > 0) {
+      if (this.questions().length > 0 && this.loading()) {
+        this.baseDuration.set(this.examService.examDuration());
+        this.timeRemaining.set(this.baseDuration());
         this.loading.set(false);
+        this.restartTimer();
       }
-    });
-  }
-
-  private fetchDurationAndStartExam() {
-    this.examService.fetchExamDuration().subscribe(duration => {
-      this.baseDuration.set(duration);
-      this.startNewExam();
     });
   }
 
   // Method to start a fresh exam
   startNewExam() {
     this.loading.set(true);
-
-    // Reset time to base duration
-    this.timeRemaining.set(this.baseDuration());
+    // Clear previous questions to ensure effect triggers on new data
+    this.examService.questionsSignal.set([]);
 
     // Fetch new Questions
     this.examService.fetchExam(this.examToken());
@@ -97,8 +93,7 @@ export class ExamComponent implements OnDestroy {
     this.showResults.set(false);
     this.examResults.set(null);
 
-    // Restart timer
-    this.restartTimer();
+    // Timer will be started by effect when data arrives
   }
 
   private restartTimer() {

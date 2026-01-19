@@ -46,8 +46,7 @@ export class VehiclesComponent implements AfterViewInit {
 
   dataSource = new MatTableDataSource<Vehicle>([]);
   displayedColumnsSignal = computed(() => {
-    const base = ['registration', 'make', 'model', 'year', 'type', 'status'];
-    if (this.isAdmin()) base.push('actions');
+    const base = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
     return base;
   });
   // displayedColumns: string[] = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
@@ -73,7 +72,7 @@ export class VehiclesComponent implements AfterViewInit {
     this.loading = true;
     this.error = null;
     // Note: service fetchVehicles calls API, API filters by role (Instructor sees only assigned).
-    this.vehicleService.fetchVehicles().subscribe({
+    this.vehicleService.fetchVehicles(this.user()?.id).subscribe({
       next: (res) => {
         this.dataSource.data = res || [];
         this.dataSource.paginator = this.paginator;

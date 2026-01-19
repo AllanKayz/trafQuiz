@@ -74,12 +74,20 @@
       <ng-container matColumnDef="actions">
         <mat-header-cell *matHeaderCellDef> Actions </mat-header-cell>
         <mat-cell *matCellDef="let v">
+          <button mat-icon-button color="primary" (click)="openLog(v, logTemplate)" matTooltip="Log Activity">
+            <mat-icon>speed</mat-icon>
+          </button>
+          <button mat-icon-button color="accent" (click)="openIssue(v, issueTemplate)" matTooltip="Report Issue">
+            <mat-icon>build</mat-icon>
+          </button>
+          @if (isAdmin()) {
           <button mat-icon-button color="primary" (click)="openEdit(v, vehicleTemplate)" matTooltip="Edit Vehicle">
             <mat-icon>edit</mat-icon>
           </button>
           <button mat-icon-button color="warn" (click)="confirmDelete(v.id)" matTooltip="Delete Vehicle">
             <mat-icon>delete</mat-icon>
           </button>
+          }
         </mat-cell>
       </ng-container>
 

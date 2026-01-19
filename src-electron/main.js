@@ -1,9 +1,13 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { fork } = require('child_process');
+const db = require('./db');
+
+app.whenReady().then(async () => {
+    await db.init();
+    createWindow();
+});
 
 let mainWindow;
-let serverProcess;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -17,53 +21,29 @@ function createWindow() {
     icon: path.join(__dirname, '../public/logo.ico')
   });
 
-  // Load the Angular app.
-  // In development, we might want to wait for the local server to start.
-  // For this "conversion", we are serving the Angular app via the Express server 
-  // OR we are serving the Angular app separately?
-  // The plan said Angular app makes requests to localhost:port/api.
-  // We need to decide: Does Express serve the built Angular assets?
-  // YES, that is the most robust way for a strictly "convert to electron" app.
-  // So the Express server will serve static files from /dist/trafquiz/browser.
+  const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
   
-  // We will try to connect to the server.
-  const loadApp = () => {
-    mainWindow.loadURL('http://localhost:3000').catch((err) => {
-        console.log('Server not ready, retrying...', err);
-        setTimeout(loadApp, 1000);
+  if (isDev) {
+    console.log('Running in development mode');
+    const loadApp = () => {
+        mainWindow.loadURL('http://localhost:4200').catch((err) => {
+            console.log('Server not ready, retrying...', err);
+            setTimeout(loadApp, 1000);
+        });
+    };
+    loadApp();
+    mainWindow.webContents.openDevTools();
+  } else {
+    const indexPath = path.join(__dirname, '../dist/trafquiz/browser/index.html');
+    mainWindow.loadFile(indexPath).catch(err => {
+        console.error('Failed to load local app:', err);
     });
-  };
-
-  loadApp();
+  }
 
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
 }
-
-const { spawn } = require('child_process');
-
-// ...
-
-function startServer() {
-  // Use system 'node' to avoid Electron native module mismatch issues
-  // We use current working directory as project root so require paths work relative to it if needed,
-  // but better to keep CWD as is or ensure paths are absolute.
-  // actually, let's keep CWD as the project root (.. from src-electron)
-  serverProcess = spawn('node', [path.join(__dirname, 'server.js')], {
-    stdio: 'inherit',
-    cwd: path.join(__dirname, '..')
-  });
-
-  serverProcess.on('error', (err) => {
-      console.error('Failed to start server:', err);
-  });
-}
-
-app.on('ready', () => {
-  startServer();
-  createWindow();
-});
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
@@ -73,8 +53,16 @@ app.on('activate', function () {
   if (mainWindow === null) createWindow();
 });
 
-app.on('will-quit', () => {
-  if (serverProcess) {
-    serverProcess.kill();
-  }
-});
+// Import and register IPC handlers
+require('./ipc-handlers/auth-handler');
+require('./ipc-handlers/dashboard-handler');
+require('./ipc-handlers/questions-handler');
+require('./ipc-handlers/students-handler');
+require('./ipc-handlers/instructors-handler');
+require('./ipc-handlers/lessons-handler');
+require('./ipc-handlers/admin-handler');
+require('./ipc-handlers/vehicles-handler');
+require('./ipc-handlers/misc-handler');
+require('./ipc-handlers/messages-handler');
+require('./ipc-handlers/exam-handler');
+require('./ipc-handlers/finances-handler');

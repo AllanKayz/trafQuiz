@@ -9,7 +9,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "electron:start": "npm run build && electron .",
-    "electron:dev": "concurrently \"ng serve\" \"electron .\""
+    "electron:dev": "concurrently \"ng serve\" \"electron . --dev\""
   },
   "private": true,
   "dependencies": {
@@ -23,9 +23,11 @@
     "@angular/platform-browser": "^21.0.6",
     "@angular/platform-browser-dynamic": "^21.0.6",
     "@angular/router": "^21.0.6",
+    "bcryptjs": "^3.0.3",
     "bootstrap": "^5.3.8",
     "jspdf": "^4.0.0",
     "rxjs": "~7.8.2",
+    "sqlite3": "^5.1.7",
     "tslib": "^2.8.1",
     "zone.js": "~0.16.0"
   },
@@ -34,18 +36,18 @@
     "@angular/cli": "^21.0.4",
     "@angular/compiler-cli": "^21.0.6",
     "@types/jasmine": "~5.1.13",
+    "body-parser": "^1.20.2",
+    "concurrently": "^8.0.0",
+    "cors": "^2.8.5",
+    "electron": "^28.0.0",
+    "electron-rebuild": "^3.2.9",
+    "express": "^4.18.2",
     "jasmine-core": "~5.13.0",
     "karma": "~6.4.4",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.1",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.9.3",
-    "electron": "^28.0.0",
-    "express": "^4.18.2",
-    "better-sqlite3": "^9.0.0",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "concurrently": "^8.0.0"
+    "typescript": "~5.9.3"
   }
 }

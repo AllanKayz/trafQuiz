@@ -1,39 +1,62 @@
-const { db } = require('../db');
+const { get, query, run } = require('../db');
 
 class VehicleModel {
-    static all() {
-        return db.prepare('SELECT * FROM vehicles').all();
+    static async all() {
+        return await query('SELECT * FROM vehicles ORDER BY created_at DESC');
     }
 
-    static find(id) {
-        return db.prepare('SELECT * FROM vehicles WHERE id = ?').get(id);
+    static async find(id) {
+        return await get('SELECT * FROM vehicles WHERE id = ?', [id]);
     }
 
-    static create(data) {
-        const stmt = db.prepare(`
+    static async create(data) {
+        const { make, model, year, registration, type, status, notes } = data;
+        const info = await run(`
             INSERT INTO vehicles (
-                make, model, year, registration_number, type, 
-                status, mileage, last_service_date, next_service_date
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-        const info = stmt.run(
-            data.make, data.model, data.year, data.registration_number,
-            data.type, data.status || 'active', data.mileage || 0,
-            data.last_service_date, data.next_service_date
-        );
-        return this.find(info.lastInsertRowid);
+                make, model, year, registration, type, status, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            make, model, year, registration,
+            type || 'car', status || 'active', notes
+        ]);
+        return await this.find(info.lastID);
     }
 
-    static update(id, data) {
-        // Dynamic update
-        const keys = Object.keys(data);
-        if (keys.length === 0) return this.find(id);
+    static async update(id, data) {
+        const allowedFields = ['make', 'model', 'year', 'registration', 'type', 'status', 'notes'];
+        const keys = Object.keys(data).filter(k => allowedFields.includes(k));
+        
+        if (keys.length === 0) return await this.find(id);
 
         const setClause = keys.map(key => `${key} = ?`).join(', ');
-        const values = [...Object.values(data), id];
+        const values = [...keys.map(k => data[k]), id];
 
-        db.prepare(`UPDATE vehicles SET ${setClause} WHERE id = ?`).run(...values);
-        return this.find(id);
+        await run(`UPDATE vehicles SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values);
+        return await this.find(id);
+    }
+
+    static async delete(id) {
+        return await run('DELETE FROM vehicles WHERE id = ?', [id]);
+    }
+
+    static async reportIssue(data) {
+        const { vehicleId, instructorId, description, severity } = data;
+        const info = await run(`
+            INSERT INTO vehicle_issues (vehicle_id, instructor_id, description, severity, status)
+            VALUES (?, ?, ?, ?, ?)
+        `, [vehicleId, instructorId, description, severity || 'low', 'open']);
+        
+        return { id: info.lastID, ...data, status: 'open' };
+    }
+
+    static async logActivity(data) {
+        const { vehicleId, instructorId, mileage, fuelLevel, notes } = data;
+        const info = await run(`
+            INSERT INTO vehicle_logs (vehicle_id, instructor_id, mileage, fuel_level, notes)
+            VALUES (?, ?, ?, ?, ?)
+        `, [vehicleId, instructorId, mileage, fuelLevel, notes]);
+        
+        return { id: info.lastID, ...data };
     }
 }
 

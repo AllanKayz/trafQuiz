@@ -58,8 +58,8 @@ export class FinancesComponent implements AfterViewInit {
   editBuffer = signal<any>(null);
 
   // Table Columns
-  displayedColumns: string[] = ['id', 'date', 'transactionId', 'description', 'amount', 'status'];
-  adminColumns: string[] = ['date', 'type', 'entityName', 'transactionId', 'description', 'amount', 'status', 'actions'];
+  displayedColumns: string[] = ['id', 'date', 'transactionId', 'entityName', 'description', 'method', 'amount', 'status'];
+  adminColumns: string[] = ['date', 'type', 'entityName', 'transactionId', 'description', 'method', 'amount', 'status', 'actions'];
 
   constructor() {
     effect(() => {

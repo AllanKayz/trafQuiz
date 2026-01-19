@@ -1,0 +1,17 @@
+INSERT INTO `questions` (`id`, `question_text`, `img_insert`, `option_image`, `option_a`, `option_b`, `option_c`, `correct_option`, `exam_id`, `answer`) VALUES
+(741, 'When parking a vehicle on side of the road….. ', NULL, 0, 'Use taillights, sidelights, parklights ', 'Use only taillights', 'Use only sidelights', '1', 30, 'Use taillights, sidelights, parklights '),
+(742, 'This sign means', 'assets/20230812161505022_20160_bb14.png', 0, 'Raining ahead', 'Danger of a variable nature', 'Neither', '2', 30, 'Danger of a variable nature'),
+(743, 'When stopping a vehicle what do you do? ', NULL, 0, 'You apply your brakes ', 'Slow down, check the mirror, signal your intention', 'Stop, signal, check mirror', '2', 30, 'Slow down, check the mirror, signal your intention'),
+(744, 'When travelling at 90km/h behind another vehicle which I will not intend to overtake ', NULL, 0, ' I will leave a gap of 10 cars	', ' I will leave a gap of 6 cars', ' I will leave a gap of 1 car', '2', 30, ' I will leave a gap of 6 cars'),
+(745, 'This sign means ', 'assets/20230812155758929_225823_bb28.gif', 0, '3 point 10 ', 'About turn', 'U-turn is prohibitory', '3', 30, 'U-turn is prohibitory'),
+(746, 'What is the use of a park brake?', NULL, 0, 'It has the same use as the foot brake', ' It is only used in an emergency', 'To keep the vehicle stationary', '3', 30, 'To keep the vehicle stationary'),
+(747, 'A hooter is used…..', NULL, 0, 'When frustrated by others ', 'When pedestrians are at the middle of the road', 'When attracting a friend’s attention', '2', 30, 'When pedestrians are at the middle of the road'),
+(748, 'What are diverging lines?', NULL, 0, 'One which form two ', 'One found at a round about', 'One that is not visible', '1', 30, 'One which form two '),
+(749, 'Which reflectors do you put infront of a bus?', NULL, 0, 'White all over ', 'Yellow in front ', 'White in front', '3', 30, 'White in front'),
+(750, 'Which car goes last', 'assets/20230812171450663_651404_bb3.jpg', 0, 'CAR A', 'CAR B', 'CAR C', '1', 30, 'CAR A'),
+(751, 'On a bridge one should not… ', NULL, 0, 'Apply brakes', 'Sound a horn', 'Overtake slow moving vehicles', '3', 30, 'Overtake slow moving vehicles'),
+(752, 'what are the colors of a private vehicle registration plate ? ', NULL, 0, '  Black on yellow background ', 'Black on white blackground', 'Black', '1', 30, '  Black on yellow background '),
+(753, 'in case of a tyre burst :', NULL, 0, '  Apply brakes immediately and engage in lower gears ', '  slow down and don’t apply brakes immediately  ', 'Apply foot brakes immediately', '2', 30, '  slow down and don’t apply brakes immediately  '),
+(754, 'when under the influence of alcohol and drugs what must you do ? ', NULL, 0, 'drive slowly ', 'dim your lights at night', ' Stay off the road', '3', 30, ' Stay off the road'),
+(755, 'On rail crossing with boom gates open you should,', NULL, 0, 'Wait until the train has passed ', 'Look both sides and proceed', 'Wait until the gates have closed', '2', 30, 'Look both sides and proceed'),
+(756, 'when approaching this sign I am expected to ;

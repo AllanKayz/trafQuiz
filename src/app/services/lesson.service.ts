@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, of, tap, catchError, map } from 'rxjs';
+import { BehaviorSubject, Observable, of, tap, catchError, map, from } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Lesson } from '../models/lesson';
 import { TraffiquizService } from '../traffiquiz.service';
@@ -65,45 +65,52 @@ export class LessonService {
     this.lessons$.next(lessons);
   }
 
-  fetchLessons(range?: string): Observable<Lesson[]> {
-    const url = range ? `${this.base}?range=${encodeURIComponent(range)}` : this.base;
-    return this.http.get<Lesson[]>(url).pipe(
-      tap((ls) => this.lessons$.next(ls)),
+  /**
+   * Fetches lessons using Electron IPC.
+   */
+  fetchLessons(range?: string, instructorId?: number | string): Observable<Lesson[]> {
+    return from(window.electronAPI.invoke('get-lessons', { range, instructorId })).pipe(
+      map((res: any) => {
+        if (res.success) return res.data as Lesson[];
+        throw new Error(res.message || 'Failed to fetch lessons');
+      }),
+      tap((ls: Lesson[]) => this.lessons$.next(ls)),
       catchError((err) => {
-        console.warn('Lesson API fetch failed, falling back to mock', err);
+        console.warn('Lesson IPC fetch failed, falling back to mock', err);
         return of([] as Lesson[]);
       })
     );
   }
 
-  getLessons(range?: string): Observable<Lesson[]> {
-    // Return observable of BehaviorSubject, but also trigger fetch if a range is requested
-    if (range) {
-      this.fetchLessons(range).subscribe();
+  getLessons(range?: string, instructorId?: number | string): Observable<Lesson[]> {
+    if (range || instructorId) {
+      this.fetchLessons(range, instructorId).subscribe();
     }
     return this.lessons$.asObservable();
   }
 
   getLesson(id: number): Observable<Lesson | undefined> {
-    const url = `${this.base}?id=${id}`;
-    return this.http.get<Lesson>(url).pipe(
+    return from(window.electronAPI.invoke('get-lesson', id)).pipe(
+      map((res: any) => {
+        if (res.success) return res.data as Lesson;
+        return this.lessons$.getValue().find((l) => l.id === id);
+      }),
       catchError(() => of(this.lessons$.getValue().find((l) => l.id === id)))
     );
   }
 
   joinLesson(id: number): Observable<any> {
-    const url = `${this.base}/join`;
-    return this.http.post(url, { id }).pipe(
-      catchError(() => of({ success: true, meetingLink: 'https://meet.example.com/abc' }))
-    );
+    // This might still need a mock or different logic in Electron
+    return of({ success: true, meetingLink: 'https://meet.example.com/abc' });
   }
 
   cancelLesson(id: number): Observable<any> {
-    const url = `${this.base}/cancel`;
-    return this.http.post(url, { id }).pipe(
-      tap(() => {
-        const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, status: 'cancelled' } : l)) as Lesson[];
-        this.lessons$.next(updated);
+    return from(window.electronAPI.invoke('update-lesson', { id, status: 'cancelled' })).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, status: 'cancelled' } : l)) as Lesson[];
+          this.lessons$.next(updated);
+        }
       }),
       catchError(() => {
         const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, status: 'cancelled' } : l)) as Lesson[];
@@ -114,11 +121,12 @@ export class LessonService {
   }
 
   patchLesson(id: number, payload: Partial<Lesson>): Observable<any> {
-    const url = `${this.base}/update`;
-    return this.http.post(url, { id, ...payload }).pipe(
-      tap(() => {
-        const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, ...payload, updatedAt: new Date().toISOString() } : l)) as Lesson[];
-        this.lessons$.next(updated);
+    return from(window.electronAPI.invoke('update-lesson', { id, ...payload })).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, ...payload, updatedAt: new Date().toISOString() } : l)) as Lesson[];
+          this.lessons$.next(updated);
+        }
       }),
       catchError(() => {
         const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, ...payload, updatedAt: new Date().toISOString() } : l)) as Lesson[];
@@ -129,15 +137,19 @@ export class LessonService {
   }
 
   addLesson(payload: Partial<Lesson>, token?: string): Observable<any> {
-    const url = token ? `${this.base}/add?token=${encodeURIComponent(token)}` : `${this.base}/add`;
-    return this.http.post<Lesson>(url, payload).pipe(
-      tap((newLesson) => {
+    // Token is ignored in Electron/SQLite local mode for now
+    return from(window.electronAPI.invoke('add-lesson', payload)).pipe(
+      map((res: any) => {
+        if (res.success) return res.data as Lesson;
+        throw new Error(res.message || 'Failed to create lesson');
+      }),
+      tap((newLesson: Lesson) => {
         const updated = [...this.lessons$.getValue(), newLesson];
         this.lessons$.next(updated);
       }),
       catchError((error) => {
-        this.trafQuiz.showNotification('Failed to create lesson: ' + (error.error?.message || error.message), 'error');
-        throw error; // Don't create mock data - propagate error
+        this.trafQuiz.showNotification('Failed to create lesson: ' + (error.message || 'Unknown error'), 'error');
+        throw error;
       })
     );
   }

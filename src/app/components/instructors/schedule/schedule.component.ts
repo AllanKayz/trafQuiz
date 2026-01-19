@@ -64,10 +64,8 @@ export class ScheduleComponent {
 
   refreshSchedule() {
     const userId = this.user()?.id;
-    this.lessonService.getLessons().subscribe(ls => {
-      // In a real app, query by instructorId.
-      const filtered = ls.filter(l => l.instructor.id === userId);
-      this.myLessons.set(filtered);
+    this.lessonService.getLessons(undefined, userId).subscribe(ls => {
+      this.myLessons.set(ls);
     });
   }
 
