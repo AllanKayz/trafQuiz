@@ -1,4 +1,4 @@
-import { Component, inject, ViewChild, AfterViewInit, computed } from '@angular/core';
+import { Component, inject, ViewChild, AfterViewInit, computed, signal, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatTableModule, MatTableDataSource } from '@angular/material/table';
@@ -11,9 +11,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Vehicle } from '../../models/vehicle';
 import { VehicleService } from '../../services/vehicle.service';
 import { TraffiquizService } from '../../traffiquiz.service';
+import { TableColumn, TableComponent } from '../../widgets/table/table.component';
+import { FormConfigService } from '../../widgets/form-config.service';
+import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 
 @Component({
   selector: 'app-vehicles',
@@ -31,7 +35,8 @@ import { TraffiquizService } from '../../traffiquiz.service';
     MatSelectModule,
     MatFormFieldModule,
     MatTooltipModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    TableComponent
   ],
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
@@ -40,6 +45,7 @@ export class VehiclesComponent implements AfterViewInit {
   private vehicleService = inject(VehicleService);
   private trafService = inject(TraffiquizService);
   private dialog = inject(MatDialog);
+  private formConfig = inject(FormConfigService);
 
   user = this.trafService.currentUser;
   isAdmin = computed(() => this.user()?.role === 'admin');
@@ -56,12 +62,28 @@ export class VehiclesComponent implements AfterViewInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   // Form state for dialogs
-  formVehicle: Partial<Vehicle> = {};
   isEditing = false;
 
-  // Logs/Issue Data
-  logData = { mileage: 0, fuelLevel: 0, notes: '' };
-  issueData = { description: '', severity: 'low' };
+  // Table Configurations
+  tableColumns = signal<TableColumn[]>([
+    { key: 'registration', header: 'Reg. Number', type: 'text' },
+    { key: 'make', header: 'Make', type: 'text' },
+    { key: 'model', header: 'Model', type: 'text' },
+    { key: 'year', header: 'Year', type: 'number' },
+    { key: 'type', header: 'Type', type: 'text' },
+    { key: 'status', header: 'Status', type: 'text' }
+  ]);
+
+  tableActions = computed(() => {
+    const actions = ['Log Activity', 'Report Issue'];
+    if (this.isAdmin()) {
+      actions.push('edit', 'delete');
+    }
+    return actions;
+  });
+
+  // Get data from service
+  tableData = toSignal(this.vehicleService.getVehicles(), { initialValue: [] });
 
   constructor() {
     this.load();
@@ -71,10 +93,26 @@ export class VehiclesComponent implements AfterViewInit {
     this.dataSource.paginator = this.paginator;
   }
 
+  handleTableAction(event: { action: string, item: any }) {
+    switch (event.action) {
+      case 'Log Activity':
+        this.openLog(event.item);
+        break;
+      case 'Report Issue':
+        this.openIssue(event.item);
+        break;
+      case 'edit':
+        this.openEdit(event.item);
+        break;
+      case 'delete':
+        this.confirmDelete(event.item.id);
+        break;
+    }
+  }
+
   load() {
     this.loading = true;
     this.error = null;
-    // Note: service fetchVehicles calls API, API filters by role (Instructor sees only assigned).
     this.vehicleService.fetchVehicles(this.user()?.id).subscribe({
       next: (res) => {
         this.dataSource.data = res || [];
@@ -89,37 +127,48 @@ export class VehiclesComponent implements AfterViewInit {
     });
   }
 
-  openAdd(template: any) {
+  openAdd() {
     this.isEditing = false;
-    this.error = null;
-    this.formVehicle = {
-      make: '',
-      model: '',
-      year: new Date().getFullYear(),
-      registration: '',
-      type: 'car',
-      status: 'active',
-      notes: ''
-    };
-    this.dialog.open(template, { width: '500px' });
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '500px',
+      data: {
+        title: 'Register Vehicle',
+        submitText: 'Register',
+        fields: this.formConfig.getFormConfig('vehicle'),
+        initialData: {
+          year: new Date().getFullYear(),
+          type: 'car',
+          status: 'active'
+        }
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data) => {
+      this.save(data, dialogRef);
+    });
   }
 
-  openEdit(v: Vehicle, template: any) {
+  openEdit(v: Vehicle) {
     this.isEditing = true;
-    this.error = null;
-    this.formVehicle = { ...v };
-    this.dialog.open(template, { width: '500px' });
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '500px',
+      data: {
+        title: 'Update Vehicle',
+        submitText: 'Save Changes',
+        fields: this.formConfig.getFormConfig('vehicle'),
+        initialData: v
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data) => {
+      this.save({ ...data, id: v.id }, dialogRef);
+    });
   }
 
-  save(dialogRef: any) {
-    if (!this.formVehicle.make || !this.formVehicle.model || !this.formVehicle.registration) {
-      this.trafService.showNotification('Make, model, and registration are required', 'error');
-      return;
-    }
-
-    const obs = (this.isEditing && this.formVehicle.id)
-      ? this.vehicleService.updateVehicle(this.formVehicle.id, this.formVehicle)
-      : this.vehicleService.addVehicle(this.formVehicle);
+  save(data: any, dialogRef: any) {
+    const obs = (this.isEditing && data.id)
+      ? this.vehicleService.updateVehicle(data.id, data)
+      : this.vehicleService.addVehicle(data);
 
     obs.subscribe({
       next: () => {
@@ -128,8 +177,8 @@ export class VehiclesComponent implements AfterViewInit {
         this.load();
       },
       error: () => {
-        this.error = this.isEditing ? 'Update failed' : 'Create failed';
-        this.trafService.showNotification(this.error, 'error');
+        this.trafService.showNotification(this.isEditing ? 'Update failed' : 'Create failed', 'error');
+        dialogRef.componentInstance.loading.set(false);
       }
     });
   }
@@ -148,42 +197,74 @@ export class VehiclesComponent implements AfterViewInit {
     });
   }
 
-  openLog(v: Vehicle, template: any) {
-    this.formVehicle = { ...v };
-    this.logData = { mileage: 0, fuelLevel: 0, notes: '' };
-    this.dialog.open(template, { width: '400px' });
-  }
+  openLog(v: Vehicle) {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '400px',
+      data: {
+        title: `Log Activity: ${v.registration}`,
+        submitText: 'Save Log',
+        fields: this.formConfig.getFormConfig('vehicle-log'),
+        initialData: {}
+      }
+    });
 
-  submitLog(dialogRef: any) {
-    const payload = {
-      vehicleId: this.formVehicle.id!,
-      instructorId: this.user()?.id!,
-      mileage: this.logData.mileage,
-      fuelLevel: this.logData.fuelLevel,
-      notes: this.logData.notes
-    };
-
-    this.vehicleService.logActivity(payload as any).subscribe(() => {
-      dialogRef.close();
-      this.load();
+    dialogRef.componentInstance.submitted.subscribe((data) => {
+      this.submitLog(v.id!, data, dialogRef);
     });
   }
 
-  openIssue(v: Vehicle, template: any) {
-    this.formVehicle = { ...v };
-    this.issueData = { description: '', severity: 'low' };
-    this.dialog.open(template, { width: '400px' });
+  submitLog(vehicleId: number, data: any, dialogRef: any) {
+    const payload = {
+      vehicleId: vehicleId,
+      instructorId: this.user()?.id!,
+      ...data
+    };
+
+    this.vehicleService.logActivity(payload as any).subscribe({
+      next: () => {
+        this.trafService.showNotification('Activity logged successfully', 'success');
+        dialogRef.close();
+        this.load();
+      },
+      error: () => {
+        this.trafService.showNotification('Failed to log activity', 'error');
+        dialogRef.componentInstance.loading.set(false);
+      }
+    });
   }
 
-  submitIssue(dialogRef: any) {
+  openIssue(v: Vehicle) {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      width: '400px',
+      data: {
+        title: `Report Issue: ${v.registration}`,
+        submitText: 'Report Issue',
+        fields: this.formConfig.getFormConfig('vehicle-issue'),
+        initialData: {}
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe((data) => {
+      this.submitIssue(v.id!, data, dialogRef);
+    });
+  }
+
+  submitIssue(vehicleId: number, data: any, dialogRef: any) {
     const payload = {
-      vehicleId: this.formVehicle.id!,
+      vehicleId: vehicleId,
       instructorId: this.user()?.id!,
-      description: this.issueData.description,
-      severity: this.issueData.severity
+      ...data
     };
-    this.vehicleService.reportIssue(payload as any).subscribe(() => {
-      dialogRef.close();
+
+    this.vehicleService.reportIssue(payload as any).subscribe({
+      next: () => {
+        this.trafService.showNotification('Issue reported successfully', 'success');
+        dialogRef.close();
+      },
+      error: () => {
+        this.trafService.showNotification('Failed to report issue', 'error');
+        dialogRef.componentInstance.loading.set(false);
+      }
     });
   }
 }

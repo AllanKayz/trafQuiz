@@ -722,6 +722,69 @@ export class FormConfigService {
         colspan: 2,
         icon: 'edit_note'
       }
+    ],
+    'vehicle': [
+      {
+        key: 'registration',
+        label: 'Registration Number',
+        type: 'text',
+        validators: [Validators.required],
+        icon: 'badge',
+        hint: 'e.g. ABC-123'
+      },
+      {
+        key: 'year',
+        label: 'Year',
+        type: 'number',
+        validators: [Validators.required, Validators.min(1900)],
+        icon: 'calendar_today'
+      },
+      {
+        key: 'make',
+        label: 'Make',
+        type: 'text',
+        validators: [Validators.required],
+        icon: 'factory'
+      },
+      {
+        key: 'model',
+        label: 'Model',
+        type: 'text',
+        validators: [Validators.required],
+        icon: 'model_training'
+      },
+      {
+        key: 'type',
+        label: 'Vehicle Type',
+        type: 'select',
+        validators: [Validators.required],
+        options: [
+          { value: 'car', label: 'Car' },
+          { value: 'motorcycle', label: 'Motorcycle' },
+          { value: 'truck', label: 'Truck' }
+        ],
+        icon: 'category'
+      },
+      {
+        key: 'status',
+        label: 'Current Status',
+        type: 'select',
+        validators: [Validators.required],
+        options: [
+          { value: 'active', label: 'Active' },
+          { value: 'maintenance', label: 'Maintenance' },
+          { value: 'inactive', label: 'Inactive' }
+        ],
+        icon: 'info'
+      },
+      {
+        key: 'notes',
+        label: 'Maintenance Notes',
+        type: 'textarea',
+        colspan: 2,
+        icon: 'note',
+        hint: 'Add any specific details...'
+      }
     ]
   }));
 

@@ -66,3 +66,4 @@ require('./ipc-handlers/misc-handler');
 require('./ipc-handlers/messages-handler');
 require('./ipc-handlers/exam-handler');
 require('./ipc-handlers/finances-handler');
+require('./ipc-handlers/reports-handler');

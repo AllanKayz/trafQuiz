@@ -103,33 +103,65 @@ export class SchedulingComponent implements AfterViewInit {
         });
 
         dialogRef.componentInstance.submitted.subscribe((data: any) => {
-            const instructor = this.trafService.instructorsSignal().find(i => i.id === data.instructorId);
+            this.handleLessonFormSubmit(data, dialogRef);
+        });
+    }
 
-            // Format Date to YYYY-MM-DD HH:mm:ss for SQL
-            let formattedStartTime = data.startTime;
-            if (data.startTime instanceof Date) {
-                const pad = (n: number) => n < 10 ? '0' + n : n;
-                const d = data.startTime;
-                formattedStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-            }
-
-            const payload: any = {
-                ...data,
-                startTime: formattedStartTime,
-                instructor: {
-                    id: data.instructorId,
-                    name: instructor ? `${instructor.firstName} ${instructor.lastName}` : 'Unknown'
+    openEditLessonDialog(lesson: Lesson) {
+        const dialogRef = this.dialog.open(DynamicFormComponent, {
+            width: '600px',
+            data: {
+                title: 'Edit Lesson',
+                submitText: 'Save Changes',
+                fields: this.formConfig.getFormConfig('admin-create-lesson'),
+                initialData: {
+                    ...lesson,
+                    instructorId: lesson.instructor.id, // Map for form
+                    startTime: new Date(lesson.startTime) // Ensure Date object for datepicker
                 }
-            };
+            }
+        });
 
-            // Remove instructorId from root payload as backend expects matches for its keys or specific mapping
-            delete payload.instructorId;
+        dialogRef.componentInstance.submitted.subscribe((data: any) => {
+            this.handleLessonFormSubmit(data, dialogRef, lesson.id);
+        });
+    }
 
-            this.lessonService.addLesson(payload).subscribe(() => {
-                this.trafService.showNotification('Lesson created successfully', 'success');
+    private handleLessonFormSubmit(data: any, dialogRef: any, lessonId?: number) {
+        const instructor = this.trafService.instructorsSignal().find(i => i.id === data.instructorId);
+
+        // Format Date to YYYY-MM-DD HH:mm:ss for SQL if changed
+        let formattedStartTime = data.startTime;
+        if (data.startTime instanceof Date) {
+            const pad = (n: number) => n < 10 ? '0' + n : n;
+            const d = data.startTime;
+            formattedStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        const payload: any = {
+            ...data,
+            startTime: formattedStartTime,
+            instructor: {
+                id: data.instructorId,
+                name: instructor ? `${instructor.firstName} ${instructor.lastName}` : 'Unknown'
+            }
+        };
+
+        // Remove instructorId from root payload as backend expects matches for its keys or specific mapping
+        delete payload.instructorId;
+
+        const obs = lessonId ? this.lessonService.patchLesson(lessonId, payload) : this.lessonService.addLesson(payload);
+
+        obs.subscribe({
+            next: () => {
+                this.trafService.showNotification(`Lesson ${lessonId ? 'updated' : 'created'} successfully`, 'success');
                 dialogRef.close();
                 this.loadData();
-            });
+            },
+            error: (err) => {
+                this.trafService.showNotification(`Failed to ${lessonId ? 'update' : 'create'} lesson`, 'error');
+                dialogRef.componentInstance.loading.set(false);
+            }
         });
     }
 }

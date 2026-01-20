@@ -8,7 +8,7 @@ ipcMain.handle('get-vehicles', async (event, { userId } = {}) => {
 
         if (userId) {
             // Find instructor ID for this user
-            const instructor = await require('../models/InstructorModel').findByUser(userId);
+            const instructor = await require('../models/InstructorModel').findByUserId(userId);
             if (instructor) {
                 sql += ' WHERE instructor_id = ?';
                 params.push(instructor.id);
@@ -61,7 +61,7 @@ ipcMain.handle('report-vehicle-issue', async (event, data) => {
         let { instructorId } = data;
         // Resolve instructor ID if it looks like a user ID (or just try to find it)
         // If data.instructorId comes from frontend as user ID
-        const instructor = await require('../models/InstructorModel').findByUser(instructorId);
+        const instructor = await require('../models/InstructorModel').findByUserId(instructorId);
         if (instructor) {
             data.instructorId = instructor.id;
         } else {
@@ -88,7 +88,7 @@ ipcMain.handle('report-vehicle-issue', async (event, data) => {
 ipcMain.handle('log-vehicle-activity', async (event, data) => {
     try {
         let { instructorId } = data;
-        const instructor = await require('../models/InstructorModel').findByUser(instructorId);
+        const instructor = await require('../models/InstructorModel').findByUserId(instructorId);
         if (instructor) {
             data.instructorId = instructor.id;
         }

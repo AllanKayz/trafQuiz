@@ -69,3 +69,61 @@ ipcMain.handle('get-all-users', async () => {
         return { success: false, message: error.message };
     }
 });
+ipcMain.handle('get-exam-statistics', async () => {
+    try {
+        const { get, query } = require('../db');
+        const passCountRow = await get('SELECT COUNT(*) as count FROM student_exams WHERE score >= 50');
+        const failCountRow = await get('SELECT COUNT(*) as count FROM student_exams WHERE score < 50');
+        
+        const recentExams = await query(`
+            SELECT e.name, COUNT(se.id) as candidates, AVG(se.score) as avgScore
+            FROM exams e
+            LEFT JOIN student_exams se ON e.id = se.exam_id
+            GROUP BY e.id
+            ORDER BY e.created_at DESC
+            LIMIT 5
+        `);
+
+        return {
+            success: true,
+            data: {
+                pass_count: passCountRow.count,
+                fail_count: failCountRow.count,
+                recent_exams: recentExams
+            }
+        };
+    } catch (error) {
+        console.error('Get exam statistics error:', error);
+        return { success: false, message: error.message };
+    }
+});
+ipcMain.handle('add-user', async (event, data) => {
+    try {
+        const UserModel = require('../models/UserModel');
+        const user = await UserModel.create(data);
+        return { success: true, data: user };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('delete-user', async (event, { id, role }) => {
+    try {
+        const UserModel = require('../models/UserModel');
+        if (role === 'student') {
+            const StudentModel = require('../models/StudentModel');
+            // Assuming student delete also deletes user if needed, or we do it here
+            await StudentModel.deleteByUserId(id); 
+        } else if (role === 'instructor') {
+            const InstructorModel = require('../models/InstructorModel');
+            // Find instructor id from user id
+            const instructor = await InstructorModel.findByUserId(id);
+            if (instructor) await InstructorModel.delete(instructor.id);
+        } else {
+            await UserModel.delete(id);
+        }
+        return { success: true };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});

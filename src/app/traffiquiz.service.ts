@@ -154,9 +154,9 @@ export class TraffiquizService {
       { label: 'System Settings', icon: 'settings', route: '/dashboard/settings' }
     ],
     instructor: [
-      { label: 'My Schedule', icon: 'calendar_today', route: '/dashboard' },
+      { label: 'My Schedule', icon: 'calendar_today', route: '/dashboard/schedule' },
       { label: 'Grade Student', icon: 'fact_check', route: '/dashboard/students' },
-      { label: 'Log Issue', icon: 'report_problem', route: '/dashboard/vehicles' },
+      { label: 'Log Issue', icon: 'report_problem', route: '/dashboard/vehicle-status' },
       { label: 'Message Admin', icon: 'mail', route: '/dashboard/messages' }
     ],
     student: [
@@ -488,19 +488,13 @@ export class TraffiquizService {
   }
 
   private formatUser(user: any): any {
-    // If incoming user is nested (from IPC reply), flatten it if needed or use direct props
-    // IPC login returns { success, user: {...}, roleData: {...} }
-    // If we stored the whole response in 'user' key key, then user.user.role exists.
-    // Let's assume user is the user object, possibly with role.
-    // Check if user has 'user' property (nested)
     let actualUser = user;
-    if (user && user.user) {
-      actualUser = { ...user.user, ...user.roleData };
-      // If roleData has common fields, merge carefully.
+    if (user && user.roleData) {
+      actualUser = { ...user, ...user.roleData };
     }
 
     // Check role from actualUser
-    const role = actualUser?.role || user?.role;
+    const role = actualUser?.role;
 
     switch (role) {
       case 'admin':
@@ -515,7 +509,8 @@ export class TraffiquizService {
         };
       case 'instructor':
         return {
-          id: actualUser.id,
+          id: actualUser.user_id || actualUser.id, // Ensure we have users.id
+          instructor_id: actualUser.user_id ? actualUser.id : null, // instructors.id
           username: actualUser.username || actualUser.name,
           role: role,
           sidebar: this.menus.instructor,
@@ -525,7 +520,8 @@ export class TraffiquizService {
         };
       case 'student':
         return {
-          id: actualUser.id,
+          id: actualUser.user_id || actualUser.id, // Ensure we have users.id
+          student_id: actualUser.user_id ? actualUser.id : null, // students.id
           username: actualUser.username || actualUser.name,
           role: role,
           sidebar: this.menus.student,
@@ -544,12 +540,9 @@ export class TraffiquizService {
     return from(window.electronAPI.invoke('login', payload)).pipe(
       tap((response: any) => {
         if (response.success) {
-          // Store entire response or just user?
-          // To match initializeUser, let's store the combined object or standard user object
-          // Let's store the whole response for now so formatUser can handle it
-          localStorage.setItem('user', JSON.stringify(response.user));
-          // wait, formatUser expects role. response.user has role.
-          this.userSignal.set(this.formatUser(response.user));
+          const sessionData = { ...response.user, roleData: response.roleData };
+          localStorage.setItem('user', JSON.stringify(sessionData));
+          this.userSignal.set(this.formatUser(sessionData));
         } else {
           this.showNotification(`Fatal error: ${response.message}`, 'error');
         }
@@ -563,13 +556,13 @@ export class TraffiquizService {
   }
 
   forgotPassword(username: string): Observable<any> {
-    // Mock or implement IPC
-    return of({ success: true, message: 'Password reset link sent' });
+    return from(window.electronAPI.invoke('forgot-password', { username }));
   }
 
   resetPassword(payload: any): Observable<any> {
-    return of({ success: true, message: 'Password reset successfully' });
+    return from(window.electronAPI.invoke('reset-password', payload));
   }
+
 
   fetchExam(token: any) {
     const user = this.userSignal();
@@ -598,6 +591,11 @@ export class TraffiquizService {
         this.questionsSignal.set([]);
       }
     });
+  }
+
+  getStoredResponses() {
+    const responses = localStorage.getItem('quizResponses');
+    return responses ? JSON.parse(responses) : null
   }
 
   private transformQuestion(item: ApiResponse): Question {
@@ -666,7 +664,7 @@ export class TraffiquizService {
   }
 
   updateQuestion(question: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-question', question)); // Need to create update-question IPC
+    return from(window.electronAPI.invoke('update-question', question));
   }
 
   // Students CRUD
@@ -674,8 +672,9 @@ export class TraffiquizService {
     const user = this.userSignal();
     const role = user?.role || 'student';
     const userId = user?.id || '';
+    const instructorId = role === 'instructor' ? user?.instructor_id : null;
 
-    from(window.electronAPI.invoke('get-students', { role, userId })).subscribe({
+    from(window.electronAPI.invoke('get-students', { role, userId, instructorId })).subscribe({
       next: (res: any) => {
         if (res.success) {
           const students = res.data;
@@ -709,11 +708,11 @@ export class TraffiquizService {
   }
 
   updateStudent(student: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-student', student)); // Need IPC
+    return from(window.electronAPI.invoke('update-student', student));
   }
 
   deleteStudent(student: Student): Observable<any> {
-    return from(window.electronAPI.invoke('delete-student', { id: student.id })); // Need IPC
+    return from(window.electronAPI.invoke('delete-student', { id: student.id }));
   }
 
   // Instructors CRUD
@@ -735,30 +734,24 @@ export class TraffiquizService {
   }
 
   addInstructor(instructor: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-instructor', instructor)); // Need IPC
+    return from(window.electronAPI.invoke('add-instructor', instructor));
   }
 
   updateInstructor(instructor: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-instructor', instructor)); // Need IPC
+    return from(window.electronAPI.invoke('update-instructor', instructor));
   }
 
   deleteInstructor(instructor: Instructor): Observable<any> {
-    return from(window.electronAPI.invoke('delete-instructor', { id: instructor.id })); // Need IPC
+    return from(window.electronAPI.invoke('delete-instructor', { id: instructor.id }));
   }
+
 
   addCategory(category: any): Observable<any> {
-    // Mock
-    return of({ success: true });
-  }
-
-  getStoredResponses() {
-    const responses = localStorage.getItem('quizResponses');
-    return responses ? JSON.parse(responses) : null
+    return from(window.electronAPI.invoke('add-category', category));
   }
 
   setExamTimeframe(time: any): Observable<any> {
-    // Mock
-    return of({ success: true });
+    return from(window.electronAPI.invoke('set-exam-timeframe', time));
   }
 
   // Miscellaneous
@@ -786,8 +779,7 @@ export class TraffiquizService {
   }
 
   updatePackage(pkg: any): Observable<any> {
-    // Mock update
-    return of({ success: true }).pipe(
+    return from(window.electronAPI.invoke('update-package', pkg)).pipe(
       tap(() => {
         const updatedPackages = this.packagesSignal().map(p => p.id === pkg.id ? { ...p, ...pkg } : p);
         this.packagesSignal.set(updatedPackages);
@@ -804,7 +796,13 @@ export class TraffiquizService {
   }
 
   getQuestionCategories() {
-    // Mock
+    from(window.electronAPI.invoke('get-question-categories')).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          localStorage.setItem('question_categories', JSON.stringify(this.transformQuestionCategoriesJson(res.data)));
+        }
+      }
+    });
   }
 
   getSpecializations() {
@@ -846,20 +844,23 @@ export class TraffiquizService {
   }
 
   autoAllocateExams(date: string, capacity: number): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('auto-allocate-exams', { date, capacity }));
   }
 
   getExamStatistics(): Observable<any> {
-    // Mock
-    return of({ detailed: null });
+    return from(window.electronAPI.invoke('get-exam-statistics')).pipe(
+      tap(res => {
+        if (res.success) this.examStats.set(res.data);
+      })
+    );
   }
 
   addSpecialization(specialization: any): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('add-specialization', specialization));
   }
 
   updateSpecialization(specialization: any): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('update-specialization', specialization));
   }
 
   getCertifications() {
@@ -886,11 +887,11 @@ export class TraffiquizService {
   }
 
   updateCertification(certification: any): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('update-certification', certification));
   }
 
   addCertification(certification: any): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('add-certification', certification));
   }
 
   openAlertDialog(data: any): MatDialogRef<AlertComponent> {
@@ -899,23 +900,25 @@ export class TraffiquizService {
     });
   }
 
-  fetchStudentProgress(studentId?: string): Observable<StudentProgress> {
-    // Mock
-    return of({
-      studentId: studentId || 'current-user',
-      totalTests: 0,
-      averageScore: 0,
-      completionRate: 0,
-      recentActivity: [],
-      monthlyPerformance: []
-    });
+  fetchStudentProgress(studentId?: string): Observable<any> {
+    const user = this.userSignal();
+    const payload = studentId ? { studentId } : { userId: user?.id };
+    return from(window.electronAPI.invoke('get-student-progress', payload)).pipe(
+      map(res => res.success ? res.data : null),
+      catchError(err => {
+        this.showNotification(`Error fetching progress: ${err}`, 'error');
+        return of(null);
+      })
+    );
   }
 
   // --- Financial & Payments Mocks ---
 
   processPayment(paymentData: any): Observable<any> {
-    return of({ success: true }).pipe(
-      tap(() => this.showNotification('Payment processed successfully', 'success'))
+    return from(window.electronAPI.invoke('add-payment', paymentData)).pipe(
+      tap(res => {
+        if (res.success) this.showNotification('Payment processed successfully', 'success');
+      })
     );
   }
 
@@ -945,11 +948,19 @@ export class TraffiquizService {
   }
 
   processSalary(payload: any): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('process-salary', payload)).pipe(
+      tap(res => {
+        if (res.success) this.showNotification('Salary processed successfully', 'success');
+      })
+    );
   }
 
   recordExpense(payload: any): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('record-expense', payload)).pipe(
+      tap(res => {
+        if (res.success) this.showNotification('Expense recorded successfully', 'success');
+      })
+    );
   }
 
   // Receipt generation (unchanged logic mostly)
@@ -1037,27 +1048,34 @@ export class TraffiquizService {
   }
 
   public addUser(user: any): Observable<any> {
-    // Route to IPC
     if (user.role === 'student') {
-      return this.addStudent({ ...user, firstName: user.name.split(' ')[0], lastName: user.name.split(' ')[1] || '' });
+      return this.addStudent({ ...user, firstName: user.name?.split(' ')[0] || user.firstName, lastName: user.name?.split(' ')[1] || user.lastName || '' });
+    } else if (user.role === 'instructor') {
+      return this.addInstructor({ ...user, firstName: user.name?.split(' ')[0] || user.firstName, lastName: user.name?.split(' ')[1] || user.lastName || '' });
     }
-    // ...
-    return of({ success: false, message: 'Not implemented' });
+    return from(window.electronAPI.invoke('add-user', user));
   }
 
   public updateUserPassword(userId: string, newPass: string): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('update-user-password', { id: userId, password: newPass }));
   }
 
   public deleteUser(userId: string, role?: string): Observable<any> {
-    return of({ success: true });
+    return from(window.electronAPI.invoke('delete-user', { id: userId, role }));
   }
 
   public deleteAccount(userId: string, password: string): Observable<any> {
-    return of({ success: true }).pipe(tap(() => this.logout()));
+    return from(window.electronAPI.invoke('delete-account', { id: userId, password })).pipe(tap(() => this.logout()));
   }
 
   public sendMessage(recipientId: string, senderId: string, message: string): Observable<any> {
-    return of({ success: true });
+    const user = this.userSignal();
+    const payload = {
+      recipientId,
+      senderId,
+      senderName: user?.username || 'User',
+      text: message
+    };
+    return from(window.electronAPI.invoke('send-message', payload));
   }
 }

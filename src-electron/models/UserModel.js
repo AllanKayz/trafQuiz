@@ -43,8 +43,7 @@ class UserModel {
         
         for (const [key, value] of Object.entries(data)) {
             if (key === 'id' || key === 'password') continue;
-            // Map camelCase to snake_case if necessary, 
-            // but here we'll assume the keys match the schema or we handle them
+            // Map camelCase to snake_case
             const column = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
             fields.push(`${column} = ?`);
             values.push(value);
@@ -55,6 +54,16 @@ class UserModel {
         values.push(id);
         await run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
         return await this.find(id);
+    }
+
+    static async updatePassword(id, newPassword) {
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, id]);
+        return true;
+    }
+
+    static async delete(id) {
+        return await run('DELETE FROM users WHERE id = ?', [id]);
     }
 }
 

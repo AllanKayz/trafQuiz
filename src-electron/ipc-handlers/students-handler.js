@@ -3,7 +3,8 @@ const StudentModel = require('../models/StudentModel');
 
 ipcMain.handle('get-students', async (event, params) => {
     try {
-        const students = await StudentModel.all();
+        const instructorId = params ? params.instructorId : null;
+        const students = await StudentModel.all(instructorId);
         return { success: true, data: students };
     } catch (error) {
         console.error('Get students error:', error);

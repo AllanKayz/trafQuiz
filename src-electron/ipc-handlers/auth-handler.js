@@ -86,3 +86,49 @@ ipcMain.handle('update-user', async (event, data) => {
         return { success: false, message: error.message };
     }
 });
+ipcMain.handle('update-user-password', async (event, { id, password }) => {
+    try {
+        await UserModel.updatePassword(id, password);
+        return { success: true };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+
+
+ipcMain.handle('delete-account', async (event, { id, password }) => {
+    try {
+        const user = await UserModel.find(id);
+        if (!user) return { success: false, message: 'User not found' };
+        
+        const isValid = await UserModel.verifyPassword(user, password);
+        if (!isValid) return { success: false, message: 'Invalid password' };
+
+        await UserModel.delete(id);
+        return { success: true };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('forgot-password', async (event, { username }) => {
+    try {
+        const user = await UserModel.findByUsername(username) || await UserModel.findByEmail(username);
+        if (!user) return { success: false, message: 'User not found' };
+        return { success: true, message: 'Password reset instructions sent (Simulated)' };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('reset-password', async (event, { username, password }) => {
+    try {
+        const user = await UserModel.findByUsername(username) || await UserModel.findByEmail(username);
+        if (!user) return { success: false, message: 'User not found' };
+        await UserModel.updatePassword(user.id, password);
+        return { success: true, message: 'Password reset successfully' };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+

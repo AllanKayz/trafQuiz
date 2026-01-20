@@ -125,3 +125,69 @@ ipcMain.handle('update-payment-status', async (event, { id, status }) => {
         return { success: false, message: error.message };
     }
 });
+ipcMain.handle('add-payment', async (event, data) => {
+    try {
+        const { run } = require('../db');
+        const transactionId = 'TXN' + Date.now() + Math.floor(Math.random() * 1000);
+        const { userId, studentId, instructorId, vehicleId, amount, method, category, notes, status = 'completed' } = data;
+        
+        let targetStudentId = studentId;
+        // If userId is provided, resolve studentId if not present
+        if (!targetStudentId && userId) {
+            const student = await require('../db').get('SELECT id FROM students WHERE user_id = ?', [userId]);
+            if (student) targetStudentId = student.id;
+        }
+
+        const sql = `
+            INSERT INTO payments (transaction_id, student_id, instructor_id, vehicle_id, amount, method, category, notes, status, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const params = [transactionId, targetStudentId, instructorId, vehicleId, amount, method, category || 'student_payment', notes, status, 'income'];
+        
+        const result = await run(sql, params);
+        return { success: true, transactionId, id: result.lastID };
+    } catch (error) {
+        console.error('Error adding payment:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('process-salary', async (event, data) => {
+    try {
+        const { run } = require('../db');
+        const transactionId = 'SAL' + Date.now() + Math.floor(Math.random() * 1000);
+        const { instructorId, amount, method, notes } = data;
+
+        const sql = `
+            INSERT INTO payments (transaction_id, instructor_id, amount, method, category, notes, status, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const params = [transactionId, instructorId, amount, method, 'salary', notes, 'completed', 'expense'];
+        
+        const result = await run(sql, params);
+        return { success: true, transactionId, id: result.lastID };
+    } catch (error) {
+        console.error('Error processing salary:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('record-expense', async (event, data) => {
+    try {
+        const { run } = require('../db');
+        const transactionId = 'EXP' + Date.now() + Math.floor(Math.random() * 1000);
+        const { vehicleId, amount, method, category, notes } = data;
+
+        const sql = `
+            INSERT INTO payments (transaction_id, vehicle_id, amount, method, category, notes, status, type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        const params = [transactionId, vehicleId, amount, method, category || 'business_expense', notes, 'completed', 'expense'];
+        
+        const result = await run(sql, params);
+        return { success: true, transactionId, id: result.lastID };
+    } catch (error) {
+        console.error('Error recording expense:', error);
+        return { success: false, message: error.message };
+    }
+});

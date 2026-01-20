@@ -2,13 +2,21 @@ const { get, query, run, exec } = require('../db');
 const bcrypt = require('bcryptjs');
 
 class StudentModel {
-    static async all() {
-        return await query(`
+    static async all(instructorId = null) {
+        let sql = `
             SELECT s.*, u.username, u.first_name as firstName, u.last_name as lastName, u.email, u.phone, u.avatar as profilePicture, p.package as package_name
             FROM students s
             JOIN users u ON s.user_id = u.id
             LEFT JOIN packages p ON s.package_id = p.id
-        `);
+        `;
+        const params = [];
+
+        if (instructorId) {
+            sql += ` WHERE s.status = 'active' AND EXISTS (SELECT 1 FROM lessons l WHERE l.student_id = s.id AND l.instructor_id = ?)`;
+            params.push(instructorId);
+        }
+
+        return await query(sql, params);
     }
 
     static async find(id) {

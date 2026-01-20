@@ -91,8 +91,8 @@ export class DynamicFormComponent {
 
   private initializeForm() {
     const group: any = {};
-    const fields = this.fields();
-    const initialData = this.initialData();
+    const fields = this.fields() || [];
+    const initialData = this.initialData() || {};
 
     fields.forEach((field: any) => {
       const validators = field.validators || [];

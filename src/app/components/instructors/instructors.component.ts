@@ -1,6 +1,5 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
 import { Validators } from '@angular/forms';
-
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TraffiquizService } from '../../traffiquiz.service';

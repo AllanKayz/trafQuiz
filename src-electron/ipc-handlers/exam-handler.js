@@ -132,3 +132,69 @@ ipcMain.handle('get-exam-questions', async (event, userId) => {
         return { success: false, message: error.message };
     }
 });
+
+ipcMain.handle('set-exam-timeframe', async (event, { time, examId }) => {
+    try {
+        const period = Math.ceil(time / 60); // Convert seconds back to minutes for DB
+        if (examId) {
+            await run('INSERT INTO exam_timeframe (exam_id, period) VALUES (?, ?) ON CONFLICT(exam_id) DO UPDATE SET period = EXCLUDED.period, updated_at = CURRENT_TIMESTAMP', [examId, period]);
+        } else {
+            // Global update - update all or just the first one?
+            // Let's update all existing ones and ensure if none exist, we might have an issue.
+            // But usually this would be called for a specific context.
+            // For now, let's update all.
+            await run('UPDATE exam_timeframe SET period = ?, updated_at = CURRENT_TIMESTAMP', [period]);
+            // And if none exist?
+            const exist = await get('SELECT id FROM exam_timeframe LIMIT 1');
+            if(!exist) {
+                // If no exams yet, we can't really set a timeframe that links to one.
+                // But we can try to find the first exam.
+                const firstExam = await get('SELECT id FROM exams LIMIT 1');
+                if(firstExam) {
+                    await run('INSERT INTO exam_timeframe (exam_id, period) VALUES (?, ?)', [firstExam.id, period]);
+                }
+            }
+        }
+        return { success: true, message: 'Exam timeframe updated successfully', new_time: time };
+    } catch (error) {
+        console.error('Set exam timeframe error:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('auto-allocate-exams', async (event, { date, capacity }) => {
+    try {
+        // 1. Find or create an exam for this date
+        let exam = await get('SELECT id FROM exams WHERE date(start_time) = ? LIMIT 1', [date]);
+        if (!exam) {
+            const result = await run('INSERT INTO exams (name, start_time, end_time) VALUES (?, ?, ?)', 
+                [`Exam ${date}`, `${date} 09:00:00`, `${date} 11:00:00`]);
+            exam = { id: result.lastID };
+        }
+
+        // 2. Find students who haven't take this exam and are active
+        // Simplistic: just take up to 'capacity' students who haven't taken any exam today
+        const students = await query(`
+            SELECT s.id 
+            FROM students s
+            WHERE s.status = 'active'
+            AND s.id NOT IN (SELECT student_id FROM student_exams WHERE date(completed_at) = ?)
+            LIMIT ?
+        `, [date, capacity]);
+
+        let allocatedCount = 0;
+        for (const student of students) {
+            await run('INSERT OR IGNORE INTO student_exams (student_id, exam_id, score, completed_at) VALUES (?, ?, 0, ?)', 
+                [student.id, exam.id, `${date} 09:00:00`]);
+            allocatedCount++;
+        }
+
+        return { 
+            success: true, 
+            message: `Successfully allocated ${allocatedCount} students to exam on ${date}` 
+        };
+    } catch (error) {
+        console.error('Auto allocate exams error:', error);
+        return { success: false, message: error.message };
+    }
+});

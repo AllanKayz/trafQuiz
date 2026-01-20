@@ -11,7 +11,7 @@ ipcMain.handle('get-lessons', async (event, { range, instructorId, userId }) => 
         const uid = userId || instructorId;
 
         if (uid) {
-             const instructor = await require('../models/InstructorModel').findByUser(uid);
+             const instructor = await require('../models/InstructorModel').findByUserId(uid);
              if (instructor) {
                  conditions.push('instructor_id = ?');
                  params.push(instructor.id);

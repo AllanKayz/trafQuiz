@@ -108,7 +108,8 @@ export class VehicleStatusComponent implements OnInit {
       data: {
         title: `Report Issue for ${vehicle.make} ${vehicle.model}`,
         fields: this.formConfig.getFormConfig('vehicle-issue'),
-        submitText: 'Submit Report'
+        submitText: 'Submit Report',
+        initialData: {}
       }
     });
 
