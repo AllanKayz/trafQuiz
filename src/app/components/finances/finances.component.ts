@@ -15,6 +15,7 @@ import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { FormConfigService } from '../../widgets/form-config.service';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
+import { TableColumn, TableComponent } from '../../widgets/table/table.component';
 
 @Component({
   selector: 'app-finances',
@@ -31,7 +32,8 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
     MatInputModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    FormsModule
+    FormsModule,
+    TableComponent
   ],
   templateUrl: './finances.component.html',
   styleUrl: './finances.component.css'
@@ -47,9 +49,17 @@ export class FinancesComponent implements AfterViewInit {
 
   // Data Signals
   transactionDataSource = new MatTableDataSource<any>([]);
+  transactions = signal<any[]>([]);
   stats = signal<any>(null);
   isLoading = signal<boolean>(false);
   searchQuery = signal<string>('');
+
+  chartMax = computed(() => {
+    const data = this.stats()?.chartData;
+    if (!data) return 1000;
+    const allValues = [...data.revenue, ...data.expenses];
+    return Math.max(...allValues, 1000);
+  });
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -58,8 +68,39 @@ export class FinancesComponent implements AfterViewInit {
   editBuffer = signal<any>(null);
 
   // Table Columns
-  displayedColumns: string[] = ['id', 'date', 'transactionId', 'entityName', 'description', 'method', 'amount', 'status'];
-  adminColumns: string[] = ['date', 'type', 'entityName', 'transactionId', 'description', 'method', 'amount', 'status', 'actions'];
+  tableColumns = computed<TableColumn[]>(() => {
+    const admin = this.isAdmin();
+    const cols: TableColumn[] = [
+      { key: 'payment_date', header: 'Date', type: 'date', width: '120px' },
+      { key: 'transaction_id', header: 'Txn ID', type: 'code', width: '150px' },
+    ];
+
+    if (admin) {
+      cols.push({ key: 'entity_name', header: 'Entity', type: 'text' });
+    }
+
+    cols.push(
+      { key: 'description_full', header: 'Description', type: 'text' },
+      { key: 'method', header: 'Method', type: 'text', width: '100px' },
+      { key: 'amount', header: 'Amount', type: 'amount', width: '120px' },
+      { key: 'status', header: 'Status', type: 'status', width: '100px' }
+    );
+
+    return cols;
+  });
+
+  tableActions = computed(() => {
+    return this.isAdmin() ? ['activate', 'flag'] : []; // activate = Approve, flag = Partial
+  });
+
+  tableData = computed(() => {
+    return this.transactions().map(t => ({
+      ...t,
+      description_full: t.notes ? `${t.description} (${t.notes})` : t.description,
+      actions: (t.status === 'pending' || t.status === 'partial') && this.isAdmin() ?
+        (t.status === 'pending' ? ['activate', 'flag'] : ['activate']) : []
+    }));
+  });
 
   constructor() {
     effect(() => {
@@ -82,6 +123,7 @@ export class FinancesComponent implements AfterViewInit {
 
     // Fetch Transactions
     this.service.fetchTransactions(userId, query).subscribe(res => {
+      this.transactions.set(res.data || []);
       this.transactionDataSource.data = res.data || [];
       this.transactionDataSource.paginator = this.paginator;
       this.isLoading.set(false);
@@ -99,8 +141,12 @@ export class FinancesComponent implements AfterViewInit {
     }
   }
 
-  get tableColumns() {
-    return this.isAdmin() ? this.adminColumns : this.displayedColumns;
+  handleTableAction(event: { action: string, item: any }) {
+    if (event.action === 'activate') {
+      this.approvePayment(event.item.id, 'completed');
+    } else if (event.action === 'flag') {
+      this.approvePayment(event.item.id, 'partial');
+    }
   }
 
   applyFilter() {

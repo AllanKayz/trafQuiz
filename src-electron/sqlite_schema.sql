@@ -54,6 +54,7 @@ CREATE TABLE `instructors` (
   `certification_id` INTEGER NOT NULL,
   `experience` INTEGER NOT NULL,
   `salary` decimal(10,2) NOT NULL DEFAULT 0.00,
+  `status` varchar(50) DEFAULT 'active',
   `availability` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP,

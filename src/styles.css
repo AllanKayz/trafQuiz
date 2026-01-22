@@ -2,15 +2,31 @@
 
 /* Global CSS Variables for Theming */
 :root {
-    /* Light Theme Palette (Default) */
-    --bg-body: #f8fafc;
-    --bg-card: #ffffff;
-    --bg-sidebar: #ffffff;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
-    --primary-color: #4f46e5;
-    --hover-bg: #f1f5f9;
+    /* Modern HSL Palette (Light) */
+    --primary: 235 75% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 25% 27%;
+    --secondary-foreground: 210 40% 98%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
+
+    /* Legacy Map (for compatibility during migration) */
+    --bg-body: hsl(var(--background));
+    --bg-card: hsl(var(--card));
+    --bg-sidebar: hsl(var(--card));
+    --text-main: hsl(var(--foreground));
+    --text-muted: hsl(215.4 16.3% 46.9%);
+    --border-color: hsl(var(--border));
+    --primary-color: hsl(var(--primary));
+    --hover-bg: hsl(var(--accent));
     --shadow-color: rgba(0, 0, 0, 0.05);
 
     --mat-form-field-container-text-color: var(--text-main);
@@ -19,28 +35,34 @@
 
 /* Dark Theme Palette (Premium Night) */
 body.dark-theme {
-    --bg-body: #0a0f1d;
-    --bg-card: rgba(23, 31, 58, 0.8);
-    --bg-sidebar: #0f172a;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border-color: rgba(255, 255, 255, 0.1);
-    --primary-color: #6366f1;
-    --hover-bg: rgba(255, 255, 255, 0.05);
-    --shadow-color: rgba(0, 0, 0, 0.5);
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
 
     /* Glassmorphism Support */
-    --glass-bg: rgba(23, 31, 58, 0.7);
+    --glass-bg: rgba(15, 23, 42, 0.7);
     --glass-blur: blur(12px);
     --glass-border: 1px solid rgba(255, 255, 255, 0.08);
 
+    --shadow-color: rgba(0, 0, 0, 0.5);
+
     /* Material Overrides for Dark Mode */
-    --mdc-theme-surface: #0f172a;
-    --mdc-theme-text-primary-on-background: #f8fafc;
-    --mdc-theme-text-secondary-on-background: #94a3b8;
-    --mat-menu-container-color: #0f172a;
-    --mat-dialog-container-color: #0f172a;
-    --mat-select-panel-background-color: #0f172a;
+    --mdc-theme-surface: hsl(var(--card));
+    --mdc-theme-text-primary-on-background: hsl(var(--foreground));
+    --mdc-theme-text-secondary-on-background: hsl(215 20.2% 65.1%);
+    --mat-menu-container-color: hsl(var(--card));
+    --mat-dialog-container-color: hsl(var(--card));
+    --mat-select-panel-background-color: hsl(var(--card));
     --mat-form-field-container-placeholder-text-color: rgba(255, 255, 255, 0.5);
     --mat-form-field-container-label-text-color: var(--text-muted);
     --mat-form-field-state-layer-color: rgba(255, 255, 255, 0.1);
@@ -54,10 +76,72 @@ body {
 
 body {
     margin: 0;
-    font-family: 'Inter', Roboto, "Helvetica Neue", sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     background-color: var(--bg-body);
     color: var(--text-main);
     transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Global Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Premium UI Utility Classes */
+.glass-card {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    box-shadow: 0 8px 32px 0 var(--shadow-color);
+    border-radius: var(--radius);
+}
+
+.premium-shadow {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.text-gradient {
+    background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--primary) / 0.7));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hover-lift {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.hover-lift:hover {
+    transform: translateY(-4px);
 }
 
 /* Material Component Global Overrides utilizing variables */
@@ -67,8 +151,8 @@ body {
     color: var(--text-main) !important;
     border: var(--glass-border);
     -webkit-backdrop-filter: var(--glass-blur);
-    -moz-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
+    border-radius: var(--radius) !important;
     box-shadow: 0 8px 32px 0 var(--shadow-color) !important;
 }
 
@@ -111,6 +195,21 @@ body.dark-theme .mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-no
 
 .mat-mdc-row:hover .mat-mdc-cell {
     background-color: var(--hover-bg) !important;
+}
+
+/* Table Responsiveness Utility */
+.table-container,
+.mat-elevation-z1,
+.table-card,
+.questions-table {
+    overflow-x: auto !important;
+    max-width: 100%;
+}
+
+.mat-mdc-table {
+    width: 100% !important;
+    min-width: 650px;
+    /* Ensures columns stay readable on mobile */
 }
 
 .widgets-grid {

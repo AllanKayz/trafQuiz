@@ -22,18 +22,35 @@ ipcMain.handle('get-financial-stats', async () => {
         `);
         const projectedRevenue = (projected[0].projectedRevenue || 0) + totalRevenue;
         
-        // Mock chart data for now or aggregate by date
-        // Simple aggregation by month for chart
+        // Aggregate by date for chart - Ensure last 6 months are present
+        const months = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date();
+            d.setMonth(d.getMonth() - i);
+            months.push(d.toISOString().slice(0, 7)); // YYYY-MM
+        }
+
         const chartQuery = await query(`
              SELECT strftime('%Y-%m', payment_date) as month, 
                     SUM(CASE WHEN type='income' THEN amount ELSE 0 END) as revenue,
                     SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as expense
              FROM payments 
-             WHERE status='completed'
+             WHERE status='completed' AND payment_date >= date('now', '-6 months')
              GROUP BY month
-             ORDER BY month DESC
-             LIMIT 6
         `);
+
+        // Map query results to the last 6 months
+        const chartData = {
+            labels: months,
+            revenue: months.map(m => {
+                const row = chartQuery.find(r => r.month === m);
+                return row ? row.revenue : 0;
+            }),
+            expenses: months.map(m => {
+                const row = chartQuery.find(r => r.month === m);
+                return row ? row.expense : 0;
+            })
+        };
 
         return {
             success: true,
@@ -42,11 +59,7 @@ ipcMain.handle('get-financial-stats', async () => {
                 totalExpenses,
                 netProfit,
                 projectedRevenue,
-                chartData: {
-                    labels: chartQuery.map(c => c.month).reverse(),
-                    revenue: chartQuery.map(c => c.revenue).reverse(),
-                    expenses: chartQuery.map(c => c.expense).reverse()
-                }
+                chartData
             }
         };
 

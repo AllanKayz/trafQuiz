@@ -54,17 +54,34 @@ export interface FormField {
 export class DynamicFormComponent {
   private selectedFile?: File;
   private fb = inject(FormBuilder);
-  private data = inject(MAT_DIALOG_DATA);
+  private data = inject(MAT_DIALOG_DATA, { optional: true });
+  private dialogRef = inject(MatDialogRef, { optional: true });
 
-  // Input signals
-  fields = input<FormField[]>(this.data.fields);
-  title = input(this.data.title);
-  submitText = input(this.data.submitText);
-  cancelText = input('Cancel');
-  initialData = input<any>(this.data.initialData);
+  // Input properties with defaults
+  // Input properties with defaults using signal inputs
+  fields = input<FormField[]>(this.data?.fields || []);
+  title = input<string>(this.data?.title || '');
+  submitText = input<string>(this.data?.submitText || 'Submit');
+  cancelText = input<string>(this.data?.cancelText || 'Cancel');
+  initialData = input<any>(this.data?.initialData || {});
+  isSubmitting = input<boolean>(false);
 
   // Form state
-  form = signal<FormGroup>(this.fb.group({}));
+  form = computed(() => {
+    const group: any = {};
+    const fields = this.fields();
+    const initialData = this.initialData();
+
+    fields.forEach((field: any) => {
+      const validators = field.validators || [];
+      const defaultValue = initialData[field.key] ?? field.defaultValue ?? '';
+
+      group[field.key] = this.fb.control(defaultValue, validators);
+    });
+
+    return this.fb.group(group);
+  });
+
   loading = signal(false);
   error = signal('');
 
@@ -85,24 +102,8 @@ export class DynamicFormComponent {
   @Output() submitted = new EventEmitter<any>();
   @Output() cancelled = new EventEmitter<void>();
 
-  constructor(public dialogRef: MatDialogRef<DynamicFormComponent>) {
-    this.initializeForm();
-  }
+  constructor() { }
 
-  private initializeForm() {
-    const group: any = {};
-    const fields = this.fields() || [];
-    const initialData = this.initialData() || {};
-
-    fields.forEach((field: any) => {
-      const validators = field.validators || [];
-      const defaultValue = initialData[field.key] ?? field.defaultValue ?? '';
-
-      group[field.key] = [defaultValue, validators];
-    });
-
-    this.form.set(this.fb.group(group));
-  }
 
   onSubmit() {
     if (this.form().invalid) {
@@ -117,7 +118,9 @@ export class DynamicFormComponent {
 
   onCancel() {
     this.cancelled.emit();
-    this.dialogRef.close();
+    if (this.dialogRef) {
+      this.dialogRef.close();
+    }
   }
 
   onFileChange(event: any, key: any) {

@@ -1,4 +1,4 @@
-import { Component, input, computed, ViewChild, signal, Output, EventEmitter, OnChanges, AfterViewInit } from '@angular/core';
+import { Component, input, computed, ViewChild, signal, Output, EventEmitter, AfterViewInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
@@ -11,7 +11,7 @@ import { MatSort, MatSortModule } from '@angular/material/sort';
 export interface TableColumn {
   key: string;
   header: string;
-  type?: 'text' | 'number' | 'date' | 'action' | 'boolean';
+  type?: 'text' | 'number' | 'date' | 'action' | 'boolean' | 'status' | 'code' | 'amount';
   width?: string;
 }
 
@@ -19,7 +19,7 @@ export interface TableColumn {
   selector: 'app-table',
   imports: [CommonModule, MatTableModule, MatPaginatorModule, MatSortModule, MatButtonModule, MatIconModule, MatMenuModule, MatInputModule],
   template: `
-    <div class="table-container">
+    <div class="table-container animate-fade-in">
       <div class="filter-section">
         <mat-form-field appearance="outline" class="filter-field">
           <mat-label>{{ filterPlaceholder() }}</mat-label>
@@ -28,42 +28,56 @@ export interface TableColumn {
         </mat-form-field>
       </div>
     
-      <table mat-table [dataSource]="dataSource()" matSort>
-        <!-- Dynamic Columns -->
-        @for (column of columns(); track column) {
-          <ng-container [matColumnDef]="column.key">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header [style.width]="column.width">
-              {{ column.header }}
-            </th>
-            <td mat-cell *matCellDef="let row">
-              {{ getCellValue(row, column) }}
-            </td>
-          </ng-container>
-        }
-    
-        <!-- Action Column -->
-        @if (actions().length > 0) {
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef></th>
-            <td mat-cell *matCellDef="let row">
-              <button mat-icon-button [matMenuTriggerFor]="menu" class="action-btn">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              <mat-menu #menu="matMenu">
-                @for (action of actions(); track action) {
-                  <button mat-menu-item (click)="onAction(action, row)">
-                    <mat-icon>{{getActionIcon(action)}}</mat-icon>
-                    <span>{{ action | titlecase }}</span>
-                  </button>
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="dataSource()" matSort>
+          <!-- Dynamic Columns -->
+          @for (column of columns(); track column.key) {
+            <ng-container [matColumnDef]="column.key">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header [style.width]="column.width">
+                {{ column.header }}
+              </th>
+              <td mat-cell *matCellDef="let row">
+                @if (column.type === 'status' || column.key === 'status') {
+                  <span class="status-badge" [class]="getStatusClass(getCellValue(row, column))">
+                    {{ getCellValue(row, column) }}
+                  </span>
+                } @else if (column.type === 'code') {
+                  <code class="txn-code">{{ getCellValue(row, column) }}</code>
+                } @else if (column.type === 'amount') {
+                  <span [class]="getAmountClass(row, column)">
+                    {{ getAmountValue(row, column) }}
+                  </span>
+                } @else {
+                  {{ getCellValue(row, column) }}
                 }
-              </mat-menu>
-            </td>
-          </ng-container>
-        }
-    
-        <tr mat-header-row *matHeaderRowDef="columnKeys()"></tr>
-        <tr mat-row *matRowDef="let row; columns: columnKeys();"></tr>
-      </table>
+              </td>
+            </ng-container>
+          }
+      
+          <!-- Action Column -->
+          @if (actions().length > 0) {
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let row">
+                <button mat-icon-button [matMenuTriggerFor]="menu" class="action-btn">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  @for (action of (row.actions || actions()); track action) {
+                    <button mat-menu-item (click)="onAction(action, row)">
+                      <mat-icon>{{getActionIcon(action)}}</mat-icon>
+                      <span>{{ action | titlecase }}</span>
+                    </button>
+                  }
+                </mat-menu>
+              </td>
+            </ng-container>
+          }
+      
+          <tr mat-header-row *matHeaderRowDef="columnKeys()"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnKeys();" class="hover-row"></tr>
+        </table>
+      </div>
     
       <mat-paginator [pageSizeOptions]="pageSizeOptions()" showFirstLastButtons></mat-paginator>
     </div>
@@ -76,25 +90,33 @@ export interface TableColumn {
 
     .table-container {
       width: 100%;
-      overflow: hidden;
       background: var(--bg-card);
-      border-radius: 16px;
-      box-shadow: 0 4px 6px -1px var(--shadow-color);
+      border-radius: 20px;
+      box-shadow: 0 10px 15px -3px var(--shadow-color);
       border: var(--glass-border);
       backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     .filter-section {
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--border-color);
+        padding: 20px 24px;
         background: var(--hover-bg);
+        border-bottom: 1px solid var(--border-color);
     }
 
     .filter-field {
       width: 100%;
-      max-width: 400px;
+      max-width: 320px;
+    }
+
+    /* Custom Input overrides for filter */
+    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
+
+    .table-wrapper {
+        overflow-x: auto;
     }
 
     /* Table Styles */
@@ -109,10 +131,10 @@ export interface TableColumn {
       background: var(--hover-bg);
       color: var(--text-muted);
       font-size: 0.75rem;
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 16px 24px;
+      letter-spacing: 0.1em;
+      padding: 20px 24px;
       border-bottom: 1px solid var(--border-color);
       white-space: nowrap;
     }
@@ -120,33 +142,93 @@ export interface TableColumn {
     td.mat-cell {
       padding: 16px 24px;
       color: var(--text-main);
-      font-size: 0.875rem;
+      font-size: 0.9375rem;
       border-bottom: 1px solid var(--border-color);
-      transition: background 0.2s;
+      transition: background 0.3s ease;
     }
 
-    tr.mat-row:hover td {
+    .hover-row {
+        cursor: pointer;
+    }
+
+    .hover-row:hover td {
       background-color: var(--hover-bg);
     }
     
-    tr.mat-row:last-child td {
+    .hover-row:last-child td {
         border-bottom: none;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .status-active, .status-available, .status-completed, .status-success {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+
+    .status-inactive, .status-unavailable, .status-cancelled, .status-error {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+
+    .status-pending, .status-scheduled, .status-warning, .status-partial {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+    }
+
+    .status-income {
+        background: rgba(16, 185, 129, 0.15);
+        color: #10b981;
+    }
+
+    .status-expense, .status-salary {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+    }
+
+    .txn-code {
+        font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: var(--primary-color);
+        background: var(--hover-bg);
+        padding: 4px 8px;
+        border-radius: 6px;
+    }
+
+    .amount-positive {
+        color: #10b981;
+        font-weight: 600;
+    }
+
+    .amount-negative {
+        color: #ef4444;
+        font-weight: 600;
     }
 
     /* Actions Column */
     .mat-column-actions {
-      width: 60px;
-      padding-right: 16px !important;
+      width: 80px;
+      padding-right: 24px !important;
       text-align: right;
     }
     
     .action-btn {
         color: var(--text-muted);
+        transition: all 0.2s ease;
     }
     
     .action-btn:hover {
         color: var(--primary-color);
         background: var(--hover-bg);
+        transform: rotate(90deg);
     }
 
     /* Paginator */
@@ -155,16 +237,29 @@ export interface TableColumn {
         background: transparent;
         font-size: 0.875rem;
         color: var(--text-muted);
+        padding: 8px 16px;
     }
   `
 })
-export class TableComponent implements OnChanges, AfterViewInit {
+export class TableComponent implements AfterViewInit {
+  constructor() {
+    effect(() => {
+      this.updateDataSource();
+    });
+  }
   getActionIcon(action: string): string {
     const icons: Record<string, string> = {
       edit: 'edit',
       delete: 'delete',
       flag: 'flag',
-      view: 'visibility'
+      view: 'visibility',
+      activate: 'check_circle',
+      deactivate: 'block',
+      download: 'download',
+      schedule: 'calendar_today',
+      pay: 'payments',
+      available: 'person_search',
+      unavailable: 'person_off'
     };
     return icons[action] || 'more_vert';
   }
@@ -200,9 +295,7 @@ export class TableComponent implements OnChanges, AfterViewInit {
     this.dataSource().sort = this.sort;
   }
 
-  ngOnChanges() {
-    this.updateDataSource();
-  }
+
 
   private updateDataSource() {
     const dataSource = new MatTableDataSource(this.data());
@@ -236,6 +329,12 @@ export class TableComponent implements OnChanges, AfterViewInit {
     this.rowAction.emit({ action, item });
   }
 
+  getStatusClass(status: string): string {
+    if (!status) return '';
+    const s = status.toLowerCase();
+    return `status-${s}`;
+  }
+
   getCellValue(item: any, column: TableColumn): any {
     const value = item[column.key];
 
@@ -247,6 +346,24 @@ export class TableComponent implements OnChanges, AfterViewInit {
       default:
         return value;
     }
+  }
+
+  getAmountClass(row: any, column: TableColumn): string {
+    const value = row[column.key];
+    const type = row['type'] || '';
+    if (type === 'expense' || type === 'salary' || value < 0) {
+      return 'amount-negative';
+    }
+    return 'amount-positive';
+  }
+
+  getAmountValue(row: any, column: TableColumn): string {
+    const value = row[column.key];
+    const type = row['type'] || '';
+    const numValue = Number(value);
+    const sign = (type === 'expense' || type === 'salary' || numValue < 0) ? '-' : '+';
+    const absValue = Math.abs(numValue);
+    return `${sign}$${absValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
 }

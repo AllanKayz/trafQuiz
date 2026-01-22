@@ -13,23 +13,24 @@ export interface SectionButton {
   selector: 'app-sectionheader',
   imports: [MatButtonModule, MatIconModule],
   template: `
-    <div class="header-container">
+    <div class="header-container animate-fade-in">
       <div class="header-content">
-        <h2>{{header()}}</h2>
+        <h2 class="text-gradient">{{header()}}</h2>
         <p>{{content()}}</p>
       </div>
       
       <div class="header-actions">
         @for (btn of buttons(); track btn.name) {
           <button 
-            [class.primary-btn]="!btn.disabled"
+            class="premium-btn"
+            [class.disabled-btn]="btn.disabled"
             mat-flat-button 
             (click)="buttonClicked.emit(btn.action)" 
             [disabled]="btn.disabled">
             @if (btn.icon) {
               <mat-icon>{{btn.icon}}</mat-icon>
             }
-            {{btn.name}}
+            <span>{{btn.name}}</span>
           </button>
         }
       </div>
@@ -38,26 +39,36 @@ export interface SectionButton {
   styles: [`
     :host {
       display: block;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
       font-family: 'Inter', system-ui, sans-serif;
     }
 
     .header-container {
       background: var(--bg-card);
-      padding: 24px 32px;
-      border-radius: 16px;
-      box-shadow: 0 4px 6px -1px var(--shadow-color);
+      padding: 32px 40px;
+      border-radius: 24px;
+      box-shadow: 0 10px 15px -3px var(--shadow-color);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 24px;
+      gap: 32px;
       border: var(--glass-border);
       backdrop-filter: var(--glass-blur);
-      transition: box-shadow 0.3s ease;
+      -webkit-backdrop-filter: var(--glass-blur);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
     }
 
-    .header-container:hover {
-      box-shadow: 0 10px 15px -3px var(--shadow-color);
+    .header-container::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(to right, var(--primary-color), transparent);
+        opacity: 0.5;
     }
 
     .header-content {
@@ -65,10 +76,10 @@ export interface SectionButton {
     }
 
     .header-content h2 {
-      margin: 0 0 8px 0;
+      margin: 0 0 6px 0;
       color: var(--text-main);
-      font-size: 1.5rem;
-      font-weight: 700;
+      font-size: 1.875rem;
+      font-weight: 800;
       letter-spacing: -0.025em;
       line-height: 1.2;
     }
@@ -76,14 +87,43 @@ export interface SectionButton {
     .header-content p {
       margin: 0;
       color: var(--text-muted);
-      font-size: 0.95rem;
-      line-height: 1.5;
+      font-size: 1rem;
+      line-height: 1.6;
+      max-width: 600px;
     }
 
     .header-actions {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       align-items: center;
+    }
+
+    .premium-btn {
+        background: var(--primary-color) !important;
+        color: white !important;
+        border-radius: 12px !important;
+        padding: 10px 24px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .premium-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -5px var(--primary-color);
+        filter: brightness(1.1);
+    }
+
+    .premium-btn mat-icon {
+        margin-right: 8px;
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+    }
+
+    .disabled-btn {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 
     /* Responsive adjustments */
@@ -91,7 +131,8 @@ export interface SectionButton {
       .header-container {
         flex-direction: column;
         align-items: flex-start;
-        padding: 20px;
+        padding: 24px;
+        gap: 24px;
       }
 
       .header-actions {
@@ -101,6 +142,7 @@ export interface SectionButton {
       
       .header-actions button {
         flex: 1;
+        min-width: 140px;
       }
     }
   `]

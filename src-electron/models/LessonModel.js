@@ -116,7 +116,13 @@ class LessonModel {
         if (keys.length === 0) return await this.find(id);
 
         const setClause = keys.map(key => `${mapping[key]} = ?`).join(', ');
-        const values = [...keys.map(key => data[key]), id];
+        const values = [...keys.map(key => {
+            const val = data[key];
+            if (['instructorId', 'studentId', 'assignedVehicleId'].includes(key) && val === '') {
+                return null;
+            }
+            return val;
+        }), id];
 
         await run(`UPDATE lessons SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values);
         return await this.find(id);

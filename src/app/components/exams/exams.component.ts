@@ -1,7 +1,6 @@
 import { Component, inject, signal, input, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TraffiquizService } from '../../traffiquiz.service';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
@@ -13,19 +12,18 @@ import { MatTableModule } from '@angular/material/table';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { FormControl } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { SectionheaderComponent } from "../../widgets/sectionheader/sectionheader.component";
 import { ButtonConfigService } from '../../widgets/button-config.service';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { TableComponent, TableColumn } from '../../widgets/table/table.component';
+import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
+import { FormConfigService } from '../../widgets/form-config.service';
 
 @Component({
   selector: 'app-exams',
   standalone: true,
   imports: [
     CommonModule,
-    ReactiveFormsModule,
     MatCardModule,
     MatButtonModule,
     MatInputModule,
@@ -39,7 +37,8 @@ import { TableComponent, TableColumn } from '../../widgets/table/table.component
     MatTooltipModule,
     SectionheaderComponent,
     StatCardComponent,
-    TableComponent
+    TableComponent,
+    DynamicFormComponent
   ],
   templateUrl: './exams.component.html',
   styleUrl: './exams.component.css'
@@ -50,7 +49,9 @@ export class ExamsComponent implements OnInit {
 
   public service = inject(TraffiquizService);
   private buttonService = inject(ButtonConfigService);
-  private fb = inject(FormBuilder);
+  public formConfig = inject(FormConfigService);
+
+  allocationFields = this.formConfig.getFormConfig('exam-allocation');
 
   user = this.service.currentUser;
   isAdmin = computed(() => this.user()?.role === 'admin');
@@ -58,7 +59,6 @@ export class ExamsComponent implements OnInit {
 
   stats = this.service.examStats;
   recentExams = computed(() => this.stats()?.recent_exams || []);
-  searchControl = new FormControl('');
   isLoading = signal(false);
   isAllocating = signal(false);
 
@@ -66,7 +66,6 @@ export class ExamsComponent implements OnInit {
     return this.recentExams();
   });
 
-  autoAllocateForm: FormGroup;
 
   //Get buttons based on user role and current menu
   buttons = computed(() => {
@@ -102,12 +101,7 @@ export class ExamsComponent implements OnInit {
     }));
   });
 
-  constructor() {
-    this.autoAllocateForm = this.fb.group({
-      date: [new Date(), Validators.required],
-      capacity: [20, [Validators.required, Validators.min(1)]]
-    });
-  }
+  constructor() { }
 
   ngOnInit() {
     if (this.isAdmin()) {
@@ -157,13 +151,12 @@ export class ExamsComponent implements OnInit {
     }
   }
 
-  onAutoAllocate() {
-    if (this.autoAllocateForm.valid) {
+  onAutoAllocate(data: any) {
+    if (data) {
       this.isAllocating.set(true);
-      const val = this.autoAllocateForm.value;
-      const dateStr = val.date.toISOString().split('T')[0];
+      const dateStr = data.date instanceof Date ? data.date.toISOString().split('T')[0] : data.date;
 
-      this.service.autoAllocateExams(dateStr, val.capacity).subscribe({
+      this.service.autoAllocateExams(dateStr, data.capacity).subscribe({
         next: (res) => {
           this.service.showNotification(res.message, 'success');
           this.loadStats();

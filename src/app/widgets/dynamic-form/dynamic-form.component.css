@@ -52,6 +52,12 @@
   max-height: 70vh !important;
 }
 
+.form-content.no-padding {
+  padding: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
 .modern-form {
   display: flex;
   flex-direction: column;
@@ -216,6 +222,17 @@
   justify-content: flex-end;
   gap: 12px;
   background: var(--hover-bg);
+}
+
+.form-actions.no-padding {
+  padding: 0 !important;
+  border-top: none;
+  background: transparent;
+  margin-top: 1rem;
+}
+
+.w-full {
+  width: 100% !important;
 }
 
 .submit-btn {

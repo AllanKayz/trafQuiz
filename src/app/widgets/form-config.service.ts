@@ -785,6 +785,25 @@ export class FormConfigService {
         icon: 'note',
         hint: 'Add any specific details...'
       }
+    ],
+    'exam-allocation': [
+      {
+        key: 'date',
+        label: 'Session Date',
+        type: 'date',
+        validators: [Validators.required],
+        icon: 'calendar_today',
+        hint: 'Choose the date for the exam session'
+      },
+      {
+        key: 'capacity',
+        label: 'Maximum Capacity',
+        type: 'number',
+        validators: [Validators.required, Validators.min(1)],
+        defaultValue: 20,
+        icon: 'groups',
+        hint: 'Max students for this session'
+      }
     ]
   }));
 

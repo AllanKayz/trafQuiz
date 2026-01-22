@@ -40,10 +40,16 @@ export class InstructorsComponent {
 		{ key: 'phone', header: 'Phone', type: 'text' },
 		{ key: 'specialization', header: 'Specialization', type: 'text' },
 		{ key: 'certified', header: 'Certified', type: 'text', width: '40px' },
-		{ key: 'availability', header: 'Avaibility', type: 'text' }
+		{ key: 'availability', header: 'Availability', type: 'text' },
+		{ key: 'status', header: 'Status', type: 'text' }
 	]);
 
-	tableActions = signal<string[]>(['edit', 'delete', 'activate']);
+	tableActions = computed(() => {
+		if (this.user?.role === 'admin') {
+			return ['edit', 'delete'];
+		}
+		return [];
+	});
 
 	// Get data from service
 	tableData: any = this.trafQuizService.tableInstructors;
@@ -86,10 +92,15 @@ export class InstructorsComponent {
 				this.openInstructorForm(instructor);
 				break;
 			case 'activate':
-				this.deleteStudent(instructorId);
+			case 'deactivate':
+				this.toggleStatus(instructor);
+				break;
+			case 'available':
+			case 'unavailable':
+				this.toggleAvailability(instructor);
 				break;
 			case 'delete':
-				this.deleteStudent(instructorId);
+				this.confirmDelete(instructor);
 				break;
 		}
 	}
@@ -168,7 +179,59 @@ export class InstructorsComponent {
 		});
 	}
 
-	deleteStudent(studentID: number) { }
+	private toggleStatus(instructor: any) {
+		const action = (instructor.status || 'active') === 'active' ? 'deactivate' : 'activate';
+		this.trafQuizService.showConfirm(`Are you sure you want to ${action} ${instructor.firstName}?`, action.toUpperCase())
+			.subscribe(() => {
+				this.trafQuizService.toggleInstructorStatus(instructor).subscribe({
+					next: () => {
+						this.trafQuizService.showNotification(`Instructor ${action}d successfully`, 'success');
+						this.trafQuizService.fetchInstructors();
+					},
+					error: (err) => {
+						this.trafQuizService.showNotification(`Error ${action}ing instructor`, 'error');
+					}
+				});
+			});
+	}
+
+	private toggleAvailability(instructor: any) {
+		const isAvailable = Number(instructor.availability) === 1;
+		const action = isAvailable ? 'set as unavailable' : 'set as available';
+		const confirmLabel = isAvailable ? 'UNAVAILABLE' : 'AVAILABLE';
+
+		this.trafQuizService.showConfirm(`Are you sure you want to ${action} for ${instructor.firstName}?`, confirmLabel)
+			.subscribe(() => {
+				this.trafQuizService.toggleInstructorAvailability(instructor).subscribe({
+					next: () => {
+						this.trafQuizService.showNotification(`Instructor availability updated successfully`, 'success');
+						this.trafQuizService.fetchInstructors();
+					},
+					error: (err) => {
+						this.trafQuizService.showNotification(`Error updating instructor availability`, 'error');
+					}
+				});
+			});
+	}
+
+	private confirmDelete(instructor: any) {
+		this.trafQuizService.showConfirm(`Are you sure you want to delete ${instructor.firstName}? This action cannot be undone.`, 'DELETE', 'Delete Instructor')
+			.subscribe(() => {
+				this.trafQuizService.deleteInstructor(instructor.id).subscribe({
+					next: () => {
+						this.trafQuizService.showNotification('Instructor deleted successfully', 'success');
+						this.trafQuizService.fetchInstructors();
+					},
+					error: (err) => {
+						this.trafQuizService.showNotification('Error deleting instructor', 'error');
+					}
+				});
+			});
+	}
+
+	deleteStudent(studentID: number) {
+		// Legacy method
+	}
 
 	openCertificationForm(certification?: any) {
 		const dialogRef = this.dialog.open(DynamicFormComponent, {

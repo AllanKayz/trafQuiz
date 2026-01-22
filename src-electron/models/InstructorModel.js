@@ -77,7 +77,8 @@ class InstructorModel {
             if (data.specialization_id) { instFields.push('specialization_id = ?'); instValues.push(data.specialization_id); }
             if (data.certification_id) { instFields.push('certification_id = ?'); instValues.push(data.certification_id); }
             if (data.experience !== undefined) { instFields.push('experience = ?'); instValues.push(data.experience); }
-            if (data.availability) { instFields.push('availability = ?'); instValues.push(data.availability); }
+            if (data.availability !== undefined) { instFields.push('availability = ?'); instValues.push(data.availability); }
+            if (data.status) { instFields.push('status = ?'); instValues.push(data.status); }
 
             if (instFields.length > 0) {
                 instValues.push(id);

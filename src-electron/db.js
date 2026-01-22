@@ -191,6 +191,17 @@ async function init() {
             }
         }
 
+        // Ensure instructors has status column
+        try {
+            await get("SELECT status FROM instructors LIMIT 1");
+        } catch (e) {
+            if (e.message && e.message.includes("no such column: status")) {
+                console.log("Migrating: Adding status column to instructors table...");
+                await run("ALTER TABLE instructors ADD COLUMN status varchar(50) DEFAULT 'active'");
+                console.log("instructors status column added.");
+            }
+        }
+
     } catch (error) {
         console.error('Failed to initialize database:', error);
     }

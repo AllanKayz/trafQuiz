@@ -178,16 +178,14 @@ export class TraffiquizService {
   studentWidgetConfig = {
     admin: [
       { title: '100', data: 'Total Students', footer: '' },
-      { title: '10', data: 'Active Students', footer: '' },
-      { title: '100', data: 'Pending Approvals', footer: '' },
+      { title: '10', data: 'Active Students', footer: '' }
     ]
   }
 
   instructorWidgetConfig = {
     admin: [
       { title: '100', data: 'Total Instructors', footer: '' },
-      { title: '10', data: 'Available Instructors', footer: '' },
-      { title: '100', data: 'Job Applications', footer: '' },
+      { title: '10', data: 'Available Instructors', footer: '' }
     ]
   }
 
@@ -297,6 +295,7 @@ export class TraffiquizService {
   });
 
   public tableStudents = computed(() => {
+    const role = this.currentUser()?.role;
     return this.studentsSignal().map(student => ({
       id: student.id,
       name: student.firstName + ' ' + student.lastName,
@@ -307,21 +306,30 @@ export class TraffiquizService {
       phone: student.phone,
       address: student.address,
       enrollmentDate: new Date(student.enrollmentDate),
-      status: student.status
+      status: student.status,
+      actions: role === 'admin' ?
+        ['edit', student.status === 'active' ? 'deactivate' : 'activate', 'delete'] :
+        []
     }))
   });
 
   public tableInstructors = computed(() => {
+    const role = this.currentUser()?.role;
     return this.instructorsSignal().map(instructor => ({
       id: instructor.id,
       name: instructor.firstName + ' ' + instructor.lastName,
       username: '',
       email: instructor.email,
       phone: instructor.phone,
-      availability: instructor.availability,
+      availabilityValue: instructor.availability,
       specialization: instructor.specialization,
       experience: instructor.experience,
-      certified: instructor.certification ? 'Yes' : 'No'
+      certified: instructor.certification ? 'Yes' : 'No',
+      availability: Number(instructor.availability) === 1 ? 'Available' : 'Unavailable',
+      status: instructor.status || 'active',
+      actions: role === 'admin' ?
+        ['edit', (instructor.status || 'active') === 'active' ? 'deactivate' : 'activate', Number(instructor.availability) === 1 ? 'unavailable' : 'available', 'delete'] :
+        []
     }))
   });
 
@@ -656,15 +664,40 @@ export class TraffiquizService {
   }
 
   deleteQuestion(questionId: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-question', { id: questionId }));
+    return from(window.electronAPI.invoke('delete-question', { id: questionId })).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          this.questionsSignal.update(list => list.filter(q => q.id !== questionId));
+        }
+      })
+    );
   }
 
   addQuestion(question: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-question', question));
+    return from(window.electronAPI.invoke('add-question', question)).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          this.questionsSignal.update(list => [...list, this.transformQuestion(res.data)]);
+        }
+      })
+    );
   }
 
   updateQuestion(question: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-question', question));
+    return from(window.electronAPI.invoke('update-question', question)).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          const current = this.questionsSignal();
+          const index = current.findIndex(q => q.id === question.id);
+          if (index !== -1) {
+            const updated = [...current];
+            const transformed = this.transformQuestion(res.data);
+            updated[index] = transformed;
+            this.questionsSignal.set(updated);
+          }
+        }
+      })
+    );
   }
 
   // Students CRUD
@@ -682,6 +715,7 @@ export class TraffiquizService {
           this.setCache('students_raw', students);
           this.widgetsConfig.admin[0].data = this.totalStudents().toString();
           this.studentWidgetConfig.admin[0].title = this.totalStudents().toString();
+          this.studentWidgetConfig.admin[1].title = students.filter((s: any) => s.status === 'active').length.toString();
         }
       },
       error: (error) => {
@@ -704,15 +738,44 @@ export class TraffiquizService {
   }
 
   addStudent(student: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-student', student));
+    return from(window.electronAPI.invoke('add-student', student)).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          this.studentsSignal.update(list => [...list, res.data]);
+        }
+      })
+    );
   }
 
   updateStudent(student: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-student', student));
+    return from(window.electronAPI.invoke('update-student', student)).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          const current = this.studentsSignal();
+          const index = current.findIndex(s => s.id === student.id);
+          if (index !== -1) {
+            const updated = [...current];
+            updated[index] = { ...updated[index], ...res.data };
+            this.studentsSignal.set(updated);
+          }
+        }
+      })
+    );
   }
 
-  deleteStudent(student: Student): Observable<any> {
-    return from(window.electronAPI.invoke('delete-student', { id: student.id }));
+  deleteStudent(id: number): Observable<any> {
+    return from(window.electronAPI.invoke('delete-student', { id })).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          this.studentsSignal.update(list => list.filter(s => s.id !== id));
+        }
+      })
+    );
+  }
+
+  toggleStudentStatus(student: any): Observable<any> {
+    const newStatus = student.status === 'active' ? 'inactive' : 'active';
+    return this.updateStudent({ id: student.id, status: newStatus });
   }
 
   // Instructors CRUD
@@ -725,6 +788,7 @@ export class TraffiquizService {
           this.setCache('instructors_raw', instructors);
           this.widgetsConfig.admin[4].data = this.totalInstructors().toString();
           this.instructorWidgetConfig.admin[0].title = this.totalInstructors().toString();
+          this.instructorWidgetConfig.admin[1].title = instructors.filter((i: any) => i.availability === 1).length.toString();
         }
       },
       error: (error) => {
@@ -734,15 +798,49 @@ export class TraffiquizService {
   }
 
   addInstructor(instructor: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-instructor', instructor));
+    return from(window.electronAPI.invoke('add-instructor', instructor)).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          this.instructorsSignal.update(list => [...list, res.data]);
+        }
+      })
+    );
   }
 
   updateInstructor(instructor: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-instructor', instructor));
+    return from(window.electronAPI.invoke('update-instructor', instructor)).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          const current = this.instructorsSignal();
+          const index = current.findIndex(i => i.id === instructor.id);
+          if (index !== -1) {
+            const updated = [...current];
+            updated[index] = { ...updated[index], ...res.data };
+            this.instructorsSignal.set(updated);
+          }
+        }
+      })
+    );
   }
 
-  deleteInstructor(instructor: Instructor): Observable<any> {
-    return from(window.electronAPI.invoke('delete-instructor', { id: instructor.id }));
+  deleteInstructor(id: number): Observable<any> {
+    return from(window.electronAPI.invoke('delete-instructor', { id })).pipe(
+      tap((res: any) => {
+        if (res.success) {
+          this.instructorsSignal.update(list => list.filter(i => i.id !== id));
+        }
+      })
+    );
+  }
+
+  toggleInstructorStatus(instructor: any): Observable<any> {
+    const newStatus = (instructor.status || 'active') === 'active' ? 'inactive' : 'active';
+    return this.updateInstructor({ id: instructor.id, status: newStatus });
+  }
+
+  toggleInstructorAvailability(instructor: any): Observable<any> {
+    const newAvailability = Number(instructor.availabilityValue || instructor.availability) === 1 ? 0 : 1;
+    return this.updateInstructor({ id: instructor.id, availability: newAvailability });
   }
 
 
@@ -930,13 +1028,25 @@ export class TraffiquizService {
 
   fetchFinancialStats(): Observable<any> {
     return from(window.electronAPI.invoke('get-financial-stats')).pipe(
-      map((res: any) => res.success ? res.data : {
-        totalRevenue: 0,
-        totalExpenses: 0,
-        netProfit: 0,
-        projectedRevenue: 0,
-        chartData: { labels: [], revenue: [], expenses: [] },
-        categoriesBreakdown: []
+      map((res: any) => {
+        if (!res.success) return {
+          totalRevenue: 0,
+          totalExpenses: 0,
+          netProfit: 0,
+          projectedRevenue: 0,
+          chartData: { labels: [], revenue: [], expenses: [] },
+          categoriesBreakdown: []
+        };
+
+        const chartData = res.data.chartData;
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        chartData.labels = chartData.labels.map((m: string) => {
+          const [year, month] = m.split('-');
+          return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+        });
+
+        return { ...res.data, chartData };
       })
     );
   }

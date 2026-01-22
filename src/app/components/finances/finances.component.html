@@ -75,12 +75,14 @@
       <div class="chart-column">
         <div class="bars-wrapper">
           <!-- Revenue Bar -->
-          <div class="bar revenue-bar" [style.height.px]="(data.chartData.revenue[i] / 30)"
-            [title]="'Rev: $' + data.chartData.revenue[i]">
-          </div>
-          <!-- Expense Bar -->
-          <div class="bar expense-bar" [style.height.px]="(data.chartData.expenses[i] / 30)"
-            [title]="'Exp: $' + data.chartData.expenses[i]">
+          <div class="bar-group">
+            <div class="bar revenue-bar" [style.height.%]="(data.chartData.revenue[i] / chartMax() * 100)"
+              [title]="'Revenue: $' + (data.chartData.revenue[i] | number)">
+            </div>
+            <!-- Expense Bar -->
+            <div class="bar expense-bar" [style.height.%]="(data.chartData.expenses[i] / chartMax() * 100)"
+              [title]="'Expense: $' + (data.chartData.expenses[i] | number)">
+            </div>
           </div>
         </div>
         <span class="x-label">{{label}}</span>
@@ -94,114 +96,17 @@
   <mat-card class="table-card">
     <div class="card-header history-header">
       <h3>Transaction History</h3>
-      <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Search transactions...</mat-label>
-        <input matInput [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
-          placeholder="Name, ID, Vehicle or Notes...">
-        <mat-icon matSuffix>search</mat-icon>
-      </mat-form-field>
     </div>
 
     @if (isLoading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
-    <table mat-table [dataSource]="transactionDataSource" class="transactions-table">
-      <!-- ID Column -->
-      <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef> ID </th>
-        <td mat-cell *matCellDef="let element"> {{element.id}} </td>
-      </ng-container>
+    <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="tableActions()"
+      [filterPlaceholder]="'Search transactions...'" (rowAction)="handleTableAction($event)">
+    </app-table>
 
-      <!-- Transaction ID Column -->
-      <ng-container matColumnDef="transactionId">
-        <th mat-header-cell *matHeaderCellDef> Txn ID </th>
-        <td mat-cell *matCellDef="let element">
-          <code class="txn-code">{{element.transaction_id}}</code>
-        </td>
-      </ng-container>
-
-      <!-- Type Column -->
-      <ng-container matColumnDef="type">
-        <th mat-header-cell *matHeaderCellDef> Type </th>
-        <td mat-cell *matCellDef="let element">
-          <span class="type-badge" [class]="element.type">{{element.type | titlecase}}</span>
-        </td>
-      </ng-container>
-
-      <!-- Entity Column (Admin Only) -->
-      <ng-container matColumnDef="entityName">
-        <th mat-header-cell *matHeaderCellDef> Entity </th>
-        <td mat-cell *matCellDef="let element"> {{element.entity_name}} </td>
-      </ng-container>
-
-      <!-- Date Column -->
-      <ng-container matColumnDef="date">
-        <th mat-header-cell *matHeaderCellDef> Date </th>
-        <td mat-cell *matCellDef="let element"> {{element.payment_date | date:'mediumDate'}} </td>
-      </ng-container>
-
-      <!-- Method Column -->
-      <ng-container matColumnDef="method">
-        <th mat-header-cell *matHeaderCellDef> Method </th>
-        <td mat-cell *matCellDef="let element"> {{element.method | titlecase}} </td>
-      </ng-container>
-
-      <!-- Description Column -->
-      <ng-container matColumnDef="description">
-        <th mat-header-cell *matHeaderCellDef> Description </th>
-        <td mat-cell *matCellDef="let element">
-          {{element.description | titlecase}}
-          @if (element.notes) {
-          <small class="txn-notes">({{element.notes}})</small>
-          }
-        </td>
-      </ng-container>
-
-      <!-- Amount Column -->
-      <ng-container matColumnDef="amount">
-        <th mat-header-cell *matHeaderCellDef> Amount </th>
-        <td mat-cell *matCellDef="let element" class="amount-cell" [class.expense]="element.type === 'expense'">
-          {{ element.type === 'expense' ? '-' : '+' }}${{element.amount | number:'1.2-2'}}
-        </td>
-      </ng-container>
-
-      <!-- Status Column -->
-      <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef> Status </th>
-        <td mat-cell *matCellDef="let element">
-          <span class="status-badge" [class]="element.status">{{element.status | titlecase}}</span>
-        </td>
-      </ng-container>
-
-      <!-- Actions Column -->
-      <ng-container matColumnDef="actions">
-        <th mat-header-cell *matHeaderCellDef> Actions </th>
-        <td mat-cell *matCellDef="let element">
-        <td mat-cell *matCellDef="let element">
-          @if ((element.status === 'pending' || element.status === 'partial') && isAdmin()) {
-          <button mat-icon-button (click)="approvePayment(element.id, 'completed')" matTooltip="Approve Full"
-            class="btn-approve">
-            <mat-icon>check_circle</mat-icon>
-          </button>
-          }
-          @if (element.status === 'pending' && isAdmin()) {
-          <button mat-icon-button (click)="approvePayment(element.id, 'partial')" matTooltip="Mark as Partial"
-            class="btn-partial">
-            <mat-icon>timelapse</mat-icon>
-          </button>
-          }
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="tableColumns"></tr>
-      <tr mat-row *matRowDef="let row; columns: tableColumns;"></tr>
-    </table>
-
-    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
-
-
-    @if (!isLoading() && transactionDataSource.data.length === 0) {
+    @if (!isLoading() && transactions().length === 0) {
     <div class="empty-state">
       <p>No transactions found.</p>
     </div>

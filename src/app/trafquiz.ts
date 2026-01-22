@@ -76,6 +76,7 @@ export interface Instructor {
   certification: string;
   experience: number;
   availability: boolean;
+  status?: string;
   password: string;
 }
 

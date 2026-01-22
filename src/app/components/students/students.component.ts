@@ -46,7 +46,7 @@ export class StudentsComponent {
 	tableActions = computed(() => {
 		const role = this.user()?.role;
 		if (role === 'admin') {
-			return ['edit', 'delete', 'activate'];
+			return ['edit', 'delete'];
 		}
 		return []; // Instructors: Read-only
 	});
@@ -90,10 +90,11 @@ export class StudentsComponent {
 				this.openStudentForm(student);
 				break;
 			case 'activate':
-				this.deleteStudent(studentId);
+			case 'deactivate':
+				this.toggleStatus(student);
 				break;
 			case 'delete':
-				this.deleteStudent(studentId);
+				this.confirmDelete(student);
 				break;
 		}
 	}
@@ -165,6 +166,39 @@ export class StudentsComponent {
 		});
 	}
 
-	deleteStudent(studentID: number) { }
+	private toggleStatus(student: any) {
+		const action = student.status === 'active' ? 'deactivate' : 'activate';
+		this.trafQuizService.showConfirm(`Are you sure you want to ${action} ${student.firstName}?`, action.toUpperCase())
+			.subscribe(() => {
+				this.trafQuizService.toggleStudentStatus(student).subscribe({
+					next: () => {
+						this.trafQuizService.showNotification(`Student ${action}d successfully`, 'success');
+						this.trafQuizService.fetchStudents();
+					},
+					error: (err) => {
+						this.trafQuizService.showNotification(`Error ${action}ing student`, 'error');
+					}
+				});
+			});
+	}
+
+	private confirmDelete(student: any) {
+		this.trafQuizService.showConfirm(`Are you sure you want to delete ${student.firstName}? This action cannot be undone.`, 'DELETE', 'Delete Student')
+			.subscribe(() => {
+				this.trafQuizService.deleteStudent(student.id).subscribe({
+					next: () => {
+						this.trafQuizService.showNotification('Student deleted successfully', 'success');
+						this.trafQuizService.fetchStudents();
+					},
+					error: (err) => {
+						this.trafQuizService.showNotification('Error deleting student', 'error');
+					}
+				});
+			});
+	}
+
+	deleteStudent(studentID: number) {
+		// Legacy method or internal use if needed
+	}
 }
 
