@@ -16,6 +16,8 @@ import { Vehicle } from '../../models/vehicle';
 import { VehicleService } from '../../services/vehicle.service';
 import { TraffiquizService } from '../../traffiquiz.service';
 import { TableColumn, TableComponent } from '../../widgets/table/table.component';
+import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
+import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { FormConfigService } from '../../widgets/form-config.service';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 
@@ -36,7 +38,9 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
     MatFormFieldModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
-    TableComponent
+    TableComponent,
+    SectionheaderComponent,
+    StatCardComponent
   ],
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
@@ -50,10 +54,31 @@ export class VehiclesComponent implements AfterViewInit {
   user = this.trafService.currentUser;
   isAdmin = computed(() => this.user()?.role === 'admin');
 
+  header = 'Vehicle Fleet Management';
+  content = 'Monitor and manage company vehicles and maintenance status.';
+
+  buttons = computed(() => {
+    if (this.isAdmin()) {
+      return [
+        { name: 'Register Vehicle', action: 'addVehicle', color: 'primary', icon: 'add_directions_car' }
+      ];
+    }
+    return [];
+  });
+
+
   dataSource = new MatTableDataSource<Vehicle>([]);
-  displayedColumnsSignal = computed(() => {
-    const base = ['registration', 'make', 'model', 'year', 'type', 'status', 'actions'];
-    return base;
+  tableData = signal<Vehicle[]>([]);
+
+  widgets = computed(() => {
+    const data = this.tableData();
+    const active = data.filter(v => v.status === 'active').length;
+    const maintenance = data.filter(v => v.status === 'maintenance').length;
+    return [
+      { title: 'Total Fleet', data: data.length.toString(), footer: 'Total vehicles' },
+      { title: 'Active', data: active.toString(), footer: 'Ready for use' },
+      { title: 'Maintenance', data: maintenance.toString(), footer: 'Under repair' }
+    ];
   });
 
   loading = false;
@@ -83,7 +108,7 @@ export class VehiclesComponent implements AfterViewInit {
   });
 
   // Get data from service
-  tableData = toSignal(this.vehicleService.getVehicles(), { initialValue: [] });
+  // tableData is now a signal updated in load()
 
   constructor() {
     this.load();
@@ -91,6 +116,10 @@ export class VehiclesComponent implements AfterViewInit {
 
   ngAfterViewInit() {
     this.dataSource.paginator = this.paginator;
+  }
+
+  handleButtonAction(action: string) {
+    if (action === 'addVehicle') this.openAdd();
   }
 
   handleTableAction(event: { action: string, item: any }) {
@@ -115,8 +144,8 @@ export class VehiclesComponent implements AfterViewInit {
     this.error = null;
     this.vehicleService.fetchVehicles(this.user()?.id).subscribe({
       next: (res) => {
+        this.tableData.set(res || []);
         this.dataSource.data = res || [];
-        this.dataSource.paginator = this.paginator;
         this.loading = false;
       },
       error: (err) => {

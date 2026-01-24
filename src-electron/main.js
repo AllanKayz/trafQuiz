@@ -12,13 +12,32 @@ let mainWindow;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
-    height: 800,
+    height: 700,
+    icon: path.join(__dirname, '../public/logo.png'),
+    frame: false, // Disable default frame
+    titleBarStyle: 'hidden', // Hide default title bar but keep window controls overlay on macOS if needed (optional)
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: false,
-      contextIsolation: true
-    },
-    icon: path.join(__dirname, '../public/logo.ico')
+        preload: path.join(__dirname, 'preload.js'),
+        nodeIntegration: false,
+        contextIsolation: true
+    }
+  });
+
+  // Window Controls IPC
+  ipcMain.handle('window:minimize', () => {
+    mainWindow.minimize();
+  });
+
+  ipcMain.handle('window:maximize', () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.restore();
+    } else {
+      mainWindow.maximize();
+    }
+  });
+
+  ipcMain.handle('window:close', () => {
+    mainWindow.close();
   });
 
   const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');

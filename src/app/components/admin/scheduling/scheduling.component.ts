@@ -16,6 +16,9 @@ import { DynamicFormComponent } from '../../../widgets/dynamic-form/dynamic-form
 import { FormConfigService } from '../../../widgets/form-config.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatNativeDateModule } from '@angular/material/core';
+import { TableColumn, TableComponent } from '../../../widgets/table/table.component';
+import { SectionheaderComponent } from '../../../widgets/sectionheader/sectionheader.component';
+import { StatCardComponent } from '../../../widgets/stat-card/stat-card.component';
 
 @Component({
     selector: 'app-scheduling',
@@ -30,7 +33,10 @@ import { MatNativeDateModule } from '@angular/material/core';
         MatSelectModule,
         MatDialogModule,
         MatTooltipModule,
-        MatNativeDateModule
+        MatNativeDateModule,
+        TableComponent,
+        SectionheaderComponent,
+        StatCardComponent
     ],
     templateUrl: './scheduling.component.html',
     styleUrls: ['./scheduling.component.css']
@@ -43,12 +49,50 @@ export class SchedulingComponent implements AfterViewInit {
     private formConfig = inject(FormConfigService);
 
     lessonDataSource = new MatTableDataSource<Lesson>([]);
+    lessons = signal<Lesson[]>([]);
     vehicles = signal<Vehicle[]>([]);
     instructors = this.trafService.instructorsSignal;
 
-    @ViewChild(MatPaginator) paginator!: MatPaginator;
+    header = 'Lesson & Vehicle Scheduling';
+    content = 'Manage lesson assignments and automatic vehicle allocation.';
 
-    displayedColumns: string[] = ['title', 'startTime', 'instructor', 'vehicle', 'actions'];
+    buttons = computed(() => [
+        { name: 'Create Lesson', action: 'createLesson', color: 'accent', icon: 'add' },
+        { name: 'Auto-Allocate', action: 'autoAllocate', color: 'primary', icon: 'auto_awesome' }
+    ]);
+
+    widgets = computed(() => {
+        const ls = this.lessons();
+        const vs = this.vehicles();
+        const unassigned = ls.filter(l => !l.assignedVehicleId).length;
+        const maintenance = vs.filter(v => v.status === 'maintenance').length;
+        return [
+            { title: 'Total Lessons', data: ls.length.toString(), footer: 'Scheduled sessions' },
+            { title: 'Unassigned', data: unassigned.toString(), footer: 'Need vehicles' },
+            { title: 'Fleet Status', data: `${vs.length - maintenance}/${vs.length}`, footer: 'Available vehicles' }
+        ];
+    });
+
+    tableColumns = signal<TableColumn[]>([
+        { key: 'title', header: 'Lesson', type: 'text' },
+        { key: 'startTime', header: 'Time', type: 'date' },
+        { key: 'instructorName', header: 'Instructor', type: 'text' },
+        { key: 'assignedVehicle', header: 'Vehicle', type: 'text' },
+        { key: 'status', header: 'Status', type: 'status' }
+    ]);
+
+    tableData = computed(() => {
+        return this.lessons().map(l => ({
+            ...l,
+            instructorName: l.instructor.name,
+            assignedVehicle: l.assignedVehicleId ?
+                (() => {
+                    const v = this.vehicles().find(v => v.id === l.assignedVehicleId);
+                    return v ? `${v.make} ${v.model} (${v.registration})` : 'Assigned';
+                })() : 'None',
+            status: l.assignedVehicleId ? 'scheduled' : 'pending'
+        }));
+    });
 
     loading = false;
 
@@ -57,14 +101,13 @@ export class SchedulingComponent implements AfterViewInit {
     }
 
     ngAfterViewInit() {
-        this.lessonDataSource.paginator = this.paginator;
+        // TableComponent handles its own paginator
     }
 
     loadData() {
         this.loading = true;
         this.lessonService.getLessons().subscribe(ls => {
-            this.lessonDataSource.data = ls;
-            this.lessonDataSource.paginator = this.paginator;
+            this.lessons.set(ls);
             this.loading = false;
         });
         this.vehicleService.getVehicles().subscribe(vs => {
@@ -78,6 +121,15 @@ export class SchedulingComponent implements AfterViewInit {
             this.trafService.showNotification(res.message, 'success');
             this.loadData();
         });
+    }
+
+    handleButtonAction(action: string) {
+        if (action === 'createLesson') this.openCreateLessonDialog();
+        if (action === 'autoAllocate') this.autoAllocate();
+    }
+
+    handleTableAction(event: { action: string, item: any }) {
+        if (event.action === 'edit') this.openEditLessonDialog(event.item);
     }
 
     assignVehicle(lessonId: number, vehicleId: any) {

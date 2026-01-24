@@ -7,9 +7,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { finalize } from 'rxjs';
 
+import { ManageMetadataComponent } from '../components/admin/manage-metadata/manage-metadata.component';
+
 @Component({
   selector: 'app-admin',
-  imports: [RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule],
+  imports: [RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, ManageMetadataComponent],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.css'
 })

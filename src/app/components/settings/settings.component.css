@@ -6,8 +6,8 @@
 .settings-container {
   display: flex;
   height: calc(100vh - 80px);
-  background: var(--bg-body);
-  color: var(--text-main);
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   overflow: hidden;
 }
@@ -15,12 +15,13 @@
 /* Sidebar Navigation */
 .settings-sidebar {
   width: 280px;
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
+  background: hsl(var(--card));
+  border-right: 1px solid hsl(var(--border));
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
+  padding: 32px 20px;
   gap: 32px;
+  box-shadow: 4px 0 16px rgba(0, 0, 0, 0.02);
 }
 
 .user-profile-summary {
@@ -28,8 +29,8 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding-bottom: 24px;
-  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 32px;
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .avatar-large {
@@ -86,13 +87,13 @@
 }
 
 .nav-item:hover {
-  background: #f8fafc;
-  color: #1e293b;
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 .nav-item.active {
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--primary-color);
+  background: hsla(var(--primary) / 0.1);
+  color: hsl(var(--primary));
   font-weight: 600;
 }
 
@@ -193,8 +194,8 @@ mat-progress-bar {
 }
 
 .card-option:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border-color: hsl(var(--primary));
+  box-shadow: 0 8px 20px -5px hsla(var(--primary) / 0.1);
 }
 
 .option-info h4 {

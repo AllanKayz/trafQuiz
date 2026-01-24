@@ -1,66 +1,31 @@
 <div class="reports-container fade-in">
 
-    <!-- Header -->
-    <header class="page-header">
-        <div class="header-content">
-            <h1>Progress Reports</h1>
-            <p>Track performance, test history, and learning milestones.</p>
-        </div>
+    <app-sectionheader [header]="header" [content]="content" />
 
-        <!-- Admin Controls -->
-        @if (isAdminOrInstructor()) {
-        <div class="admin-controls">
-            <mat-form-field appearance="outline">
-                <mat-label>Select Student</mat-label>
-                <mat-select (selectionChange)="onStudentSelect($event.value)">
-                    @for (student of students(); track student.id) {
-                    <mat-option [value]="student.id">{{student.name}}</mat-option>
-                    }
-                </mat-select>
-            </mat-form-field>
-        </div>
-        }
-    </header>
+    <!-- Admin Controls -->
+    @if (isAdminOrInstructor()) {
+    <div class="admin-controls mb-4">
+        <mat-form-field appearance="outline">
+            <mat-label>Select Student</mat-label>
+            <mat-select (selectionChange)="onStudentSelect($event.value)">
+                @for (student of students(); track student.id) {
+                <mat-option [value]="student.id">{{student.name}}</mat-option>
+                }
+            </mat-select>
+        </mat-form-field>
+    </div>
+    }
 
     @if (isLoading()) {
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
     @if (progressData(); as data) {
-    <!-- Key Metrics Grid -->
-    <section class="metrics-grid">
-        <mat-card class="metric-card">
-            <div class="metric-icon primary">
-                <mat-icon>assignment_turned_in</mat-icon>
-            </div>
-            <div class="metric-info">
-                <span class="label">Total Tests</span>
-                <span class="value">{{data.totalTests}}</span>
-            </div>
-        </mat-card>
-
-        <mat-card class="metric-card">
-            <div class="metric-icon accent">
-                <mat-icon>score</mat-icon>
-            </div>
-            <div class="metric-info">
-                <span class="label">Average Score</span>
-                <span class="value">{{data.averageScore}}%</span>
-                <mat-progress-bar mode="determinate" [value]="data.averageScore"
-                    [color]="getStatusColor(data.averageScore >= 75 ? 'pass' : 'fail')">
-                </mat-progress-bar>
-            </div>
-        </mat-card>
-
-        <mat-card class="metric-card">
-            <div class="metric-icon success">
-                <mat-icon>verified</mat-icon>
-            </div>
-            <div class="metric-info">
-                <span class="label">Completion</span>
-                <span class="value">{{data.completionRate}}%</span>
-            </div>
-        </mat-card>
+    <!-- Standardized Widgets Grid -->
+    <section class="widgets-grid">
+        @for (widget of widgets(); track widget.title) {
+        <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
+        }
     </section>
 
     <!-- Visualizations & History -->

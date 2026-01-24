@@ -46,6 +46,12 @@ CREATE TABLE `certification` (
   `description` text NOT NULL
 );
 
+CREATE TABLE `categories` (
+  `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL
+);
+
 CREATE TABLE `instructors` (
   `id` INTEGER PRIMARY KEY AUTOINCREMENT,
   `user_id` INTEGER NOT NULL,

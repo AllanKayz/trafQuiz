@@ -16,6 +16,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { FormConfigService } from '../../widgets/form-config.service';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { TableColumn, TableComponent } from '../../widgets/table/table.component';
+import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
+import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
+import { ReceiptPreviewComponent } from './receipt-preview/receipt-preview.component';
 
 @Component({
   selector: 'app-finances',
@@ -33,7 +36,9 @@ import { TableColumn, TableComponent } from '../../widgets/table/table.component
     MatDatepickerModule,
     MatNativeDateModule,
     FormsModule,
-    TableComponent
+    TableComponent,
+    SectionheaderComponent,
+    StatCardComponent
   ],
   templateUrl: './finances.component.html',
   styleUrl: './finances.component.css'
@@ -46,6 +51,34 @@ export class FinancesComponent implements AfterViewInit {
 
   isAdmin = computed(() => this.user()?.role === 'admin');
   packages = this.service.packagesSignal;
+
+  header = computed(() => this.isAdmin() ? 'System Finances' : 'My Payments');
+  content = computed(() => this.isAdmin() ? 'Track revenue, expenses, and salary payments.' : 'View your transaction history.');
+
+  buttons = computed(() => {
+    const admin = this.isAdmin();
+    if (admin) {
+      return [
+        { name: 'Process Payment', action: 'adminPayment', color: 'primary', icon: 'payments' },
+        { name: 'Pay Salary', action: 'processSalary', color: 'accent', icon: 'payments' },
+        { name: 'Record Expense', action: 'recordExpense', color: 'warn', icon: 'receipt_long' }
+      ];
+    }
+    return [
+      { name: 'Make Payment', action: 'makePayment', color: 'primary', icon: 'add' }
+    ];
+  });
+
+  widgets = computed(() => {
+    const data = this.stats();
+    if (!data) return [];
+    return [
+      { title: 'Total Revenue', data: `$${data.totalRevenue.toLocaleString()}`, footer: 'Gross income' },
+      { title: 'Total Expenses', data: `$${data.totalExpenses.toLocaleString()}`, footer: 'Operational costs' },
+      { title: 'Net Profit', data: `$${data.netProfit.toLocaleString()}`, footer: 'After expenses' },
+      { title: 'Projected', data: `$${data.projectedRevenue.toLocaleString()}`, footer: 'Monthly estimate' }
+    ];
+  });
 
   // Data Signals
   transactionDataSource = new MatTableDataSource<any>([]);
@@ -89,17 +122,30 @@ export class FinancesComponent implements AfterViewInit {
     return cols;
   });
 
+  // NOTE: Actions now handled per row in tableData for flexibility, but global definition helps TableComponent know what to expect
   tableActions = computed(() => {
-    return this.isAdmin() ? ['activate', 'flag'] : []; // activate = Approve, flag = Partial
+    // We return a superset of possible actions if needed, or rely on row-specific actions
+    return [];
   });
 
   tableData = computed(() => {
-    return this.transactions().map(t => ({
-      ...t,
-      description_full: t.notes ? `${t.description} (${t.notes})` : t.description,
-      actions: (t.status === 'pending' || t.status === 'partial') && this.isAdmin() ?
-        (t.status === 'pending' ? ['activate', 'flag'] : ['activate']) : []
-    }));
+    const admin = this.isAdmin();
+    return this.transactions().map(t => {
+      const actions = [];
+      if (t.status === 'completed') {
+        actions.push('receipt');
+      }
+      if (admin && (t.status === 'pending' || t.status === 'partial')) {
+        if (t.status === 'pending') actions.push('activate', 'flag');
+        else actions.push('activate');
+      }
+
+      return {
+        ...t,
+        description_full: t.notes ? `${t.description} (${t.notes})` : t.description,
+        actions: actions
+      };
+    });
   });
 
   constructor() {
@@ -146,6 +192,8 @@ export class FinancesComponent implements AfterViewInit {
       this.approvePayment(event.item.id, 'completed');
     } else if (event.action === 'flag') {
       this.approvePayment(event.item.id, 'partial');
+    } else if (event.action === 'receipt') {
+      this.openReceipt(event.item);
     }
   }
 
@@ -176,6 +224,15 @@ export class FinancesComponent implements AfterViewInit {
     });
   }
 
+  handleButtonAction(action: string) {
+    switch (action) {
+      case 'makePayment': this.makePayment(); break;
+      case 'adminPayment': this.makeAdminPayment(); break;
+      case 'processSalary': this.processSalary(); break;
+      case 'recordExpense': this.recordExpense(); break;
+    }
+  }
+
   makePayment() {
     const dialogRef = this.dialog.open(DynamicFormComponent, {
       width: '500px',
@@ -194,10 +251,12 @@ export class FinancesComponent implements AfterViewInit {
         if (res && res.success) {
           dialogRef.close();
           this.loadData();
-          // Generate receipt with transaction ID from response
-          this.service.generateReceipt({
+          // Open Receipt Preview
+          this.openReceipt({
             ...paymentPayload,
-            transactionId: res.transactionId
+            transaction_id: res.transactionId,
+            status: 'completed',
+            payment_date: new Date()
           });
         }
       });
@@ -225,10 +284,12 @@ export class FinancesComponent implements AfterViewInit {
           dialogRef.close();
           this.loadData();
           if (data.isNewStudent) this.service.fetchStudents();
-          // Generate receipt
-          this.service.generateReceipt({
+          // Open Receipt Preview
+          this.openReceipt({
             ...data,
-            transactionId: res.transactionId
+            transaction_id: res.transactionId,
+            status: 'completed',
+            payment_date: new Date()
           });
         }
       });
@@ -284,5 +345,12 @@ export class FinancesComponent implements AfterViewInit {
       }
     });
   }
-}
 
+  openReceipt(transaction: any) {
+    this.dialog.open(ReceiptPreviewComponent, {
+      width: '450px',
+      data: transaction,
+      panelClass: 'receipt-dialog' // Add this class to global styles if needed or remove
+    });
+  }
+}

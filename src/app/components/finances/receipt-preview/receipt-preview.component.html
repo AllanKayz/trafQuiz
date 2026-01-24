@@ -1,0 +1,64 @@
+<div class="receipt-container">
+    <div class="receipt-card">
+        <div class="receipt-header">
+            <div class="logo-area">
+                <mat-icon class="app-logo">local_taxi</mat-icon>
+                <span>TrafQuiz</span>
+            </div>
+            <h2>Payment Receipt</h2>
+            <span class="status-badge" [class.success]="data.status === 'completed'"
+                [class.pending]="data.status === 'pending'">
+                {{ data.status | titlecase }}
+            </span>
+        </div>
+
+        <div class="receipt-body">
+            <div class="amount-section">
+                <span class="currency">$</span>
+                <span class="amount">{{ data.amount | number:'1.2-2' }}</span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Date</label>
+                    <span>{{ data.payment_date | date:'mediumDate' }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Time</label>
+                    <span>{{ data.payment_date | date:'shortTime' }}</span>
+                </div>
+                <div class="info-item full">
+                    <label>Transaction ID</label>
+                    <span class="mono">{{ data.transaction_id }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Method</label>
+                    <span>{{ data.method | titlecase }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Category</label>
+                    <span>{{ (data.category || 'Payment').replace('_', ' ') | titlecase }}</span>
+                </div>
+                @if(data.notes) {
+                <div class="info-item full">
+                    <label>Notes</label>
+                    <span>{{ data.notes }}</span>
+                </div>
+                }
+            </div>
+        </div>
+
+        <div class="receipt-footer">
+            <p>Thank you for your business!</p>
+            <div class="actions">
+                <button mat-stroked-button (click)="close()">Close</button>
+                <button mat-flat-button color="primary" (click)="downloadPdf()">
+                    <mat-icon>download</mat-icon> Download PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Decorative jagged edge -->
+        <div class="jagged-edge"></div>
+    </div>
+</div>

@@ -10,6 +10,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 import { MatTableModule } from '@angular/material/table';
+import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
+import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 
 @Component({
   selector: 'app-reports',
@@ -23,7 +25,9 @@ import { MatTableModule } from '@angular/material/table';
     MatSelectModule,
     MatFormFieldModule,
     FormsModule,
-    MatTableModule
+    MatTableModule,
+    SectionheaderComponent,
+    StatCardComponent
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css'
@@ -43,6 +47,19 @@ export class ReportsComponent {
 
   isStudent = computed(() => this.user()?.role === 'student');
   isAdminOrInstructor = computed(() => ['admin', 'instructor'].includes(this.user()?.role || ''));
+
+  header = 'Progress Reports';
+  content = 'Track performance, test history, and learning milestones.';
+
+  widgets = computed(() => {
+    const data = this.progressData();
+    if (!data) return [];
+    return [
+      { title: 'Total Tests', data: data.totalTests.toString(), footer: 'Tests completed' },
+      { title: 'Average Score', data: `${data.averageScore}%`, footer: 'Overall accuracy' },
+      { title: 'Completion', data: `${data.completionRate}%`, footer: 'Syllabus progress' }
+    ];
+  });
 
   constructor() {
     effect(() => {

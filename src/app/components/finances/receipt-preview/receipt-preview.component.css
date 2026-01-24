@@ -1,0 +1,144 @@
+.receipt-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background: var(--bg-default);
+}
+
+.receipt-card {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    position: relative;
+    color: #333;
+}
+
+.receipt-header {
+    background: var(--primary-color, #3f51b5);
+    color: white;
+    padding: 24px;
+    text-align: center;
+    position: relative;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    opacity: 0.8;
+    margin-bottom: 8px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.receipt-header h2 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 20px;
+}
+
+.status-badge {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.receipt-body {
+    padding: 32px 24px;
+}
+
+.amount-section {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.currency {
+    font-size: 24px;
+    vertical-align: top;
+    color: #888;
+}
+
+.amount {
+    font-size: 48px;
+    font-weight: 700;
+    color: #333;
+    line-height: 1;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-item.full {
+    grid-column: span 2;
+}
+
+.info-item label {
+    font-size: 12px;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-item span {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.mono {
+    font-family: 'Courier New', monospace;
+    letter-spacing: -0.5px;
+    background: #f5f5f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px !important;
+}
+
+.receipt-footer {
+    padding: 24px;
+    background: #fafafa;
+    text-align: center;
+    border-top: 1px dashed #ddd;
+}
+
+.receipt-footer p {
+    color: #888;
+    font-size: 13px;
+    margin-bottom: 16px;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Jagged Edge Effect at bottom (optional fun detail) */
+.jagged-edge {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(135deg, transparent 50%, white 50%), linear-gradient(45deg, white 50%, transparent 50%);
+    background-size: 20px 20px;
+    opacity: 0;
+    /* Hidden for now inside modal, better for standalone pages */
+}

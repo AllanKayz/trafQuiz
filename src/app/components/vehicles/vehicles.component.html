@@ -1,21 +1,12 @@
 <div class="vehicles-container fade-in">
-  <header class="page-header">
-    <div class="header-content">
-      <h1>Vehicle Fleet Management</h1>
-      <p>Monitor and manage company vehicles and maintenance status.</p>
-    </div>
-    <div class="header-actions">
-      @if (isAdmin()) {
-      <button mat-flat-button color="primary" (click)="openAdd()">
-        <mat-icon>add_directions_car</mat-icon>
-        Add Vehicle
-      </button>
-      }
-      <button mat-icon-button (click)="load()" [disabled]="loading" matTooltip="Refresh Data">
-        <mat-icon [class.rotating]="loading">refresh</mat-icon>
-      </button>
-    </div>
-  </header>
+  <app-sectionheader [header]="header" [content]="content" [buttons]="buttons()"
+    (buttonClicked)="handleButtonAction($event)" />
+
+  <section class="widgets-grid">
+    @for (widget of widgets(); track widget.title) {
+    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
+    }
+  </section>
 
   @if (error) {
   <div class="error-banner">

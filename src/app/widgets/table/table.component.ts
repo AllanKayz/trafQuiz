@@ -259,7 +259,8 @@ export class TableComponent implements AfterViewInit {
       schedule: 'calendar_today',
       pay: 'payments',
       available: 'person_search',
-      unavailable: 'person_off'
+      unavailable: 'person_off',
+      receipt: 'receipt_long'
     };
     return icons[action] || 'more_vert';
   }

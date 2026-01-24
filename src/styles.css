@@ -2,117 +2,98 @@
 
 /* Global CSS Variables for Theming */
 :root {
-    /* Modern HSL Palette (Light) */
+    /* 
+      Modern HSL Palette (Light - "Clean Professional") 
+      High contrast, clean white backgrounds, slate text.
+    */
     --primary: 235 75% 60%;
+    /* #5570f1 - Trusted Blue */
     --primary-foreground: 0 0% 100%;
+
     --secondary: 215 25% 27%;
+    /* Slate */
     --secondary-foreground: 210 40% 98%;
+
     --accent: 210 40% 96%;
+    /* Very light blue-grey */
     --accent-foreground: 222.2 47.4% 11.2%;
+
     --background: 210 40% 98%;
+    /* #f9fafb - Off-white background */
     --foreground: 222.2 84% 4.9%;
+    /* Very dark slate */
+
     --card: 0 0% 100%;
+    /* Pure white cards */
     --card-foreground: 222.2 84% 4.9%;
+
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.75rem;
 
-    /* Legacy Map (for compatibility during migration) */
+    /* Semantic mapped variables */
     --bg-body: hsl(var(--background));
     --bg-card: hsl(var(--card));
-    --bg-sidebar: hsl(var(--card));
     --text-main: hsl(var(--foreground));
     --text-muted: hsl(215.4 16.3% 46.9%);
+    /* Muted slate */
     --border-color: hsl(var(--border));
-    --primary-color: hsl(var(--primary));
     --hover-bg: hsl(var(--accent));
-    --shadow-color: rgba(0, 0, 0, 0.05);
 
-    --mat-form-field-container-text-color: var(--text-main);
-    --mat-select-trigger-text-color: var(--text-main);
+    --shadow-color: rgba(0, 0, 0, 0.05);
+    /* Soft, subtle shadow */
+    --glass-bg: rgba(255, 255, 255, 0.7);
+    --glass-blur: blur(10px);
+    --glass-border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-/* Dark Theme Palette (Premium Night) */
+/* 
+  Dark Theme Palette (Premium Night - "Deep Space") 
+  Avoids pure black (#000000). Uses deep rich grays/blues.
+*/
 body.dark-theme {
     --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --background: 222.2 84% 4.9%;
+    /* Brighter blue for dark mode visibility */
+    --primary-foreground: 0 0% 100%;
+
+    --background: 222 47% 11%;
+    /* #0f172a - Deep Slate */
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    /* White text */
+
+    --card: 222 47% 14%;
+    /* #1e293b - Slightly lighter slate for cards */
     --card-foreground: 210 40% 98%;
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Semantic mapped variables */
+    --bg-body: hsl(var(--background));
+    --bg-card: hsl(var(--card));
+    --text-main: hsl(var(--foreground));
+    --text-muted: hsl(215 20.2% 65.1%);
+    /* Lighter muted text for readability */
+    --border-color: rgba(255, 255, 255, 0.1);
+    --hover-bg: rgba(255, 255, 255, 0.05);
+
+    --shadow-color: rgba(0, 0, 0, 0.3);
+    /* Stronger shadow for depth */
 
     /* Glassmorphism Support */
-    --glass-bg: rgba(15, 23, 42, 0.7);
+    --glass-bg: rgba(15, 23, 42, 0.6);
     --glass-blur: blur(12px);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
 
-    --shadow-color: rgba(0, 0, 0, 0.5);
-
-    /* Material Overrides for Dark Mode */
+    /* Material Overrides */
+    --mat-form-field-container-text-color: var(--text-main);
+    --mat-select-trigger-text-color: var(--text-main);
     --mdc-theme-surface: hsl(var(--card));
-    --mdc-theme-text-primary-on-background: hsl(var(--foreground));
-    --mdc-theme-text-secondary-on-background: hsl(215 20.2% 65.1%);
-    --mat-menu-container-color: hsl(var(--card));
-    --mat-dialog-container-color: hsl(var(--card));
-    --mat-select-panel-background-color: hsl(var(--card));
-    --mat-form-field-container-placeholder-text-color: rgba(255, 255, 255, 0.5);
-    --mat-form-field-container-label-text-color: var(--text-muted);
-    --mat-form-field-state-layer-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-main);
-}
-
-html,
-body {
-    height: 100%;
-}
-
-body {
-    margin: 0;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-body);
-    color: var(--text-main);
-    transition: background-color 0.3s ease, color 0.3s ease;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-}
-
-/* Global Animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes slideUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.animate-fade-in {
-    animation: fadeIn 0.5s ease forwards;
-}
-
-.animate-slide-up {
-    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    --mdc-theme-text-primary-on-background: var(--text-main);
+    color-scheme: dark;
+    /* Native browser form controls */
 }
 
 /* Premium UI Utility Classes */

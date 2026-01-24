@@ -10,6 +10,10 @@ import { MatDialogModule, MatDialog, MatDialogRef } from '@angular/material/dial
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { TableColumn, TableComponent } from '../../widgets/table/table.component';
+import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
+import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
+import { MatNativeDateModule } from '@angular/material/core';
 
 @Component({
     selector: 'app-user-access',
@@ -25,7 +29,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
         MatSelectModule,
         MatFormFieldModule,
         FormsModule,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        TableComponent,
+        SectionheaderComponent,
+        StatCardComponent,
+        MatNativeDateModule
     ],
     templateUrl: './user-access.component.html',
     styleUrl: './user-access.component.css'
@@ -34,10 +42,40 @@ export class UserAccessComponent implements AfterViewInit {
     service = inject(TraffiquizService);
     dialog = inject(MatDialog);
 
-    userDataSource = new MatTableDataSource<any>([]);
-    displayedColumns: string[] = ['name', 'email', 'role', 'status', 'actions'];
-
     @ViewChild(MatPaginator) paginator!: MatPaginator;
+
+    userDataSource = new MatTableDataSource<any>([]);
+    users = signal<any[]>([]);
+
+    header = 'User Access Management';
+    content = 'Manage system users, roles, and security.';
+
+    buttons = computed(() => [
+        { name: 'Add User', action: 'addUser', color: 'primary', icon: 'person_add' }
+    ]);
+
+    widgets = computed(() => {
+        const data = this.users();
+        const admins = data.filter(u => u.role === 'admin').length;
+        const instructors = data.filter(u => u.role === 'instructor').length;
+        const students = data.filter(u => u.role === 'student').length;
+        return [
+            { title: 'Total Users', data: data.length.toString(), footer: 'Active accounts' },
+            { title: 'Instructors', data: instructors.toString(), footer: 'Staff' },
+            { title: 'Students', data: students.toString(), footer: 'Enrolled' },
+            { title: 'Admins', data: admins.toString(), footer: 'System' }
+        ];
+    });
+
+    tableColumns = signal<TableColumn[]>([
+        { key: 'id', header: 'ID', type: 'number', width: '60px' },
+        { key: 'name', header: 'Name', type: 'text' },
+        { key: 'email', header: 'Email', type: 'text' },
+        { key: 'role', header: 'Role', type: 'status' },
+        { key: 'status', header: 'Status', type: 'status' }
+    ]);
+
+    tableData = computed(() => this.users());
 
     constructor() {
         this.loadUsers();
@@ -49,9 +87,20 @@ export class UserAccessComponent implements AfterViewInit {
 
     loadUsers() {
         this.service.fetchAllUsers().subscribe(data => {
-            this.userDataSource.data = data;
-            this.userDataSource.paginator = this.paginator;
+            this.users.set(data || []);
         });
+    }
+
+    handleButtonAction(action: string) {
+        // Handled by inline click in template for now to maintain template dialog ref
+    }
+
+    handleTableAction(event: { action: string, item: any }) {
+        if (event.action === 'edit') {
+            // Need access to template ref, so we'll handle this in template for now
+            // or pass template to handleTableAction. For now, let's keep it simple.
+        }
+        if (event.action === 'delete') this.deleteUser(event.item);
     }
 
     openAddUserDialog(template: any) {

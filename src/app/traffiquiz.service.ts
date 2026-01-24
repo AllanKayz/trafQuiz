@@ -845,11 +845,27 @@ export class TraffiquizService {
 
 
   addCategory(category: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-category', category));
+    return from(window.electronAPI.invoke('add-category', category)).pipe(
+      tap(() => this.getQuestionCategories())
+    );
+  }
+
+  updateCategory(category: any): Observable<any> {
+    return from(window.electronAPI.invoke('update-category', category)).pipe(
+      tap(() => this.getQuestionCategories())
+    );
+  }
+
+  deleteCategory(id: number): Observable<any> {
+    return from(window.electronAPI.invoke('delete-category', { id })).pipe(
+      tap(() => this.getQuestionCategories())
+    );
   }
 
   setExamTimeframe(time: any): Observable<any> {
-    return from(window.electronAPI.invoke('set-exam-timeframe', time));
+    return from(window.electronAPI.invoke('set-exam-timeframe', time)).pipe(
+      tap(() => this.fetchExamDuration().subscribe())
+    );
   }
 
   // Miscellaneous
@@ -958,7 +974,11 @@ export class TraffiquizService {
   }
 
   updateSpecialization(specialization: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-specialization', specialization));
+    return from(window.electronAPI.invoke('update-specialization', specialization)).pipe(tap(() => this.getSpecializations()));
+  }
+
+  deleteSpecialization(id: number): Observable<any> {
+    return from(window.electronAPI.invoke('delete-specialization', { id })).pipe(tap(() => this.getSpecializations()));
   }
 
   getCertifications() {
@@ -989,7 +1009,11 @@ export class TraffiquizService {
   }
 
   addCertification(certification: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-certification', certification));
+    return from(window.electronAPI.invoke('add-certification', certification)).pipe(tap(() => this.getCertifications()));
+  }
+
+  deleteCertification(id: number): Observable<any> {
+    return from(window.electronAPI.invoke('delete-certification', { id })).pipe(tap(() => this.getCertifications()));
   }
 
   openAlertDialog(data: any): MatDialogRef<AlertComponent> {

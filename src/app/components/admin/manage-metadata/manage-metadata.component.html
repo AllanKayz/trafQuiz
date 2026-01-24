@@ -1,0 +1,155 @@
+<div class="metadata-container">
+    <div class="header">
+        <h2>Manage System Metadata</h2>
+        <p class="subtitle">Configure categories, certifications, specializations, and system settings.</p>
+    </div>
+
+    <mat-tab-group animationDuration="0ms" class="custom-tabs">
+        <!-- Categories -->
+        <mat-tab label="Question Categories">
+            <div class="tab-content">
+                <div class="actions">
+                    <button mat-flat-button color="primary" (click)="openForm('category')">
+                        <mat-icon>add</mat-icon> Add Category
+                    </button>
+                </div>
+
+                <table mat-table [dataSource]="categories()" class="mat-elevation-z0">
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef> Name </th>
+                        <td mat-cell *matCellDef="let element"> {{element.category || element.name}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="description">
+                        <th mat-header-cell *matHeaderCellDef> Description </th>
+                        <td mat-cell *matCellDef="let element"> {{element.description || '-'}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef> Actions </th>
+                        <td mat-cell *matCellDef="let element">
+                            <button mat-icon-button color="primary" (click)="openForm('category', element)">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                            <button mat-icon-button color="warn" (click)="deleteItem('category', element.id)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+                    <tr class="mat-row" *matNoDataRow>
+                        <td class="mat-cell" colspan="4">No categories data</td>
+                    </tr>
+                </table>
+            </div>
+        </mat-tab>
+
+        <!-- Certifications -->
+        <mat-tab label="Certifications">
+            <div class="tab-content">
+                <div class="actions">
+                    <button mat-flat-button color="primary" (click)="openForm('certification')">
+                        <mat-icon>add</mat-icon> Add Certification
+                    </button>
+                </div>
+
+                <table mat-table [dataSource]="certifications()" class="mat-elevation-z0">
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef> Certification </th>
+                        <td mat-cell *matCellDef="let element"> {{element.certification}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="description">
+                        <th mat-header-cell *matHeaderCellDef> Description </th>
+                        <td mat-cell *matCellDef="let element"> {{element.description || '-'}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef> Actions </th>
+                        <td mat-cell *matCellDef="let element">
+                            <button mat-icon-button color="primary" (click)="openForm('certification', element)">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                            <button mat-icon-button color="warn" (click)="deleteItem('certification', element.id)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+                    <tr class="mat-row" *matNoDataRow>
+                        <td class="mat-cell" colspan="4">No certifications data</td>
+                    </tr>
+                </table>
+            </div>
+        </mat-tab>
+
+        <!-- Specializations -->
+        <mat-tab label="Specializations">
+            <div class="tab-content">
+                <div class="actions">
+                    <button mat-flat-button color="primary" (click)="openForm('specialization')">
+                        <mat-icon>add</mat-icon> Add Specialization
+                    </button>
+                </div>
+
+                <table mat-table [dataSource]="specializations()" class="mat-elevation-z0">
+                    <ng-container matColumnDef="name">
+                        <th mat-header-cell *matHeaderCellDef> Specialization </th>
+                        <td mat-cell *matCellDef="let element"> {{element.specialization}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="description">
+                        <th mat-header-cell *matHeaderCellDef> Description </th>
+                        <td mat-cell *matCellDef="let element"> {{element.description || '-'}} </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef> Actions </th>
+                        <td mat-cell *matCellDef="let element">
+                            <button mat-icon-button color="primary" (click)="openForm('specialization', element)">
+                                <mat-icon>edit</mat-icon>
+                            </button>
+                            <button mat-icon-button color="warn" (click)="deleteItem('specialization', element.id)">
+                                <mat-icon>delete</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+                    <tr class="mat-row" *matNoDataRow>
+                        <td class="mat-cell" colspan="4">No specializations data</td>
+                    </tr>
+                </table>
+            </div>
+        </mat-tab>
+
+        <!-- Exam Timeframe -->
+        <mat-tab label="Exam Settings">
+            <div class="tab-content narrow">
+                <div class="settings-card">
+                    <h3>Global Exam Duration</h3>
+                    <p>Set the default duration for exams in minutes.</p>
+
+                    <mat-form-field appearance="outline">
+                        <mat-label>Duration (Minutes)</mat-label>
+                        <input matInput type="number" [(ngModel)]="editableDuration" min="10" placeholder="e.g. 60"
+                            title="Exam Duration" />
+                    </mat-form-field>
+
+                    <button mat-flat-button color="primary" (click)="updateTimeframe()">
+                        Save Settings
+                    </button>
+                </div>
+            </div>
+        </mat-tab>
+
+    </mat-tab-group>
+</div>

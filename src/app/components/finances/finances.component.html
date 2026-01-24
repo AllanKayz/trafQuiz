@@ -1,87 +1,34 @@
 <div class="finances-container fade-in">
 
-  <header class="page-header">
-    <div class="header-content">
-      <h1>{{ isAdmin() ? 'System Finances' : 'My Payments' }}</h1>
-      <p>{{ isAdmin() ? 'Track revenue, expenses, and salary payments.' : 'View your transaction history.' }}</p>
-    </div>
-    <div class="header-actions">
-      @if (!isAdmin()) {
-      <button mat-flat-button color="primary" (click)="makePayment()">Make Payment</button>
-      } @else {
-      <button mat-flat-button color="primary" (click)="makeAdminPayment()">Process Student Payment</button>
-      <button mat-flat-button color="accent" (click)="processSalary()">
-        <mat-icon>payments</mat-icon> Pay Salary
-      </button>
-      <button mat-stroked-button (click)="recordExpense()">
-        <mat-icon>receipt_long</mat-icon> Record Expense
-      </button>
-      }
-    </div>
-  </header>
+  <app-sectionheader [header]="header()" [content]="content()" [buttons]="buttons()"
+    (buttonClicked)="handleButtonAction($event)" />
 
   <!-- Admin: Financial Overview -->
-  @if (isAdmin() && stats(); as data) {
-  <section class="stats-overview">
-    <mat-card class="stat-card revenue">
-      <div class="stat-icon">
-        <mat-icon>monetization_on</mat-icon>
-      </div>
-      <div class="stat-content">
-        <span class="label">Total Revenue</span>
-        <span class="value">${{data.totalRevenue | number}}</span>
-      </div>
-    </mat-card>
-
-    <mat-card class="stat-card expense">
-      <div class="stat-icon">
-        <mat-icon>money_off</mat-icon>
-      </div>
-      <div class="stat-content">
-        <span class="label">Total Expenses</span>
-        <span class="value">${{data.totalExpenses | number}}</span>
-      </div>
-    </mat-card>
-
-    <mat-card class="stat-card profit">
-      <div class="stat-icon">
-        <mat-icon>account_balance</mat-icon>
-      </div>
-      <div class="stat-content">
-        <span class="label">Net Profit</span>
-        <span class="value">${{data.netProfit | number}}</span>
-      </div>
-    </mat-card>
-
-    <mat-card class="stat-card projection">
-      <div class="stat-icon">
-        <mat-icon>trending_up</mat-icon>
-      </div>
-      <div class="stat-content">
-        <span class="label">Monthly Projection</span>
-        <span class="value">${{data.projectedRevenue | number}}</span>
-      </div>
-    </mat-card>
+  @if (isAdmin() && stats()) {
+  <section class="widgets-grid">
+    @for (widget of widgets(); track widget.title) {
+    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
+    }
   </section>
 
   <!-- Projections Chart -->
-  <mat-card class="chart-container">
-    <div class="chart-header">
-      <h3>Revenue vs Expenses Trend</h3>
-      <span class="badge">Last 6 Months</span>
+  <mat-card class="chart-container table-card mt-3">
+    <div class="card-header">
+      <div class="header-main">
+        <h3>Revenue vs Expenses Trend</h3>
+        <span class="badge premium">Last 6 Months</span>
+      </div>
     </div>
-    <div class="projections-chart">
-      @for (label of data.chartData.labels; track label; let i = $index) {
+    <div class="projections-chart p-4">
+      @for (label of stats().chartData.labels; track label; let i = $index) {
       <div class="chart-column">
         <div class="bars-wrapper">
-          <!-- Revenue Bar -->
           <div class="bar-group">
-            <div class="bar revenue-bar" [style.height.%]="(data.chartData.revenue[i] / chartMax() * 100)"
-              [title]="'Revenue: $' + (data.chartData.revenue[i] | number)">
+            <div class="bar revenue-bar" [style.height.%]="(stats().chartData.revenue[i] / chartMax() * 100)"
+              [title]="'Revenue: $' + (stats().chartData.revenue[i] | number)">
             </div>
-            <!-- Expense Bar -->
-            <div class="bar expense-bar" [style.height.%]="(data.chartData.expenses[i] / chartMax() * 100)"
-              [title]="'Expense: $' + (data.chartData.expenses[i] | number)">
+            <div class="bar expense-bar" [style.height.%]="(stats().chartData.expenses[i] / chartMax() * 100)"
+              [title]="'Expense: $' + (stats().chartData.expenses[i] | number)">
             </div>
           </div>
         </div>
