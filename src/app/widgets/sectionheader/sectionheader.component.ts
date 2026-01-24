@@ -45,73 +45,53 @@ export interface SectionButton {
 
     .header-container {
       background: var(--bg-card);
-      padding: 32px 40px;
-      border-radius: 24px;
-      box-shadow: 0 10px 15px -3px var(--shadow-color);
+      padding: 24px 32px;
+      border-radius: 16px;
+      box-shadow: var(--shadow-md);
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 32px;
-      border: var(--glass-border);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      gap: 24px;
+      border: 1px solid var(--border-color);
+      transition: all 0.3s ease;
       position: relative;
-      overflow: hidden;
-    }
-
-    .header-container::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: linear-gradient(to right, var(--primary-color), transparent);
-        opacity: 0.5;
-    }
-
-    .header-content {
-      flex: 1;
     }
 
     .header-content h2 {
-      margin: 0 0 6px 0;
+      margin: 0 0 4px 0;
       color: var(--text-main);
-      font-size: 1.875rem;
-      font-weight: 800;
-      letter-spacing: -0.025em;
-      line-height: 1.2;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
     .header-content p {
       margin: 0;
       color: var(--text-muted);
-      font-size: 1rem;
-      line-height: 1.6;
-      max-width: 600px;
+      font-size: 0.875rem;
+      line-height: 1.5;
+      max-width: 500px;
     }
 
     .header-actions {
       display: flex;
-      gap: 16px;
-      align-items: center;
+      gap: 12px;
     }
 
     .premium-btn {
         background: var(--primary-color) !important;
         color: white !important;
-        border-radius: 12px !important;
-        padding: 10px 24px !important;
+        border-radius: 8px !important;
+        padding: 8px 18px !important;
         font-weight: 600 !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        font-size: 0.875rem !important;
+        transition: all 0.2s ease !important;
     }
 
     .premium-btn:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px -5px var(--primary-color);
-        filter: brightness(1.1);
+        box-shadow: 0 4px 12px hsla(var(--primary) / 0.4);
+        filter: brightness(1.05);
     }
 
     .premium-btn mat-icon {

@@ -33,96 +33,56 @@ import { MatIconModule } from '@angular/material/icon';
 	.stat-card {
         background: var(--bg-card);
         padding: 24px;
-        border-radius: 20px;
-        backdrop-filter: var(--glass-blur);
-        -webkit-backdrop-filter: var(--glass-blur);
-        box-shadow: 0 4px 12px var(--shadow-color);
+        border-radius: 16px;
+        box-shadow: var(--shadow-md);
         display: flex;
         align-items: center;
         gap: 20px;
-        border: var(--glass-border);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         height: 100%;
         position: relative;
-        overflow: hidden;
-    }
-
-    .stat-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
-        pointer-events: none;
     }
 
     .stat-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 20px 40px -10px var(--shadow-color);
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
         border-color: var(--primary-color);
     }
 
-    .icon-section {
-        flex-shrink: 0;
-    }
-
     .icon-wrapper {
-        width: 64px;
-        height: 64px;
-        border-radius: 18px;
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
         background: var(--hover-bg);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--text-muted);
+        color: var(--primary-color);
         transition: all 0.3s ease;
-        position: relative;
     }
 
     .icon-wrapper mat-icon {
-        width: 32px;
-        height: 32px;
-        font-size: 32px;
-    }
-
-    /* Trend styling for icon with gradients */
-    .icon-wrapper.trend-up { 
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%); 
-        color: #3b82f6; 
-        box-shadow: 0 8px 16px -4px rgba(59, 130, 246, 0.2);
-    }
-    .icon-wrapper.trend-down { 
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%); 
-        color: #ef4444; 
-        box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.2);
-    }
-
-    .content {
-        flex: 1;
-        min-width: 0;
+        font-size: 28px;
+        width: 28px;
+        height: 28px;
     }
 
     .stat-label {
         color: var(--text-muted);
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
+        font-size: 0.8125rem;
+        font-weight: 500;
         margin-bottom: 4px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .stat-value {
-        font-size: 2.25rem;
-        font-weight: 800;
+        font-size: 1.875rem;
+        font-weight: 700;
         color: var(--text-main);
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         letter-spacing: -0.02em;
-        line-height: 1.1;
     }
 
     .stat-footer {
@@ -130,27 +90,11 @@ import { MatIconModule } from '@angular/material/icon';
         font-size: 0.8125rem;
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-weight: 500;
-    }
-
-    .trend-indicator {
-        display: flex;
-        align-items: center;
-    }
-    
-    .trend-indicator mat-icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
+        gap: 4px;
     }
 
     .trend-indicator.up { color: #10b981; }
     .trend-indicator.down { color: #ef4444; }
-
-    .footer-text {
-        opacity: 0.8;
-    }
 	`]
 })
 

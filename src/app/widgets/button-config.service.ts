@@ -16,7 +16,7 @@ export class ButtonConfigService {
     ],
     instructors: [
       { name: 'Add Instructor', icon: 'person_add', action: 'addInstructor' },
-      { name: 'Add Specialization', icon: 'specialization_add', action: 'addSpecialization' },
+      { name: 'Add Specialization', icon: 'add', action: 'addSpecialization' },
       { name: 'Add Certification', icon: 'certificate', action: 'addCertification' }
     ],
     exams: [

@@ -3,111 +3,115 @@
 /* Global CSS Variables for Theming */
 :root {
     /* 
-      Modern HSL Palette (Light - "Clean Professional") 
-      High contrast, clean white backgrounds, slate text.
+      Advanced HSL Palette - Professional Slate & Modern Blue
+      Light Mode: High clarity, refined contrast
     */
-    --primary: 235 75% 60%;
-    /* #5570f1 - Trusted Blue */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 215 25% 27%;
-    /* Slate */
-    --secondary-foreground: 210 40% 98%;
-
-    --accent: 210 40% 96%;
-    /* Very light blue-grey */
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --primary: 221.2 83.2% 53.3%;
+    /* Sharp Primary Blue */
+    --primary-foreground: 210 40% 98%;
 
     --background: 210 40% 98%;
-    /* #f9fafb - Off-white background */
+    /* Very light slate background */
     --foreground: 222.2 84% 4.9%;
-    /* Very dark slate */
+    /* Deep Charcoal */
 
     --card: 0 0% 100%;
-    /* Pure white cards */
+    /* Clean white cards */
     --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
+    --radius: 12px;
 
     /* Semantic mapped variables */
     --bg-body: hsl(var(--background));
     --bg-card: hsl(var(--card));
+    --bg-sidebar: hsl(0 0% 100%);
     --text-main: hsl(var(--foreground));
-    --text-muted: hsl(215.4 16.3% 46.9%);
-    /* Muted slate */
+    --text-muted: hsl(var(--muted-foreground));
     --border-color: hsl(var(--border));
-    --hover-bg: hsl(var(--accent));
+    --hover-bg: hsla(var(--primary) / 0.05);
 
-    --shadow-color: rgba(0, 0, 0, 0.05);
-    /* Soft, subtle shadow */
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-blur: blur(10px);
-    --glass-border: 1px solid rgba(0, 0, 0, 0.05);
+    --primary-color: hsl(var(--primary));
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Animations */
+    --glass-blur: blur(12px);
+    --glass-border: 1px solid hsla(var(--border) / 0.5);
 }
 
-/* 
-  Dark Theme Palette (Premium Night - "Deep Space") 
-  Avoids pure black (#000000). Uses deep rich grays/blues.
-*/
 body.dark-theme {
-    --primary: 217.2 91.2% 59.8%;
-    /* Brighter blue for dark mode visibility */
-    --primary-foreground: 0 0% 100%;
-
-    --background: 222 47% 11%;
-    /* #0f172a - Deep Slate */
+    /* 
+      Deep Navy & Midnight Palette
+      Dark Mode: Rich depth without being pure black
+    */
+    --background: 222.2 84% 4.9%;
+    /* Deepest Navy */
     --foreground: 210 40% 98%;
-    /* White text */
 
-    --card: 222 47% 14%;
-    /* #1e293b - Slightly lighter slate for cards */
+    --card: 222.2 84% 7%;
+    /* Subtly lighter card */
     --card-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --popover: 222.2 84% 7%;
+    --popover-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
-    /* Semantic mapped variables */
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+
     --bg-body: hsl(var(--background));
     --bg-card: hsl(var(--card));
+    --bg-sidebar: hsl(222.2 84% 3.9%);
     --text-main: hsl(var(--foreground));
-    --text-muted: hsl(215 20.2% 65.1%);
-    /* Lighter muted text for readability */
-    --border-color: rgba(255, 255, 255, 0.1);
-    --hover-bg: rgba(255, 255, 255, 0.05);
+    --text-muted: hsl(var(--muted-foreground));
+    --border-color: hsla(217.2, 32.6%, 25%, 0.5);
+    --hover-bg: hsla(var(--primary) / 0.15);
 
-    --shadow-color: rgba(0, 0, 0, 0.3);
-    /* Stronger shadow for depth */
+    --primary-color: hsl(var(--primary));
 
-    /* Glassmorphism Support */
-    --glass-bg: rgba(15, 23, 42, 0.6);
-    --glass-blur: blur(12px);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.1);
-
-    /* Material Overrides */
-    --mat-form-field-container-text-color: var(--text-main);
-    --mat-select-trigger-text-color: var(--text-main);
-    --mdc-theme-surface: hsl(var(--card));
-    --mdc-theme-text-primary-on-background: var(--text-main);
     color-scheme: dark;
-    /* Native browser form controls */
 }
 
 /* Premium UI Utility Classes */
 .glass-card {
-    background: var(--glass-bg);
+    background: var(--bg-card);
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
     border: var(--glass-border);
-    box-shadow: 0 8px 32px 0 var(--shadow-color);
+    box-shadow: var(--shadow-lg);
     border-radius: var(--radius);
 }
 
 .premium-shadow {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-lg);
 }
 
 .text-gradient {
@@ -118,23 +122,69 @@ body.dark-theme {
 }
 
 .hover-lift {
-    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
 }
 
 .hover-lift:hover {
     transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
 }
 
-/* Material Component Global Overrides utilizing variables */
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+}
+
+.animate-slide-up {
+    animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-scale-in {
+    animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Material Component Global Overrides */
 .mat-mdc-card,
 .mat-mdc-dialog-container {
     background-color: var(--bg-card) !important;
     color: var(--text-main) !important;
     border: var(--glass-border);
-    -webkit-backdrop-filter: var(--glass-blur);
-    backdrop-filter: var(--glass-blur);
     border-radius: var(--radius) !important;
-    box-shadow: 0 8px 32px 0 var(--shadow-color) !important;
+    box-shadow: var(--shadow-md) !important;
 }
 
 .mat-mdc-form-field-input-control {

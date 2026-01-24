@@ -91,35 +91,29 @@ export interface TableColumn {
     .table-container {
       width: 100%;
       background: var(--bg-card);
-      border-radius: 20px;
-      box-shadow: 0 10px 15px -3px var(--shadow-color);
-      border: var(--glass-border);
-      backdrop-filter: var(--glass-blur);
-      -webkit-backdrop-filter: var(--glass-blur);
+      border-radius: 12px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
       display: flex;
       flex-direction: column;
       overflow: hidden;
     }
 
     .filter-section {
-        padding: 20px 24px;
-        background: var(--hover-bg);
+        padding: 16px 24px;
+        background: hsla(var(--primary) / 0.02);
         border-bottom: 1px solid var(--border-color);
     }
 
     .filter-field {
       width: 100%;
-      max-width: 320px;
+      max-width: 280px;
     }
-
-    /* Custom Input overrides for filter */
-    ::ng-deep .mat-mdc-form-field-subscript-wrapper { display: none; }
 
     .table-wrapper {
         overflow-x: auto;
     }
 
-    /* Table Styles */
     table {
       width: 100%;
       border-collapse: separate;
@@ -128,79 +122,60 @@ export interface TableColumn {
     }
 
     th.mat-header-cell {
-      background: var(--hover-bg);
+      background: hsla(var(--primary) / 0.03);
       color: var(--text-muted);
       font-size: 0.75rem;
-      font-weight: 700;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      padding: 20px 24px;
+      letter-spacing: 0.05em;
+      padding: 16px 24px;
       border-bottom: 1px solid var(--border-color);
-      white-space: nowrap;
     }
 
     td.mat-cell {
-      padding: 16px 24px;
+      padding: 14px 24px;
       color: var(--text-main);
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
       border-bottom: 1px solid var(--border-color);
-      transition: background 0.3s ease;
-    }
-
-    .hover-row {
-        cursor: pointer;
+      transition: background 0.2s ease;
     }
 
     .hover-row:hover td {
       background-color: var(--hover-bg);
     }
     
-    .hover-row:last-child td {
-        border-bottom: none;
-    }
-
-    /* Status Badges */
     .status-badge {
-        padding: 6px 12px;
-        border-radius: 9999px;
+        padding: 4px 10px;
+        border-radius: 6px;
         font-size: 0.75rem;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .status-active, .status-available, .status-completed, .status-success {
-        background: rgba(16, 185, 129, 0.15);
-        color: #10b981;
+        background: hsla(142, 76%, 36%, 0.1);
+        color: #16a34a;
     }
 
     .status-inactive, .status-unavailable, .status-cancelled, .status-error {
-        background: rgba(239, 68, 68, 0.15);
-        color: #ef4444;
+        background: hsla(0, 84%, 60%, 0.1);
+        color: #dc2626;
     }
 
-    .status-pending, .status-scheduled, .status-warning, .status-partial {
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-    }
-
-    .status-income {
-        background: rgba(16, 185, 129, 0.15);
-        color: #10b981;
-    }
-
-    .status-expense, .status-salary {
-        background: rgba(239, 68, 68, 0.15);
-        color: #ef4444;
+    .status-pending, .status-scheduled, .status-warning {
+        background: hsla(38, 92%, 50%, 0.1);
+        color: #ca8a04;
     }
 
     .txn-code {
-        font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-        font-size: 0.85rem;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.8125rem;
         color: var(--primary-color);
         background: var(--hover-bg);
-        padding: 4px 8px;
-        border-radius: 6px;
+        padding: 2px 6px;
+        border-radius: 4px;
     }
 
     .amount-positive {

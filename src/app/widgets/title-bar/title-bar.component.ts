@@ -29,70 +29,69 @@ import { TraffiquizService } from '../../traffiquiz.service';
   `,
   styles: [`
     .title-bar {
-      height: 32px;
-      background: var(--bg-body); /* Follows app background */
+      height: 38px;
+      background: var(--bg-sidebar);
       color: var(--text-main);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 10px;
+      padding: 0 12px;
       -webkit-app-region: drag;
       user-select: none;
       border-bottom: 1px solid var(--border-color);
-      transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+      transition: all 0.3s ease;
     }
-
-    /* 
-       Optional: Make title bar slightly distinct or "glassy" 
-       if desired, but matching body is safest for consistency.
-    */
 
     .logo-area {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .app-logo {
-      height: 20px;
-      width: 20px;
+      height: 22px;
+      width: 22px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
     }
 
     .app-title {
-      font-size: 14px;
-      font-weight: 500;
+      font-size: 13px;
+      font-weight: 600;
       color: var(--text-main);
+      letter-spacing: 0.02em;
     }
 
     .controls-area {
       display: flex;
       -webkit-app-region: no-drag;
+      height: 100%;
     }
 
     .control-btn {
-      width: 40px !important;
-      height: 32px !important;
-      line-height: 32px !important;
+      width: 46px !important;
+      height: 100% !important;
       border-radius: 0 !important;
       display: flex;
       align-items: center;
       justify-content: center;
       color: var(--text-main);
-      transition: background-color 0.2s;
+      transition: all 0.2s;
+      opacity: 0.8;
     }
     
     .control-btn mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
     }
 
     .control-btn:hover {
       background-color: var(--hover-bg);
+      opacity: 1;
     }
 
     .close-btn:hover {
-      background-color: #ef4444 !important; /* Red-500 */
+      background-color: #e81123 !important; /* Windows Standard Close Red */
       color: white !important;
     }
   `]
