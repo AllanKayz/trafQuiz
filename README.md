@@ -1,310 +1,121 @@
 # TrafQuiz - Driving School Management System
 
-A comprehensive web application for managing driving school operations, including student management, instructor scheduling, exam administration, and financial tracking.
+A comprehensive, cross-platform desktop application for managing driving school operations. Built with **Electron** and **Angular**, TrafQuiz provides a modern solution for student exams, instructor scheduling, fleet management, and financial tracking.
 
 ## 🚗 Overview
 
-TrafQuiz is a full-stack driving school management system that provides role-based interfaces for administrators, instructors, and students. The application streamlines the entire driving school workflow from student enrollment to exam administration and progress tracking.
+TrafQuiz streamlines driving school workflows by providing tailored interfaces for three key roles: **Administrators**, **Instructors**, and **Students**. It replaces traditional paper-based systems with a digital ecosystem that handles everything from enrollment and payments to practice exams and vehicle maintenance logs.
 
 ## ✨ Key Features
 
 ### For Administrators
 
-- **Dashboard** - Real-time metrics and system overview
-- **Student Management** - Enrollment, progress tracking, and user management
-- **Instructor Management** - Staff assignments, certifications, and specializations
-- **Exam Management** - Question bank management and exam configuration
-- **Lesson Scheduling** - Auto-allocation and manual scheduling tools
-- **Vehicle Fleet Management** - Track vehicles, assignments, and maintenance
-- **Financial Management** - Transaction tracking, revenue analytics, and package management
-- **Reporting & Analytics** - Performance metrics and business insights
-- **User Access Control** - Role-based permissions and password management
-- **Messaging System** - Internal communication platform
+- **Dashboard**: Real-time overview of active students, revenue, and system alerts.
+- **Metadata Management**: Centralized control over **Question Categories**, **Certifications**, **Specializations**, and **Exam Settings**.
+- **User Management**: enroll students, hire instructors, and manage access credentials.
+- **Financials**: Track revenue, process payments, pay salaries, and record expenses. Includes **Digital Receipts** and PDF generation.
+- **Fleet Management**: Track vehicle status, maintenance logs, and fuel levels.
+- **Lesson Scheduling**: Organize theory and practical lessons with auto-seeding capabilities.
 
 ### For Instructors
 
-- **Schedule Management** - Daily lesson calendar and availability
-- **Student Progress Tracking** - Monitor assigned students and add progress notes
-- **Vehicle Status** - Assigned vehicle information and status
-- **Performance Reports** - Track teaching effectiveness
-- **Messaging** - Communication with admin and students
+- **My Schedule**: View upcoming lessons and student appointments.
+- **Live Reporting**: Log student progress and grading after lessons.
+- **Vehicle Status**: Report vehicle issues (maintenance/fuel) directly to admin.
 
 ### For Students
 
-- **Practice Exams** - Interactive quiz system with timed tests
-- **Lesson Booking** - Schedule and manage driving lessons
-- **Progress Dashboard** - View completion status and scores
-- **Payment Management** - Track payments and select packages
-- **Performance Reports** - Detailed analytics and exam history
-- **Messaging** - Communication with instructors and admin
+- **Practice Exams**: Take timed, categorized practice tests (Rules of the Road, Signs, etc.) with instant feedback.
+- **Lesson Booking**: View available slots and book driving lessons.
+- **Financial History**: View payment history and download receipts.
+- **Progress Tracking**: Monitor exam scores and learning curve over time.
 
-## 🏗️ Architecture
+## 🏗️ Technical Stack
 
-### Frontend
-
-- **Framework**: Angular 21.x
-- **UI Library**: Angular Material + Bootstrap 5
-- **State Management**: Angular Signals (reactive state)
-- **Styling**: CSS with Material Design theming
-- **Key Service**: `TraffiquizService` - Centralized state and API communication
-
-### Backend
-
-- **Language**: PHP 8.x
-- **Architecture**: MVC pattern with custom routing
-- **Database**: MySQL (via XAMPP)
-- **API**: RESTful JSON API
-- **Security**: Session-based authentication, password hashing, SQL injection protection
-
-### Project Structure
-
-```
-trafQuiz/
-├── public/                    # Public web root
-│   └── api/                   # Backend API
-│       ├── index.php         # API router
-│       └── .htaccess         # Apache config
-├── src/                       # PHP backend source
-│   ├── Controllers/          # API controllers
-│   ├── Models/               # Data models
-│   ├── Core/                 # Core utilities (Router, Database, Auth)
-│   └── Middleware/           # CORS, Rate limiting
-├── src/                       # Angular frontend source
-│   ├── app/
-│   │   ├── components/       # Feature components
-│   │   ├── services/         # Angular services
-│   │   ├── models/           # TypeScript interfaces
-│   │   └── widgets/          # Reusable UI components
-│   └── assets/               # Static assets
-├── scripts/                   # Database scripts
-└── dist/                      # Production build output
-```
+- **Framework**: Electron (Desktop Wrapper)
+- **Frontend**: Angular 21 (Modern Web Technologies)
+- **Backend/Database**: Node.js (IPC Main Process) + SQLite
+- **Styling**: Angular Material + Bootstrap 5 + Custom CSS
+- **State Management**: Angular Signals
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- **Node.js** (v18 or higher)
-- **npm** (v9 or higher)
-- **XAMPP** (Apache + MySQL + PHP 8.x)
-- **Composer** (PHP dependency manager)
+- **Node.js** (v18+)
+- **npm** (v9+)
 
 ### Installation
 
 1. **Clone the repository**
 
-   ```bash
-   cd c:\xampp\htdocs
-   git clone <repository-url> trafQuiz
-   cd trafQuiz
-   ```
+    ```bash
+    git clone <repository-url> trafQuiz
+    cd trafQuiz
+    ```
 
-2. **Install frontend dependencies**
+2. **Install Dependencies**
 
-   ```bash
-   npm install
-   ```
+    ```bash
+    npm install
+    ```
 
-3. **Install backend dependencies**
+3. **Run Development Mode**
+    Runs Angular via `ng serve` and Electron concurrently.
 
-   ```bash
-   composer install
-   ```
+    ```bash
+    npm run electron:dev
+    ```
 
-4. **Configure the database**
-   - Start XAMPP (Apache + MySQL)
-   - Open phpMyAdmin: `http://localhost/phpmyadmin`
-   - Create a new database named `traffiquiz`
-   - Import the database schema:
+4. **Build for Production**
+    Generates a production-ready build in the `dist/` folder.
 
-     ```bash
-     mysql -u root -p traffiquiz < traffiquiz_normalized.sql
-     ```
+    ```bash
+    npm run electron:start
+    ```
 
-5. **Configure the backend**
-   - Update database credentials in `src/Core/Config.php` if needed
-   - Default configuration uses:
-     - Host: `localhost`
-     - User: `root`
-     - Password: (empty)
-     - Database: `traffiquiz`
+## 📂 Project Structure
 
-6. **Update API URL (if needed)**
-   - Frontend API URL is configured in `src/app/traffiquiz.service.ts`
-   - Default: `http://localhost:84/trafQuiz/public/api/`
-   - Adjust port number based on your XAMPP configuration
-
-### Running the Application
-
-1. **Start XAMPP**
-   - Ensure Apache and MySQL services are running
-   - Access on port 84 (or your configured port)
-
-2. **Start the Angular development server**
-
-   ```bash
-   npm start
-   ```
-
-   The application will open at `http://localhost:4200/`
-
-3. **Access the application**
-   - **Frontend**: `http://localhost:4200/`
-   - **Backend API**: `http://localhost:84/trafQuiz/public/api/`
-
-### Default Login Credentials
-
-Check your database for existing users or create new ones:
-
-- **Admin**: username determined by database
-- **Instructor**: username determined by database
-- **Student**: username determined by database
-- **Guest**: Direct access to exam without login
-
-## 📚 API Documentation
-
-Comprehensive API documentation is available in [`API_DOCUMENTATION.md`](./API_DOCUMENTATION.md).
-
-### Key Endpoints
-
-- `POST /login` - User authentication
-- `GET /exam` - Fetch exam questions
-- `GET /students` - Retrieve all students (admin)
-- `GET /instructors` - Retrieve all instructors
-- `GET /lessons` - Get available lessons
-- `GET /vehicles` - Vehicle fleet information
-- `GET /finances/transactions` - Financial transaction history
-- `GET /students/progress` - Student progress tracking
-- `POST /payments/process` - Process payment transactions
-
-### Admin Utilities
-
-Development-friendly endpoints for testing:
-
-- `POST /admin/seed-lessons?token=YOUR_TOKEN` - Seed sample lessons
-- `GET /admin/check-lessons?token=YOUR_TOKEN` - Health check
-
-## 🛠️ Build & Deployment
-
-### Development Build
-
-```bash
-npm run build
+```text
+trafQuiz/
+├── src/                  # Angular Frontend
+│   ├── app/
+│   │   ├── components/   # Feature-based Components (Admin, Finances, Exams)
+│   │   ├── services/     # Data Services (TraffiquizService, FormConfig)
+│   │   └── widgets/      # Reusable UI Widgets (Tables, Forms)
+├── src-electron/         # Electron Main Process
+│   ├── main.js           # App Entry Point
+│   ├── db.js             # SQLite Database Connection
+│   ├── ipc-handlers/     # Backend Logic (CRUD, Auth, Exams)
+│   └── models/           # Sequelize Models (Category, User, etc.)
+└── package.json          # Project Configuration
 ```
 
-Outputs to `dist/` directory
+## 📝 Database & Customization
 
-### Production Build
+The application uses a local **SQLite** database (`trafquiz_app.db`).
 
-```bash
-npm run build --configuration=production
-```
+- **Schema**: Defined in `src-electron/sqlite_schema.sql`.
+- **Initialization**: Automatically created on first run if missing.
+- **Seeding**: Admin tools allow seeding random lesson data for testing.
 
-Optimized build with minification and tree-shaking
+To reset the database during development, simply delete the `.db` file and restart the application.
 
-### Watch Mode (Development)
+## 🔒 Security & Auth
 
-```bash
-npm run watch
-```
-
-Continuous rebuild on file changes
-
-## 🎨 Features in Detail
-
-### Role-Based Dashboard
-
-Each user role sees a customized dashboard with relevant widgets and quick actions:
-
-- **Dynamic Widgets**: Context-aware metrics and statistics
-- **Quick Actions**: Role-specific shortcuts
-- **Responsive Design**: Mobile-friendly interface
-
-### Exam System
-
-- **Timed Tests**: Configurable exam duration
-- **Question Bank**: Categorized questions with images
-- **Progress Tracking**: Flagging and review capabilities
-- **Score Analytics**: Performance metrics and history
-
-### Messaging System
-
-- **Conversations**: Thread-based messaging
-- **Real-time Updates**: Notifications for new messages
-- **User-to-User**: Direct communication between roles
-
-### Theming
-
-- **Light/Dark Mode**: System preference detection
-- **Material Design**: Consistent UI components
-- **Custom Themes**: Configurable color schemes
-
-## 🔒 Security Features
-
-- **Authentication**: Session-based user authentication
-- **Password Hashing**: PHP `password_hash()` with `PASSWORD_DEFAULT`
-- **SQL Injection Protection**: Prepared statements throughout
-- **Rate Limiting**: API request throttling (100 req/min per IP)
-- **CORS Configuration**: Controlled cross-origin requests
-- **Input Validation**: Server-side validation for all endpoints
-
-## 🐛 Development Tools
-
-### Debug Mode
-
-Check database connectivity and API status at runtime
-
-### Browser DevTools
-
-- Angular DevTools extension for component inspection
-- Network tab for API debugging
-
-### Testing
-
-```bash
-npm test
-```
-
-Runs unit tests via Karma + Jasmine
-
-## 📝 Database Schema
-
-Key tables:
-
-- `users` - User authentication and roles
-- `students` - Student profiles and enrollment
-- `instructors` - Instructor information and certifications
-- `questions` - Exam question bank
-- `lessons` - Lesson schedules and assignments
-- `vehicles` - Fleet management
-- `payments` - Transaction records
-- `packages` - Service packages and pricing
-- `messages` - Internal messaging
+- **Role-Based Access Control (RBAC)**: Distinct views and guards for Admin, Instructor, and Student.
+- **Secure Password Hashing**: Uses `bcryptjs` for storing user credentials.
+- **IPC Isolation**: Frontend communicates with database strictly via secure Electron `invoke/handle` channels.
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -m 'Add your feature'`
-4. Push to branch: `git push origin feature/your-feature`
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Angular Team for the excellent framework
-- Angular Material for UI components
-- Bootstrap for responsive utilities
-- XAMPP for local development environment
-
-## 📞 Support
-
-For issues, questions, or feature requests, please open an issue on GitHub.
+1. Fork the repo
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ---
 
-**Version**: 1.0.0  
+**Version**: 1.0.0
 **Last Updated**: January 2026

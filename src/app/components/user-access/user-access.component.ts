@@ -38,13 +38,10 @@ import { MatNativeDateModule } from '@angular/material/core';
     templateUrl: './user-access.component.html',
     styleUrl: './user-access.component.css'
 })
-export class UserAccessComponent implements AfterViewInit {
+export class UserAccessComponent {
     service = inject(TraffiquizService);
     dialog = inject(MatDialog);
 
-    @ViewChild(MatPaginator) paginator!: MatPaginator;
-
-    userDataSource = new MatTableDataSource<any>([]);
     users = signal<any[]>([]);
 
     header = 'User Access Management';
@@ -81,13 +78,10 @@ export class UserAccessComponent implements AfterViewInit {
         this.loadUsers();
     }
 
-    ngAfterViewInit() {
-        this.userDataSource.paginator = this.paginator;
-    }
-
     loadUsers() {
-        this.service.fetchAllUsers().subscribe(data => {
-            this.users.set(data || []);
+        this.service.fetchAllUsers().subscribe({
+            next: (data) => this.users.set(data || []),
+            error: (err) => console.error('Failed to load users:', err)
         });
     }
 

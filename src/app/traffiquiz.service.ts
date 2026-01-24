@@ -111,7 +111,7 @@ export class TraffiquizService {
 
   /** Defines the menu items for different user roles. */
   private menus = {
-    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Scheduling', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Settings'],
+    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Scheduling', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Metadata', 'Settings'],
     instructor: ['Dashboard', 'Schedule', 'Students', 'Vehicle-Status', 'Messages', 'Settings'],
     student: ['Dashboard', 'Exam', 'Lessons', 'Reports', 'Messages', 'Payments', 'Settings'],
     icons: { dashboard: 'dashboard', questions: 'help_outline', instructors: 'person', exams: 'assignment', students: 'group', vehicles: 'directions_car', reports: 'bar_chart', settings: 'settings', scheduling: 'event', schedule: 'calendar_month', 'vehicle-status': 'car_repair', messages: 'mail', finances: 'payments', useraccess: 'admin_panel_settings', lessons: 'school', 'lessons-admin': 'admin_panel_settings', exam: 'quiz', payments: 'account_balance_wallet' }
@@ -1182,10 +1182,14 @@ export class TraffiquizService {
   }
 
   public addUser(user: any): Observable<any> {
+    const nameParts = (user.name || '').trim().split(' ');
+    const firstName = user.firstName || nameParts[0] || 'User';
+    const lastName = user.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'New');
+
     if (user.role === 'student') {
-      return this.addStudent({ ...user, firstName: user.name?.split(' ')[0] || user.firstName, lastName: user.name?.split(' ')[1] || user.lastName || '' });
+      return this.addStudent({ ...user, firstName, lastName });
     } else if (user.role === 'instructor') {
-      return this.addInstructor({ ...user, firstName: user.name?.split(' ')[0] || user.firstName, lastName: user.name?.split(' ')[1] || user.lastName || '' });
+      return this.addInstructor({ ...user, firstName, lastName });
     }
     return from(window.electronAPI.invoke('add-user', user));
   }

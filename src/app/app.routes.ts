@@ -91,8 +91,8 @@ export const routes: Routes = [
         component: SettingsComponent
       },
       {
-        path: 'admin-tools',
-        component: AdminToolsComponent
+        path: 'metadata',
+        loadComponent: () => import('./components/admin/admin-tools.component').then(m => m.AdminToolsComponent)
       },
       {
         path: 'useraccess',

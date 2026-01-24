@@ -133,17 +133,18 @@ ipcMain.handle('get-exam-questions', async (event, userId) => {
     }
 });
 
-ipcMain.handle('set-exam-timeframe', async (event, { time, examId }) => {
+ipcMain.handle('set-exam-timeframe', async (event, { time, period, examId }) => {
     try {
-        const period = Math.ceil(time / 60); // Convert seconds back to minutes for DB
+        // Accept period (minutes) directly, or convert from time (seconds)
+        const durationMinutes = period || Math.ceil(time / 60); 
         if (examId) {
-            await run('INSERT INTO exam_timeframe (exam_id, period) VALUES (?, ?) ON CONFLICT(exam_id) DO UPDATE SET period = EXCLUDED.period, updated_at = CURRENT_TIMESTAMP', [examId, period]);
+            await run('INSERT INTO exam_timeframe (exam_id, period) VALUES (?, ?) ON CONFLICT(exam_id) DO UPDATE SET period = EXCLUDED.period, updated_at = CURRENT_TIMESTAMP', [examId, durationMinutes]);
         } else {
             // Global update - update all or just the first one?
             // Let's update all existing ones and ensure if none exist, we might have an issue.
             // But usually this would be called for a specific context.
             // For now, let's update all.
-            await run('UPDATE exam_timeframe SET period = ?, updated_at = CURRENT_TIMESTAMP', [period]);
+            await run('UPDATE exam_timeframe SET period = ?, updated_at = CURRENT_TIMESTAMP', [durationMinutes]);
             // And if none exist?
             const exist = await get('SELECT id FROM exam_timeframe LIMIT 1');
             if(!exist) {
@@ -151,7 +152,7 @@ ipcMain.handle('set-exam-timeframe', async (event, { time, examId }) => {
                 // But we can try to find the first exam.
                 const firstExam = await get('SELECT id FROM exams LIMIT 1');
                 if(firstExam) {
-                    await run('INSERT INTO exam_timeframe (exam_id, period) VALUES (?, ?)', [firstExam.id, period]);
+                    await run('INSERT INTO exam_timeframe (exam_id, period) VALUES (?, ?)', [firstExam.id, durationMinutes]);
                 }
             }
         }

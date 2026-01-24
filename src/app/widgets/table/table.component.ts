@@ -299,20 +299,26 @@ export class TableComponent implements AfterViewInit {
 
 
   private updateDataSource() {
-    const dataSource = new MatTableDataSource(this.data());
-    dataSource.paginator = this.paginator;
-    dataSource.sort = this.sort;
+    const currentData = this.data();
+    const source = this.dataSource();
+
+    source.data = currentData;
 
     // Custom filter predicate
-    dataSource.filterPredicate = (data: any, filter: string) => {
+    source.filterPredicate = (data: any, filter: string) => {
       const lowerCaseFilter = filter.toLocaleLowerCase();
       return this.columns().some(column => {
-        const value = data[column.key]?.toString().toLocaleLowerCase();
-        return value?.includes(lowerCaseFilter);
+        const val = data[column.key];
+        const stringValue = (val !== null && val !== undefined) ? val.toString().toLocaleLowerCase() : '';
+        return stringValue.includes(lowerCaseFilter);
       });
     };
 
-    this.dataSource.set(dataSource);
+    // Re-bind paginator and sort in the next tick to ensure they are available
+    setTimeout(() => {
+      if (this.paginator) source.paginator = this.paginator;
+      if (this.sort) source.sort = this.sort;
+    });
   }
 
   applyFilter(event: Event) {

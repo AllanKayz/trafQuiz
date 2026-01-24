@@ -110,6 +110,12 @@ class StudentModel {
             throw error;
         }
     }
+
+    static async deleteByUserId(userId) {
+        const student = await this.findByUserId(userId);
+        if (!student) return false;
+        return await this.delete(student.id);
+    }
 }
 
 module.exports = StudentModel;

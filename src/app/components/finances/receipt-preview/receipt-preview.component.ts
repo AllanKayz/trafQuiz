@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { TraffiquizService } from '../../../../traffiquiz.service';
+import { TraffiquizService } from '../../../traffiquiz.service';
 
 @Component({
   selector: 'app-receipt-preview',

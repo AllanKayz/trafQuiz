@@ -112,13 +112,10 @@ ipcMain.handle('delete-user', async (event, { id, role }) => {
         const UserModel = require('../models/UserModel');
         if (role === 'student') {
             const StudentModel = require('../models/StudentModel');
-            // Assuming student delete also deletes user if needed, or we do it here
             await StudentModel.deleteByUserId(id); 
         } else if (role === 'instructor') {
             const InstructorModel = require('../models/InstructorModel');
-            // Find instructor id from user id
-            const instructor = await InstructorModel.findByUserId(id);
-            if (instructor) await InstructorModel.delete(instructor.id);
+            await InstructorModel.deleteByUserId(id);
         } else {
             await UserModel.delete(id);
         }

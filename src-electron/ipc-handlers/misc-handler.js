@@ -47,29 +47,7 @@ ipcMain.handle('get-exam-duration', async () => {
      }
 });
 
-ipcMain.handle('set-exam-timeframe', async (event, { period, exam_id }) => {
-    try {
-        const { run, get } = require('../db');
-        // Check if exists
-        const exists = await get('SELECT id FROM exam_timeframe LIMIT 1');
-        
-        if (exists) {
-            await run('UPDATE exam_timeframe SET period = ? WHERE id = ?', [period, exists.id]);
-        } else {
-             // Default to exam_id 1 if not provided, or handle error. 
-             // Ideally exam_timeframe should link to specific exam, 
-             // but if treated as global generic setting:
-             const firstExam = await get('SELECT id FROM exams LIMIT 1');
-             const targetExamId = exam_id || (firstExam ? firstExam.id : 0);
-             
-            await run('INSERT INTO exam_timeframe (period, exam_id) VALUES (?, ?)', [period, targetExamId]);
-        }
-        return { success: true };
-    } catch (e) {
-        console.error('Set exam duration error:', e);
-        return { success: false, message: e.message };
-    }
-});
+
 ipcMain.handle('add-specialization', async (event, specialization) => {
     try {
         const { run } = require('../db');

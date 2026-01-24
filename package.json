@@ -9,7 +9,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "electron:start": "npm run build && electron .",
-    "electron:dev": "concurrently \"ng serve\" \"wait-on http://localhost:4200 && electron . --dev\""
+    "electron:dev": "concurrently \"node --max_old_space_size=8192 ./node_modules/@angular/cli/bin/ng serve\" \"wait-on http://localhost:4200 && electron . --dev\""
   },
   "private": true,
   "dependencies": {

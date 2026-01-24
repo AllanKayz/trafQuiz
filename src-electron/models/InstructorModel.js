@@ -108,6 +108,12 @@ class InstructorModel {
             throw error;
         }
     }
+
+    static async deleteByUserId(userId) {
+        const instructor = await this.findByUserId(userId);
+        if (!instructor) return false;
+        return await this.delete(instructor.id);
+    }
 }
 
 module.exports = InstructorModel;

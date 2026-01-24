@@ -45,7 +45,7 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
 })
-export class VehiclesComponent implements AfterViewInit {
+export class VehiclesComponent {
   private vehicleService = inject(VehicleService);
   private trafService = inject(TraffiquizService);
   private dialog = inject(MatDialog);
@@ -67,7 +67,6 @@ export class VehiclesComponent implements AfterViewInit {
   });
 
 
-  dataSource = new MatTableDataSource<Vehicle>([]);
   tableData = signal<Vehicle[]>([]);
 
   widgets = computed(() => {
@@ -84,7 +83,7 @@ export class VehiclesComponent implements AfterViewInit {
   loading = false;
   error: string | null = null;
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  // ViewChild reference removed as handled by TableComponent
 
   // Form state for dialogs
   isEditing = false;
@@ -114,10 +113,6 @@ export class VehiclesComponent implements AfterViewInit {
     this.load();
   }
 
-  ngAfterViewInit() {
-    this.dataSource.paginator = this.paginator;
-  }
-
   handleButtonAction(action: string) {
     if (action === 'addVehicle') this.openAdd();
   }
@@ -145,7 +140,6 @@ export class VehiclesComponent implements AfterViewInit {
     this.vehicleService.fetchVehicles(this.user()?.id).subscribe({
       next: (res) => {
         this.tableData.set(res || []);
-        this.dataSource.data = res || [];
         this.loading = false;
       },
       error: (err) => {
