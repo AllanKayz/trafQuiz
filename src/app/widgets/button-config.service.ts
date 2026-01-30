@@ -8,21 +8,23 @@ export class ButtonConfigService {
 
   private buttonConfig = signal<Record<string, SectionButton[]>>({
     questions: [
-      { name: 'Add Question', icon: 'add', action: 'addQuestion' },
-      { name: 'Add Category', icon: 'add', action: 'addCategory' },
+      { name: 'Add Question', icon: 'add', action: 'addQuestion', variant: 'primary' },
+      { name: 'Add Category', icon: 'category', action: 'addCategory', variant: 'outline' },
     ],
     students: [
-      { name: 'Add Student', icon: 'person_add', action: 'addStudent' }
+      { name: 'Add Student', icon: 'person_add', action: 'addStudent', variant: 'primary' }
     ],
     instructors: [
-      { name: 'Add Instructor', icon: 'person_add', action: 'addInstructor' },
-      { name: 'Add Specialization', icon: 'add', action: 'addSpecialization' },
-      { name: 'Add Certification', icon: 'certificate', action: 'addCertification' }
+      { name: 'Specializations', icon: 'stars', action: 'manageSpecializations', variant: 'outline' },
+      { name: 'Certifications', icon: 'verified', action: 'manageCertifications', variant: 'outline' },
+      { name: 'Add Instructor', icon: 'person_add', action: 'addInstructor', variant: 'primary' }
     ],
     exams: [
-      { name: 'Create Exam', icon: 'post_add', action: 'createExam' },
-      { name: 'Schedule', icon: 'calendar_today', action: 'sheduleExam' },
-      { name: 'Refresh Stats', icon: 'refresh', action: 'refreshStats'}
+      { name: 'Manage Categories', icon: 'category', action: 'manageCategories', variant: 'outline' },
+      { name: 'Manage Timeframe', icon: 'timer', action: 'manageTimeframe', variant: 'outline' },
+      { name: 'Schedule', icon: 'calendar_today', action: 'sheduleExam', variant: 'primary' },
+      { name: 'Create Exam', icon: 'post_add', action: 'createExam', variant: 'primary' },
+      { name: 'Refresh Stats', icon: 'refresh', action: 'refreshStats', variant: 'outline' }
     ]
   });
 

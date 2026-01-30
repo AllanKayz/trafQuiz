@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { TraffiquizService } from './traffiquiz.service';
 
 import { TitleBarComponent } from './widgets/title-bar/title-bar.component';
+import { LoaderComponent } from './widgets/loader/loader.component';
 
 /**
  * The root component of the application.
@@ -10,7 +11,7 @@ import { TitleBarComponent } from './widgets/title-bar/title-bar.component';
  */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, TitleBarComponent],
+  imports: [RouterOutlet, TitleBarComponent, LoaderComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })

@@ -11,6 +11,7 @@ import { STUDENT_FORM_FIELDS } from '../../widgets/dynamic-form/student-form.con
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MetadataManagerDialogComponent } from '../../widgets/metadata-manager/metadata-manager-dialog.component';
 
 @Component({
 	selector: 'app-instructors',
@@ -38,6 +39,7 @@ export class InstructorsComponent {
 		{ key: 'name', header: 'Name', type: 'text' },
 		{ key: 'email', header: 'Email', type: 'text' },
 		{ key: 'phone', header: 'Phone', type: 'text' },
+		{ key: 'license', header: 'License', type: 'text' },
 		{ key: 'specialization', header: 'Specialization', type: 'text' },
 		{ key: 'certified', header: 'Certified', type: 'text', width: '40px' },
 		{ key: 'availability', header: 'Availability', type: 'text' },
@@ -69,14 +71,11 @@ export class InstructorsComponent {
 
 	handleButtonAction(action: string) {
 		switch (action) {
-			case 'addInstructor':
-				this.openInstructorForm();
+			case 'manageSpecializations':
+				this.manageSpecializations();
 				break;
-			case 'addSpecialization':
-				this.openSpecializationForm();
-				break;
-			case 'addCertification':
-				this.openCertificationForm();
+			case 'manageCertifications':
+				this.manageCertifications();
 				break;
 		}
 	}
@@ -119,7 +118,8 @@ export class InstructorsComponent {
 		}
 
 		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
+			maxWidth: '95vw',
+			minWidth: '450px',
 			data: {
 				title: instructor ? 'Edit Instructor' : 'Add New Instructor',
 				fields: fields,
@@ -233,79 +233,40 @@ export class InstructorsComponent {
 		// Legacy method
 	}
 
-	openCertificationForm(certification?: any) {
-		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
+	manageCertifications() {
+		this.dialog.open(MetadataManagerDialogComponent, {
+			maxWidth: '95vw',
+			minWidth: '500px',
 			data: {
-				title: certification ? 'Edit Certification' : 'Add New Certification',
-				fields: this.formConfig.getFormConfig('certification'),
-				initialData: certification || {},
-				submitText: certification ? 'Update' : 'Add'
-			}
-		});
-
-		dialogRef.componentInstance.submitted.subscribe(formData => {
-			this.saveCertification(formData, certification?.id);
-			dialogRef.close();
-		});
-	}
-
-	private saveCertification(data: any, id: any) {
-		const certification = {
-			id: data.id || 0,
-			certification: data.certification,
-			description: data.description
-		}
-
-		const action = id ? this.trafQuizService.updateCertification(certification) : this.trafQuizService.addCertification(certification);
-
-		action.subscribe({
-			next: (res) => {
-				this.trafQuizService.showNotification(`Certification ${id ? 'updated' : 'added'} successfully`, 'success');
-				this.trafQuizService.getSpecializations();
-			},
-			error: (err) => {
-				console.log(err);
-				this.trafQuizService.showNotification('Error saving certification', 'error');
+				title: 'Manage Certifications',
+				entityType: 'certification',
+				columns: [
+					{ key: 'certification', header: 'Certification Name', type: 'text' },
+					{ key: 'description', header: 'Description', type: 'text' }
+				],
+				dataSignal: () => this.trafQuizService.certificationsSignal(),
+				addMethod: (data: any) => this.trafQuizService.addCertification(data),
+				updateMethod: (data: any) => this.trafQuizService.updateCertification(data),
+				deleteMethod: (id: number) => this.trafQuizService.deleteCertification(id)
 			}
 		});
 	}
 
-	openSpecializationForm(specialization?: any) {
-		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
+	manageSpecializations() {
+		this.dialog.open(MetadataManagerDialogComponent, {
+			maxWidth: '95vw',
+			minWidth: '500px',
 			data: {
-				title: specialization ? 'Edit Specialization' : 'Add New Specialization',
-				fields: this.formConfig.getFormConfig('specialization'),
-				initialData: specialization || {},
-				submitText: specialization ? 'Update' : 'Add'
-			}
-		});
-
-		dialogRef.componentInstance.submitted.subscribe(formData => {
-			this.saveSpecialization(formData, specialization?.id);
-			dialogRef.close();
-		});
-	}
-
-	private saveSpecialization(data: any, id: any) {
-
-		const specialization = {
-			id: data.id || 0,
-			specialization: data.specialization,
-			description: data.description
-		}
-
-		const action = id ? this.trafQuizService.updateSpecialization(specialization) : this.trafQuizService.addSpecialization(specialization);
-
-		action.subscribe({
-			next: (res) => {
-				this.trafQuizService.showNotification(`Specialization ${id ? 'updated' : 'added'} successfully`, 'success');
-				this.trafQuizService.getSpecializations();
-			},
-			error: (err) => {
-				console.log(err);
-				this.trafQuizService.showNotification('Error saving specialization', 'error');
+				title: 'Manage Specializations',
+				entityType: 'specialization',
+				columns: [
+					{ key: 'specialization', header: 'Specialization Name', type: 'text' },
+					{ key: 'description', header: 'Description', type: 'text' }
+				],
+				dataSignal: () => this.trafQuizService.specializationsSignal(),
+				addMethod: (data: any) => this.trafQuizService.addSpecialization(data),
+				updateMethod: (data: any) => this.trafQuizService.updateSpecialization(data),
+				deleteMethod: (id: number) => this.trafQuizService.deleteSpecialization(id)
 			}
 		});
 	}

@@ -7,6 +7,7 @@ export interface SectionButton {
   icon?: string;
   action: string;
   disabled?: boolean;
+  variant?: 'primary' | 'outline' | 'danger';
 }
 
 @Component({
@@ -22,9 +23,9 @@ export interface SectionButton {
       <div class="header-actions">
         @for (btn of buttons(); track btn.name) {
           <button 
-            class="premium-btn"
+            [class]="'premium-btn ' + (btn.variant || 'primary') + '-btn'"
             [class.disabled-btn]="btn.disabled"
-            mat-flat-button 
+            mat-button 
             (click)="buttonClicked.emit(btn.action)" 
             [disabled]="btn.disabled">
             @if (btn.icon) {
@@ -79,26 +80,60 @@ export interface SectionButton {
     }
 
     .premium-btn {
-        background: var(--primary-color) !important;
-        color: white !important;
-        border-radius: 8px !important;
-        padding: 8px 18px !important;
-        font-weight: 600 !important;
-        font-size: 0.875rem !important;
-        transition: all 0.2s ease !important;
+        border-radius: 10px !important;
+        padding: 8px 20px !important;
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        letter-spacing: 0.01em !important;
     }
 
-    .premium-btn:hover:not(:disabled) {
+    .primary-btn {
+        background: var(--primary-color) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px hsla(var(--primary) / 0.25);
+    }
+
+    .primary-btn:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px hsla(var(--primary) / 0.4);
-        filter: brightness(1.05);
+        box-shadow: 0 8px 20px hsla(var(--primary) / 0.35);
+        filter: brightness(1.1);
+    }
+
+    .outline-btn {
+        background: transparent !important;
+        color: var(--text-main) !important;
+        border: 2px solid var(--border-color) !important;
+    }
+
+    .outline-btn:hover:not(:disabled) {
+        background: var(--hover-bg) !important;
+        border-color: var(--primary-color) !important;
+        color: var(--primary-color) !important;
+        transform: translateY(-2px);
+    }
+
+    .danger-btn {
+        background: #ef4444 !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(239, 68, 68, 0.25);
+    }
+
+    .danger-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.35);
+        filter: brightness(1.1);
     }
 
     .premium-btn mat-icon {
-        margin-right: 8px;
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
+        margin: 0 !important;
+        font-size: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
     }
 
     .disabled-btn {

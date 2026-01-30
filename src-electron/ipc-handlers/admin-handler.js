@@ -60,6 +60,7 @@ ipcMain.handle('get-all-users', async () => {
          
          const formatted = users.map(u => ({
              ...u,
+             status: 'active', // Default status for generic user account
              name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username
          }));
 

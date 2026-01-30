@@ -36,36 +36,12 @@
     height: 72px;
     display: flex;
     align-items: center;
-    padding: 0 20px;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-.logo-icon {
-    width: 40px;
-    height: 40px;
-    background: var(--primary-color);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    color: white;
-    flex-shrink: 0;
-    box-shadow: 0 4px 12px hsla(var(--primary) / 0.3);
+    padding: 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.logo-text {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-main);
-    letter-spacing: -0.02em;
-}
+/* Brand and Logo removed */
 
 /* Navigation List */
 .nav-list {
@@ -152,24 +128,7 @@
     background: var(--bg-body);
 }
 
-.top-bar {
-    height: 72px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
-    background: var(--bg-sidebar);
-    border-bottom: 1px solid var(--border-color);
-    z-index: 10;
-}
-
-.page-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-main);
-    margin: 0;
-    letter-spacing: -0.02em;
-}
+/* Top bar removed */
 
 .content-scroll {
     flex: 1;

@@ -13,6 +13,7 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
 import { FormConfigService } from '../../widgets/form-config.service';
 import { QUESTION_FORM_FIELDS, QUESTION_OPTION_FIELDS } from '../../widgets/dynamic-form/question-form.config';
 import { CATEGORY_FORM_FIELDS } from '../../widgets/dynamic-form/category.config';
+import { MetadataManagerDialogComponent } from '../../widgets/metadata-manager/metadata-manager-dialog.component';
 
 @Component({
 	selector: 'app-questions',
@@ -69,7 +70,7 @@ export class QuestionsComponent {
 				this.addQuestionForm();
 				break;
 			case 'addCategory':
-				this.addCategoryForm();
+				this.manageCategories();
 				break;
 		}
 	}
@@ -147,7 +148,8 @@ export class QuestionsComponent {
 
 	addQuestionForm(question?: any) {
 		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
+			maxWidth: '95vw',
+			minWidth: '600px',
 			data: {
 				title: question ? 'Edit Question' : 'Add New Question',
 				fields: this.formConfig.getFormConfig('question'),
@@ -185,25 +187,23 @@ export class QuestionsComponent {
 		});
 	}
 
-	addCategoryForm(category?: any) {
-		const dialogRef = this.dialog.open(DynamicFormComponent, {
-			width: '800px',
+	manageCategories() {
+		this.dialog.open(MetadataManagerDialogComponent, {
+			maxWidth: '95vw',
+			minWidth: '500px',
 			data: {
-				title: category ? 'Edit Category' : 'Add New Category',
-				fields: CATEGORY_FORM_FIELDS,
-				initialData: category || {},
-				submitText: category ? 'Update' : 'Create'
+				title: 'Manage Categories',
+				entityType: 'category',
+				columns: [
+					{ key: 'category', header: 'Category Name', type: 'text' },
+					{ key: 'description', header: 'Description', type: 'text' }
+				],
+				dataSignal: () => this.trafQuizService.categoriesSignal(),
+				addMethod: (data: any) => this.trafQuizService.addCategory(data),
+				updateMethod: (data: any) => this.trafQuizService.updateCategory(data),
+				deleteMethod: (id: number) => this.trafQuizService.deleteCategory(id)
 			}
 		});
-
-		dialogRef.componentInstance.submitted.subscribe(formData => {
-			this.saveCategory(formData, category?.id);
-			dialogRef.close();
-		});
-	}
-
-	private saveCategory(data: any, id: number) {
-
 	}
 }
 

@@ -3,14 +3,9 @@
   <!-- Sidebar -->
   <aside class="sidenav" [class.collapsed]="isSidenavCollapsed()">
     <div class="sidebar-header">
-      <div class="brand">
-        <div class="logo-icon">
-          <mat-icon>school</mat-icon>
-        </div>
-        @if (!isSidenavCollapsed()) {
-        <span class="logo-text">TrafQuiz</span>
-        }
-      </div>
+      <button class="toggle-btn" (click)="toggleSidenav()">
+        <mat-icon>{{isSidenavCollapsed() ? 'menu' : 'menu_open'}}</mat-icon>
+      </button>
     </div>
 
     @if (isLoggedIn()) {
@@ -25,40 +20,11 @@
       </a>
       }
     </nav>
-
-    <div class="user-profile">
-      <div class="avatar">{{ user()?.firstname?.charAt(0) || 'U' }}</div>
-      @if (!isSidenavCollapsed()) {
-      <div class="user-info">
-        <span class="user-name">{{ user()?.firstname }} {{ user()?.lastname }}</span>
-        <span class="user-role">{{ user()?.role }}</span>
-      </div>
-      }
-    </div>
     }
   </aside>
 
   <!-- Main Content -->
   <main class="main-content">
-    <header class="top-bar">
-      <div class="actions">
-        <button class="toggle-btn" (click)="toggleSidenav()">
-          <mat-icon>{{isSidenavCollapsed() ? 'menu' : 'menu_open'}}</mat-icon>
-        </button>
-        <h1 class="page-title">Dashboard</h1>
-      </div>
-
-      <div class="actions">
-        <button mat-icon-button (click)="themeService.toggleTheme()"
-          [matTooltip]="themeService.isDarkMode() ? 'Switch to Light Mode' : 'Switch to Dark Mode'">
-          <mat-icon>{{themeService.isDarkMode() ? 'light_mode' : 'dark_mode'}}</mat-icon>
-        </button>
-        <button mat-icon-button (click)="onLogout()" matTooltip="Logout">
-          <mat-icon>logout</mat-icon>
-        </button>
-      </div>
-    </header>
-
     <div class="content-scroll">
       <router-outlet></router-outlet>
     </div>

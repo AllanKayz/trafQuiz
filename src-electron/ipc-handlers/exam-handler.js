@@ -199,3 +199,49 @@ ipcMain.handle('auto-allocate-exams', async (event, { date, capacity }) => {
         return { success: false, message: error.message };
     }
 });
+
+ipcMain.handle('get-exams', async () => {
+    try {
+        const exams = await query('SELECT * FROM exams ORDER BY start_time DESC');
+        return { success: true, data: exams };
+    } catch (error) {
+        console.error('Get exams error:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('add-exam', async (event, data) => {
+    try {
+        const result = await run(
+            'INSERT INTO exams (name, start_time, end_time) VALUES (?, ?, ?)',
+            [data.name, data.start_time, data.end_time]
+        );
+        return { success: true, id: result.lastID };
+    } catch (error) {
+        console.error('Add exam error:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('update-exam', async (event, data) => {
+    try {
+        await run(
+            'UPDATE exams SET name = ?, start_time = ?, end_time = ? WHERE id = ?',
+            [data.name, data.start_time, data.end_time, data.id]
+        );
+        return { success: true };
+    } catch (error) {
+        console.error('Update exam error:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('delete-exam', async (event, id) => {
+    try {
+        await run('DELETE FROM exams WHERE id = ?', [id]);
+        return { success: true };
+    } catch (error) {
+        console.error('Delete exam error:', error);
+        return { success: false, message: error.message };
+    }
+});

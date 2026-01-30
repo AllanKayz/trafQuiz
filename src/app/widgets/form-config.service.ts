@@ -99,7 +99,7 @@ export class FormConfigService {
     category: [
       {
         key: 'category',
-        label: 'Category',
+        label: 'Category Name',
         type: 'text',
         validators: [Validators.required],
         colspan: 2,
@@ -112,6 +112,70 @@ export class FormConfigService {
         colspan: 2,
         icon: 'description'
       },
+    ],
+    'exam-timeframe': [
+      {
+        key: 'period',
+        label: 'Exam Duration (Minutes)',
+        type: 'number',
+        validators: [Validators.required, Validators.min(1)],
+        icon: 'timer',
+        hint: 'Set the maximum allowed time for exams.'
+      },
+      {
+        key: 'mode',
+        label: 'Start Mode',
+        type: 'select',
+        options: [
+          { value: 'manual', label: 'Manual' },
+          { value: 'automatic', label: 'Automatic' }
+        ],
+        defaultValue: 'manual',
+        icon: 'settings_power'
+      }
+    ],
+    'exam': [
+      {
+        key: 'name',
+        label: 'Exam Session Name',
+        type: 'text',
+        validators: [Validators.required],
+        colspan: 2,
+        icon: 'assignment'
+      },
+      {
+        key: 'start_time',
+        label: 'Start Date & Time',
+        type: 'date',
+        validators: [Validators.required],
+        icon: 'event'
+      },
+      {
+        key: 'end_time',
+        label: 'End Date & Time',
+        type: 'date',
+        validators: [Validators.required],
+        icon: 'event_busy'
+      }
+    ],
+    'schedule-exam': [
+      {
+        key: 'exam_id',
+        label: 'Select Exam Session',
+        type: 'select',
+        validators: [Validators.required],
+        options: this.getOptions('exam'),
+        colspan: 2,
+        icon: 'event_repeat'
+      },
+      {
+        key: 'capacity',
+        label: 'Number of Students to Auto-Allocate',
+        type: 'number',
+        validators: [Validators.required, Validators.min(1)],
+        defaultValue: 10,
+        icon: 'groups'
+      }
     ],
     specialization: [
       {
@@ -818,11 +882,17 @@ export class FormConfigService {
     let options: any[] = [];
     switch (feildKey) {
       case 'category':
-        options = [
-          { value: 'rules', label: 'Traffic Rules' },
-          { value: 'signs', label: 'Road Signs' },
-          { value: 'safety', label: 'Safety' }
-        ];
+        options = this.trafQuiz.questionsSignal().reduce((acc: any[], curr: any) => {
+          // This is a bit hacky, normally there should be a categories signal
+          // But I'll use a mocked list for now or try to get it from local cache if possible
+          // Actually, service.getQuestionCategories() populates localStorage
+          const cached = localStorage.getItem('question_categories');
+          return cached ? JSON.parse(cached) : [
+            { value: 'rules', label: 'Traffic Rules' },
+            { value: 'signs', label: 'Road Signs' },
+            { value: 'safety', label: 'Safety' }
+          ];
+        }, []);
         break;
       case 'package':
         options = this.trafQuiz.packages();
@@ -849,6 +919,12 @@ export class FormConfigService {
         options = this.trafQuiz.vehiclesSignal().map(v => ({
           value: v.id,
           label: `${v.make} ${v.model} (${v.registration})`
+        }));
+        break;
+      case 'exam':
+        options = this.trafQuiz.examsSignal().map(e => ({
+          value: e.id,
+          label: e.name + ' (' + new Date(e.start_time).toLocaleDateString() + ')'
         }));
         break;
     }

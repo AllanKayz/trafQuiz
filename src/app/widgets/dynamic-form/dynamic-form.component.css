@@ -12,11 +12,12 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-card);
-  border: var(--glass-border);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
   overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 
 .form-header {
@@ -30,10 +31,14 @@
 
 .form-header h2 {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.5rem;
+  font-weight: 800;
   color: var(--form-text);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
+  background: linear-gradient(135deg, var(--form-text) 0%, var(--form-muted) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .close-btn {
@@ -49,7 +54,27 @@
 
 .form-content {
   padding: 24px !important;
-  max-height: 70vh !important;
+  max-height: 75vh !important;
+  overflow-y: auto !important;
+
+  @supports (scrollbar-width: thin) {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) transparent;
+  }
+}
+
+.form-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.form-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.form-content::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 10px;
+  opacity: 0.5;
 }
 
 .form-content.no-padding {
@@ -100,11 +125,12 @@
 }
 
 .field-icon {
-  color: var(--form-muted);
-  margin-right: 8px;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
+  color: var(--primary-color);
+  margin-right: 12px;
+  font-size: 22px;
+  width: 22px;
+  height: 22px;
+  opacity: 0.8;
 }
 
 /* Checkbox & Radio */
@@ -236,11 +262,21 @@
 }
 
 .submit-btn {
-  min-width: 120px;
+  min-width: 140px;
   position: relative;
   border-radius: 12px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.01em;
+  font-weight: 700 !important;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-size: 0.8rem !important;
+  height: 48px !important;
+  box-shadow: 0 4px 15px hsla(var(--primary) / 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px hsla(var(--primary) / 0.4);
 }
 
 .submit-btn.loading {
@@ -249,8 +285,8 @@
 
 .submit-btn mat-spinner {
   position: absolute;
-  top: calc(50% - 10px);
-  left: calc(50% - 10px);
+  top: calc(50% - 12px);
+  left: calc(50% - 12px);
 }
 
 /* Animations */

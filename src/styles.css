@@ -185,6 +185,8 @@ body.dark-theme {
     border: var(--glass-border);
     border-radius: var(--radius) !important;
     box-shadow: var(--shadow-md) !important;
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
 }
 
 .mat-mdc-form-field-input-control {

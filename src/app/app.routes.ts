@@ -1,70 +1,53 @@
 import { Routes } from '@angular/router';
 import { PagenotfoundComponent } from './pagenotfound/pagenotfound.component';
 import { LoginComponent } from './login/login.component';
-import { ExamComponent } from './exam/exam.component';
-import { AdminComponent } from './admin/admin.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { MessagesComponent } from './components/messages/messages.component';
-import { WidgetsComponent } from './components/widgets/widgets.component';
-import { VehiclesComponent } from './components/vehicles/vehicles.component';
-import { ExamsComponent } from './components/exams/exams.component';
-import { InstructorsComponent } from './components/instructors/instructors.component';
-import { LessonsComponent } from './components/lessons/lessons.component';
-import { AdminToolsComponent } from './components/admin/admin-tools.component';
-import { QuestionsComponent } from './components/questions/questions.component';
-import { StudentsComponent } from './components/students/students.component';
-import { FinancesComponent } from './components/finances/finances.component';
-import { ReportsComponent } from './components/reports/reports.component';
-import { SettingsComponent } from './components/settings/settings.component';
-import { UserAccessComponent } from './components/user-access/user-access.component';
 
 /**
  * Defines the routes for the application.
+ * All major dashboard components are lazy-loaded for performance.
  */
 export const routes: Routes = [
   {
-    // The default route, which displays the login component.
     path: '',
     component: LoginComponent,
     title: 'TraffiQuiz'
   },
   {
-    // The dashboard route, which is the main view for logged-in users.
-    // It contains nested routes for the different sections of the dashboard.
     path: 'dashboard',
     component: DashboardComponent,
     children: [
       {
         path: '',
-        component: WidgetsComponent
+        loadComponent: () => import('./components/widgets/widgets.component').then(m => m.WidgetsComponent)
       },
       {
         path: 'messages',
-        component: MessagesComponent
+        loadComponent: () => import('./components/messages/messages.component').then(m => m.MessagesComponent)
       },
       {
         path: 'instructors',
-        component: InstructorsComponent
+        loadComponent: () => import('./components/instructors/instructors.component').then(m => m.InstructorsComponent)
       },
       {
         path: 'students',
-        component: StudentsComponent
+        loadComponent: () => import('./components/students/students.component').then(m => m.StudentsComponent)
       },
       {
         path: 'exams',
-        component: ExamsComponent
+        loadComponent: () => import('./components/exams/exams.component').then(m => m.ExamsComponent)
       },
       {
         path: 'questions',
-        component: QuestionsComponent
+        loadComponent: () => import('./components/questions/questions.component').then(m => m.QuestionsComponent)
       },
       {
         path: 'lessons',
-        component: LessonsComponent
+        loadComponent: () => import('./components/lessons/lessons.component').then(m => m.LessonsComponent)
       },
       {
         path: 'lessons-admin',
-        component: AdminToolsComponent
+        loadComponent: () => import('./components/admin/admin-tools.component').then(m => m.AdminToolsComponent)
       },
       {
         path: 'scheduling',
@@ -72,23 +55,23 @@ export const routes: Routes = [
       },
       {
         path: 'vehicles',
-        component: VehiclesComponent
+        loadComponent: () => import('./components/vehicles/vehicles.component').then(m => m.VehiclesComponent)
       },
       {
         path: 'finances',
-        component: FinancesComponent
+        loadComponent: () => import('./components/finances/finances.component').then(m => m.FinancesComponent)
       },
       {
         path: 'payments',
-        component: FinancesComponent
+        loadComponent: () => import('./components/finances/finances.component').then(m => m.FinancesComponent)
       },
       {
         path: 'reports',
-        component: ReportsComponent
+        loadComponent: () => import('./components/reports/reports.component').then(m => m.ReportsComponent)
       },
       {
         path: 'settings',
-        component: SettingsComponent
+        loadComponent: () => import('./components/settings/settings.component').then(m => m.SettingsComponent)
       },
       {
         path: 'metadata',
@@ -96,7 +79,7 @@ export const routes: Routes = [
       },
       {
         path: 'useraccess',
-        component: UserAccessComponent
+        loadComponent: () => import('./components/user-access/user-access.component').then(m => m.UserAccessComponent)
       },
       {
         path: 'schedule',
@@ -112,21 +95,17 @@ export const routes: Routes = [
     ]
   },
   {
-    // The exam route, which displays the quiz.
     path: 'exam',
-    component: ExamComponent
+    loadComponent: () => import('./exam/exam.component').then(m => m.ExamComponent)
   },
   {
-    // The admin route, for administrative tasks.
     path: 'admin',
-    component: AdminComponent
+    loadComponent: () => import('./admin/admin.component').then(m => m.AdminComponent)
   },
   {
-    // A redirect from '/login' to the default route.
     path: 'login', redirectTo: '', pathMatch: 'full'
   },
   {
-    // A wildcard route that displays a "page not found" message for any other routes.
     path: '**', component: PagenotfoundComponent, title: 'Error 404'
   }
 ];

@@ -18,6 +18,8 @@ import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { TableComponent, TableColumn } from '../../widgets/table/table.component';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { FormConfigService } from '../../widgets/form-config.service';
+import { MetadataManagerDialogComponent } from '../../widgets/metadata-manager/metadata-manager-dialog.component';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-exams',
@@ -50,6 +52,7 @@ export class ExamsComponent implements OnInit {
   public service = inject(TraffiquizService);
   private buttonService = inject(ButtonConfigService);
   public formConfig = inject(FormConfigService);
+  private dialog = inject(MatDialog);
 
   allocationFields = this.formConfig.getFormConfig('exam-allocation');
 
@@ -80,7 +83,8 @@ export class ExamsComponent implements OnInit {
   // Table Configurations
   tableColumns = signal<TableColumn[]>([
     { key: 'name', header: 'Session Details', type: 'text' },
-    { key: 'start_time', header: 'Date', type: 'date' },
+    { key: 'start_time', header: 'Start Date & Time', type: 'date' },
+    { key: 'end_time', header: 'End Date', type: 'date' },
     { key: 'candidates', header: 'Attendance', type: 'number' },
     { key: 'status', header: 'Status', type: 'text' }
   ]);
@@ -125,10 +129,16 @@ export class ExamsComponent implements OnInit {
   handleButtonAction(action: string) {
     switch (action) {
       case 'createExam':
-        this.service.showNotification('Create Exam functionality coming soon', 'info');
+        this.createExam();
         break;
       case 'sheduleExam':
-        this.service.showNotification('Schedule Exam functionality coming soon', 'info');
+        this.scheduleExam();
+        break;
+      case 'manageCategories':
+        this.manageCategories();
+        break;
+      case 'manageTimeframe':
+        this.manageTimeframe();
         break;
       case 'refreshStats':
         this.loadStats();
@@ -159,7 +169,8 @@ export class ExamsComponent implements OnInit {
       this.service.autoAllocateExams(dateStr, data.capacity).subscribe({
         next: (res) => {
           this.service.showNotification(res.message, 'success');
-          this.loadStats();
+          this.service.getExamStatistics().subscribe();
+          this.service.fetchExams();
           this.isAllocating.set(false);
         },
         error: (err) => {
@@ -168,6 +179,52 @@ export class ExamsComponent implements OnInit {
         }
       });
     }
+  }
+
+  createExam() {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      maxWidth: '95vw',
+      minWidth: '400px',
+      data: {
+        title: 'Create New Exam Session',
+        fields: this.formConfig.getFormConfig('exam'),
+        submitText: 'Create Exam'
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe(formData => {
+      this.service.addExam(formData).subscribe({
+        next: () => {
+          this.service.showNotification('Exam created successfully', 'success');
+          dialogRef.close();
+        },
+        error: () => this.service.showNotification('Error creating exam', 'error')
+      });
+    });
+  }
+
+  scheduleExam() {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      maxWidth: '95vw',
+      minWidth: '400px',
+      data: {
+        title: 'Schedule Students to Exam',
+        fields: this.formConfig.getFormConfig('schedule-exam'),
+        submitText: 'Auto-Allocate'
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe(formData => {
+      // Find the date for the selected exam session
+      const selectedExam = this.service.examsSignal().find(e => e.id == formData.exam_id);
+      if (selectedExam) {
+        const date = new Date(selectedExam.start_time).toISOString().split('T')[0];
+        this.onAutoAllocate({ date, capacity: formData.capacity });
+        dialogRef.close();
+      } else {
+        this.service.showNotification('Invalid exam session selected', 'error');
+      }
+    });
   }
 
   getExamStatus(exam: any): string {
@@ -180,6 +237,48 @@ export class ExamsComponent implements OnInit {
     if (now < startTime) return 'upcoming';
     if (now >= startTime && now <= endTime) return 'active';
     return 'completed';
+  }
+
+  manageCategories() {
+    this.dialog.open(MetadataManagerDialogComponent, {
+      maxWidth: '95vw',
+      minWidth: '400px',
+      data: {
+        title: 'Manage Categories',
+        entityType: 'category',
+        columns: [
+          { key: 'category', header: 'Category Name', type: 'text' },
+          { key: 'description', header: 'Description', type: 'text' }
+        ],
+        dataSignal: () => this.service.categoriesSignal(),
+        addMethod: (data: any) => this.service.addCategory(data),
+        updateMethod: (data: any) => this.service.updateCategory(data),
+        deleteMethod: (id: number) => this.service.deleteCategory(id)
+      }
+    });
+  }
+
+  manageTimeframe() {
+    const dialogRef = this.dialog.open(DynamicFormComponent, {
+      maxWidth: '95vw',
+      minWidth: '350px',
+      data: {
+        title: 'Set Exam Timeframe',
+        fields: this.formConfig.getFormConfig('exam-timeframe'),
+        initialData: { period: this.service.examDuration() / 60 },
+        submitText: 'Save Settings'
+      }
+    });
+
+    dialogRef.componentInstance.submitted.subscribe(formData => {
+      this.service.setExamTimeframe(formData).subscribe({
+        next: () => {
+          this.service.showNotification('Timeframe updated', 'success');
+          dialogRef.close();
+        },
+        error: () => this.service.showNotification('Error updating timeframe', 'error')
+      });
+    });
   }
 
   downloadResults(exam: any) {

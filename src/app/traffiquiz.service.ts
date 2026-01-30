@@ -1,10 +1,11 @@
 import { Injectable, inject, signal, computed, effect } from '@angular/core';
 import { Observable, from, of, throwError } from 'rxjs';
-import { catchError, map, tap, filter } from 'rxjs/operators';
+import { catchError, map, tap, filter, finalize } from 'rxjs/operators';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse, StudentProgress } from './trafquiz';
 import { jsPDF } from 'jspdf';
+import { LoadingService } from './loading.service';
 
 declare global {
   interface Window {
@@ -24,6 +25,7 @@ declare global {
 })
 export class TraffiquizService {
 
+  public loading = inject(LoadingService);
   public alert = inject(MatDialog);
 
   // Convert user data to signal for reactive user state management.
@@ -82,6 +84,8 @@ export class TraffiquizService {
   public specializationsSignal = signal<any[]>(this.loadCache('specializations_raw', []));
   public certificationsSignal = signal<any[]>(this.loadCache('certifications_raw', []));
   public vehiclesSignal = signal<any[]>(this.loadCache('vehicles_raw', []));
+  public categoriesSignal = signal<any[]>(this.loadCache('categories_raw', []));
+  public examsSignal = signal<any[]>(this.loadCache('exams_raw', []));
 
   /** A signal for the exam duration in seconds. */
   examDuration = signal<number>(300); //default 10 minutes
@@ -111,10 +115,10 @@ export class TraffiquizService {
 
   /** Defines the menu items for different user roles. */
   private menus = {
-    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Scheduling', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Metadata', 'Settings'],
+    admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Scheduling', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Settings'],
     instructor: ['Dashboard', 'Schedule', 'Students', 'Vehicle-Status', 'Messages', 'Settings'],
     student: ['Dashboard', 'Exam', 'Lessons', 'Reports', 'Messages', 'Payments', 'Settings'],
-    icons: { dashboard: 'dashboard', questions: 'help_outline', instructors: 'person', exams: 'assignment', students: 'group', vehicles: 'directions_car', reports: 'bar_chart', metadata:'metadata', settings: 'settings', scheduling: 'event', schedule: 'calendar_month', 'vehicle-status': 'car_repair', messages: 'mail', finances: 'payments', useraccess: 'admin_panel_settings', lessons: 'school', 'lessons-admin': 'admin_panel_settings', exam: 'quiz', payments: 'account_balance_wallet' }
+    icons: { dashboard: 'dashboard', questions: 'help_outline', instructors: 'person', exams: 'assignment', students: 'group', vehicles: 'directions_car', reports: 'bar_chart', settings: 'settings', scheduling: 'event', schedule: 'calendar_month', 'vehicle-status': 'car_repair', messages: 'mail', finances: 'payments', useraccess: 'admin_panel_settings', lessons: 'school', 'lessons-admin': 'admin_panel_settings', exam: 'quiz', payments: 'account_balance_wallet' }
   }
 
   /** Signal to store dynamic dashboard stats from backend. */
@@ -305,7 +309,7 @@ export class TraffiquizService {
       email: student.email,
       phone: student.phone,
       address: student.address,
-      enrollmentDate: new Date(student.enrollmentDate),
+      enrollmentDate: student.created_at,
       status: student.status,
       actions: role === 'admin' ?
         ['edit', student.status === 'active' ? 'deactivate' : 'activate', 'delete'] :
@@ -321,10 +325,12 @@ export class TraffiquizService {
       username: '',
       email: instructor.email,
       phone: instructor.phone,
+      license: instructor.license_number,
       availabilityValue: instructor.availability,
-      specialization: instructor.specialization,
+      specialization: this.specializationsSignal().find(s => s.id === instructor.specialization_id)?.specialization || 'N/A',
+      certification: this.certificationsSignal().find(c => c.id === instructor.certification_id)?.certification || 'N/A',
       experience: instructor.experience,
-      certified: instructor.certification ? 'Yes' : 'No',
+      certified: instructor.certification_id ? 'Yes' : 'No',
       availability: Number(instructor.availability) === 1 ? 'Available' : 'Unavailable',
       status: instructor.status || 'active',
       actions: role === 'admin' ?
@@ -369,6 +375,7 @@ export class TraffiquizService {
           this.getPackages();
           this.getSpecializations();
           this.getCertifications();
+          this.fetchExams();
         }
       }
     });
@@ -617,7 +624,7 @@ export class TraffiquizService {
       id: item.id,
       question: item.question.trim(),
       options: options,
-      correct: options.indexOf(item.answer),
+      correct: options.indexOf(item.answer.trim()),
       hasImage: this.isNotEmpty(item.photo),
       image: item.photo,
       flagged: false
@@ -649,7 +656,10 @@ export class TraffiquizService {
 
   // Questions CRUD
   fetchQuestions() {
-    from(window.electronAPI.invoke('get-questions')).subscribe({
+    this.loading.show();
+    from(window.electronAPI.invoke('get-questions')).pipe(
+      finalize(() => this.loading.hide())
+    ).subscribe({
       next: (res: any) => {
         if (res.success) {
           this.questionsSignal.set(res.data.map((item: any) => this.transformQuestion(item)));
@@ -702,12 +712,15 @@ export class TraffiquizService {
 
   // Students CRUD
   fetchStudents() {
+    this.loading.show();
     const user = this.userSignal();
     const role = user?.role || 'student';
     const userId = user?.id || '';
     const instructorId = role === 'instructor' ? user?.instructor_id : null;
 
-    from(window.electronAPI.invoke('get-students', { role, userId, instructorId })).subscribe({
+    from(window.electronAPI.invoke('get-students', { role, userId, instructorId })).pipe(
+      finalize(() => this.loading.hide())
+    ).subscribe({
       next: (res: any) => {
         if (res.success) {
           const students = res.data;
@@ -780,7 +793,10 @@ export class TraffiquizService {
 
   // Instructors CRUD
   fetchInstructors() {
-    from(window.electronAPI.invoke('get-instructors')).subscribe({
+    this.loading.show();
+    from(window.electronAPI.invoke('get-instructors')).pipe(
+      finalize(() => this.loading.hide())
+    ).subscribe({
       next: (res: any) => {
         if (res.success) {
           const instructors = res.data;
@@ -857,7 +873,7 @@ export class TraffiquizService {
   }
 
   deleteCategory(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-category', { id })).pipe(
+    return from(window.electronAPI.invoke('delete-category', id)).pipe(
       tap(() => this.getQuestionCategories())
     );
   }
@@ -913,7 +929,10 @@ export class TraffiquizService {
     from(window.electronAPI.invoke('get-question-categories')).subscribe({
       next: (res: any) => {
         if (res.success) {
-          localStorage.setItem('question_categories', JSON.stringify(this.transformQuestionCategoriesJson(res.data)));
+          const cats = res.data;
+          this.categoriesSignal.set(cats);
+          this.setCache('categories_raw', cats);
+          localStorage.setItem('question_categories', JSON.stringify(this.transformQuestionCategoriesJson(cats)));
         }
       }
     });
@@ -947,7 +966,10 @@ export class TraffiquizService {
     const role = user?.role || 'student';
     const userId = user?.id || '';
 
-    from(window.electronAPI.invoke('get-dashboard-stats', { role, userId })).subscribe({
+    this.loading.show();
+    from(window.electronAPI.invoke('get-dashboard-stats', { role, userId })).pipe(
+      finalize(() => this.loading.hide())
+    ).subscribe({
       next: (res: any) => {
         if (res.success && res.data) {
           this.dashboardStats.set(res.data);
@@ -962,10 +984,12 @@ export class TraffiquizService {
   }
 
   getExamStatistics(): Observable<any> {
+    this.loading.show();
     return from(window.electronAPI.invoke('get-exam-statistics')).pipe(
       tap(res => {
         if (res.success) this.examStats.set(res.data);
-      })
+      }),
+      finalize(() => this.loading.hide())
     );
   }
 
@@ -1176,8 +1200,10 @@ export class TraffiquizService {
   }
 
   fetchAllUsers(): Observable<any[]> {
+    this.loading.show();
     return from(window.electronAPI.invoke('get-all-users')).pipe(
-      map((res: any) => res.success ? res.data : [])
+      map((res: any) => res.success ? res.data : []),
+      finalize(() => this.loading.hide())
     );
   }
 
@@ -1192,6 +1218,39 @@ export class TraffiquizService {
       return this.addInstructor({ ...user, firstName, lastName });
     }
     return from(window.electronAPI.invoke('add-user', user));
+  }
+
+  fetchExams() {
+    this.loading.show();
+    from(window.electronAPI.invoke('get-exams')).pipe(
+      finalize(() => this.loading.hide())
+    ).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.examsSignal.set(res.data);
+          this.setCache('exams_raw', res.data);
+        }
+      },
+      error: (err) => this.showNotification('Error fetching exams', 'error')
+    });
+  }
+
+  addExam(exam: any): Observable<any> {
+    return from(window.electronAPI.invoke('add-exam', exam)).pipe(
+      tap(() => this.fetchExams())
+    );
+  }
+
+  updateExam(exam: any): Observable<any> {
+    return from(window.electronAPI.invoke('update-exam', exam)).pipe(
+      tap(() => this.fetchExams())
+    );
+  }
+
+  deleteExam(id: number): Observable<any> {
+    return from(window.electronAPI.invoke('delete-exam', id)).pipe(
+      tap(() => this.fetchExams())
+    );
   }
 
   public updateUserPassword(userId: string, newPass: string): Observable<any> {

@@ -322,7 +322,9 @@ export class TableComponent implements AfterViewInit {
 
     switch (column.type) {
       case 'date':
-        return new Date(value).toLocaleDateString();
+        if (!value || value === '0000-00-00 00:00:00') return 'N/A';
+        const date = new Date(value);
+        return isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString();
       case 'boolean':
         return value ? 'Yes' : 'No';
       default:

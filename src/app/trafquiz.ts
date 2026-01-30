@@ -66,16 +66,20 @@ export interface Student {
  */
 export interface Instructor {
   id: number;
+  user_id: number;
   username: string;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   license: string;
+  license_number: string;
   specialization: string;
+  specialization_id: number;
   certification: string;
+  certification_id: number;
   experience: number;
-  availability: boolean;
+  availability: boolean | number;
   status?: string;
   password: string;
 }
@@ -85,16 +89,20 @@ export interface Instructor {
  */
 export interface instructorApiResponse {
   id: number,
+  user_id: number,
   username: string,
   firstName: string,
   lastName: string,
   email: string,
   phone: string,
   license: string,
+  license_number: string,
   specialization: string,
+  specialization_id: number,
   certification: string,
+  certification_id: number,
   experience: number,
-  availability: boolean,
+  availability: boolean | number,
   employmentDate: Date
 }
 
