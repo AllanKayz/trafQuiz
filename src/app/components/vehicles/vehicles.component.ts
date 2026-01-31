@@ -137,7 +137,7 @@ export class VehiclesComponent {
   load() {
     this.loading = true;
     this.error = null;
-    this.vehicleService.fetchVehicles(this.user()?.id).subscribe({
+    this.vehicleService.fetchVehicles(this.user()?.role, this.user()?.id).subscribe({
       next: (res) => {
         this.tableData.set(res || []);
         this.loading = false;

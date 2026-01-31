@@ -1,5 +1,4 @@
 import { Component, computed, inject, input, signal } from '@angular/core';
-
 import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { TraffiquizService } from '../../traffiquiz.service';

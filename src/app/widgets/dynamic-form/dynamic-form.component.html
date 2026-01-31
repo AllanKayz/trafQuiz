@@ -131,15 +131,26 @@
             @case ('file') {
             <div class="file-upload-container">
               <label class="file-label">{{ field.label }}</label>
-              <div class="file-drop-zone">
+              <div class="file-drop-zone" [class.has-file]="form().get(field.key)?.value">
                 <mat-icon>cloud_upload</mat-icon>
                 <p>Click or drag file to upload</p>
                 <input type="file" class="hidden-file-input" (change)="onFileChange($event, field.key)"
                   title="{{ field.label }}">
-                @if (form().get(field.key)?.value) {
+
+                @let fileUrl = form().get(field.key)?.value;
+                @if (fileUrl) {
                 <div class="file-status">
                   <mat-icon color="primary">check_circle</mat-icon>
                   <span>File uploaded</span>
+                </div>
+
+                <!-- Image Preview -->
+                <div class="image-preview-overlay">
+                  <img [src]="fileUrl" alt="Preview" class="preview-img">
+                  <button type="button" mat-mini-fab color="warn" class="clear-img-btn"
+                    (click)="clearFile(field.key); $event.stopPropagation()">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                 </div>
                 }
               </div>

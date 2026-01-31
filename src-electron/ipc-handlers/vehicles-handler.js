@@ -1,19 +1,20 @@
 const { ipcMain } = require('electron');
 const VehicleModel = require('../models/VehicleModel');
 
-ipcMain.handle('get-vehicles', async (event, { userId } = {}) => {
+ipcMain.handle('get-vehicles', async (event, { role, userId } = {}) => {
     try {
         let sql = 'SELECT * FROM vehicles';
         const params = [];
 
-        if (userId) {
-            // Find instructor ID for this user
+        // If role is instructor, filter by their instructor_id
+        if (role === 'instructor' && userId) {
             const instructor = await require('../models/InstructorModel').findByUserId(userId);
             if (instructor) {
                 sql += ' WHERE instructor_id = ?';
                 params.push(instructor.id);
             }
         }
+        // Admin (or no role/user) gets all vehicles
         
         sql += ' ORDER BY created_at DESC';
         

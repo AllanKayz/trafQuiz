@@ -171,6 +171,15 @@ export class DynamicFormComponent {
     reader.readAsArrayBuffer(file);
   }
 
+  clearFile(key: string) {
+    this.form().get(key)?.setValue('');
+    // Also reset the file input if possible
+    const fileInput = document.querySelector(`input[type="file"]`) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
   getFieldControl(key: string) {
     return this.form().get(key);
   }

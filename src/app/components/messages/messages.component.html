@@ -157,9 +157,14 @@
                     </button>
                     @if (showEmojiPicker()) {
                     <div class="emoji-picker-container">
-                        @for (emoji of emojis; track emoji) {
-                        <span class="emoji-item" (click)="addEmoji(emoji)">{{ emoji }}</span>
-                        }
+                        <div class="emoji-picker-header">
+                            <h4>Recent Emojis</h4>
+                        </div>
+                        <div class="emoji-grid">
+                            @for (emoji of emojis; track emoji) {
+                            <span class="emoji-item" (click)="addEmoji(emoji)">{{ emoji }}</span>
+                            }
+                        </div>
                     </div>
                     }
                 </div>
