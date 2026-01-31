@@ -40,9 +40,14 @@ ipcMain.handle('get-transactions', async (event, filters) => {
     try {
         // Build query based on filters
         let query = `
-            SELECT p.*, s.first_name, s.last_name 
+            SELECT p.*, 
+                   COALESCE(u_s.first_name, u_i.first_name) as first_name, 
+                   COALESCE(u_s.last_name, u_i.last_name) as last_name 
             FROM payments p
             LEFT JOIN students s ON p.student_id = s.id
+            LEFT JOIN users u_s ON s.user_id = u_s.id
+            LEFT JOIN instructors i ON p.instructor_id = i.id
+            LEFT JOIN users u_i ON i.user_id = u_i.id
             WHERE 1=1
         `;
         const replacements = [];

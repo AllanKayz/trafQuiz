@@ -77,6 +77,9 @@ export class InstructorsComponent {
 			case 'manageCertifications':
 				this.manageCertifications();
 				break;
+			case 'addInstructor':
+				this.openInstructorForm();
+				break;
 		}
 	}
 

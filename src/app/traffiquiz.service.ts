@@ -388,9 +388,9 @@ export class TraffiquizService {
     setInterval(() => {
       const user = this.userSignal();
       if (user) {
-        this.fetchDashboardStats();
+        this.fetchDashboardStats(true);
         if (user.role === 'admin') {
-          this.getExamStatistics().subscribe();
+          this.getExamStatistics(true).subscribe();
         }
       }
     }, 30000);
@@ -978,14 +978,14 @@ export class TraffiquizService {
     }))
   }
 
-  fetchDashboardStats() {
+  fetchDashboardStats(silent = false) {
     const user = this.userSignal();
     const role = user?.role || 'student';
     const userId = user?.id || '';
 
-    this.loading.show();
+    if (!silent) this.loading.show();
     from(window.electronAPI.invoke('get-dashboard-stats', { role, userId })).pipe(
-      finalize(() => this.loading.hide())
+      finalize(() => { if (!silent) this.loading.hide(); })
     ).subscribe({
       next: (res: any) => {
         if (res.success && res.data) {
@@ -1000,13 +1000,13 @@ export class TraffiquizService {
     return from(window.electronAPI.invoke('auto-allocate-exams', { date, capacity }));
   }
 
-  getExamStatistics(): Observable<any> {
-    this.loading.show();
+  getExamStatistics(silent = false): Observable<any> {
+    if (!silent) this.loading.show();
     return from(window.electronAPI.invoke('get-exam-statistics')).pipe(
       tap(res => {
         if (res.success) this.examStats.set(res.data);
       }),
-      finalize(() => this.loading.hide())
+      finalize(() => { if (!silent) this.loading.hide(); })
     );
   }
 
