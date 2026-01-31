@@ -9,6 +9,7 @@ import { TraffiquizService } from '../../traffiquiz.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { FormConfigService } from '../../widgets/form-config.service';
+import { MessagesService } from '../messages/messages.service';
 
 @Component({
   selector: 'app-upcoming-lessons',
@@ -20,6 +21,7 @@ import { FormConfigService } from '../../widgets/form-config.service';
 export class UpcomingLessonsComponent implements OnInit {
   private service = inject(TraffiquizService);
   private lessonService = inject(LessonService);
+  private messagesService = inject(MessagesService);
   private dialog = inject(MatDialog);
   private formConfig = inject(FormConfigService);
 
@@ -253,11 +255,14 @@ export class UpcomingLessonsComponent implements OnInit {
     });
 
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
-      // Send message via MessagesController
-      this.service.sendMessage(
-        String(lesson.instructor.id),
-        String(this.user()?.id),
-        data.message
+      // Send message via MessagesService
+      // MessagesService.sendMessage(conversationId, text, type, attachment, recipientId)
+      this.messagesService.sendMessage(
+        null,
+        data.message,
+        'text',
+        null,
+        lesson.instructor.id
       ).subscribe({
         next: () => {
           dialogRef.close();

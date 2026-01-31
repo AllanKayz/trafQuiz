@@ -1,119 +1,130 @@
-const { get, query, run, exec } = require('../db');
-const bcrypt = require('bcryptjs');
+const { sequelize } = require('../database');
+const { DataTypes, Model } = require('sequelize');
+const { User } = require('./UserModel');
+const { Specialization, Certification } = require('./MetadataModels');
+
+class Instructor extends Model {}
+
+Instructor.init({
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  user_id: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: { model: 'users', key: 'id' }
+  },
+  license_number: { type: DataTypes.STRING(255), allowNull: false },
+  specialization_id: { type: DataTypes.INTEGER },
+  certification_id: { type: DataTypes.INTEGER },
+  experience: { type: DataTypes.INTEGER, allowNull: false },
+  salary: { type: DataTypes.DECIMAL(10, 2), defaultValue: 0.00 },
+  status: { type: DataTypes.STRING(50), defaultValue: 'active' },
+  availability: { type: DataTypes.TINYINT(1), defaultValue: 1 }
+}, {
+  sequelize,
+  modelName: 'Instructor',
+  tableName: 'instructors',
+  underscored: true,
+  timestamps: true // created_at, updated_at
+});
+
+Instructor.belongsTo(User, { foreignKey: 'user_id' });
+User.hasOne(Instructor, { foreignKey: 'user_id' });
+Instructor.belongsTo(Specialization, { foreignKey: 'specialization_id' });
+Instructor.belongsTo(Certification, { foreignKey: 'certification_id' });
 
 class InstructorModel {
-    static async all() {
-        return await query(`
-            SELECT i.*, u.username, u.first_name as firstName, u.last_name as lastName, u.email, u.phone, u.avatar as profilePicture
-            FROM instructors i
-            JOIN users u ON i.user_id = u.id
-        `);
+    static async findAll() {
+        const instructors = await Instructor.findAll({
+            include: [User, Specialization, Certification],
+            raw: true,
+            nest: true
+        });
+        return instructors.map(i => ({
+            ...i,
+            userId: i.user_id,
+            firstName: i.User.first_name,
+            lastName: i.User.last_name,
+            email: i.User.email,
+            phone: i.User.phone,
+            username: i.User.username
+        }));
     }
 
     static async findByUserId(userId) {
-        return await get('SELECT * FROM instructors WHERE user_id = ?', [userId]);
-    }
-
-    static async find(id) {
-        return await get(`
-            SELECT i.*, u.username, u.first_name as firstName, u.last_name as lastName, u.email, u.phone, u.avatar as profilePicture
-            FROM instructors i
-            JOIN users u ON i.user_id = u.id
-            WHERE i.id = ?
-        `, [id]);
+        return await Instructor.findOne({ where: { user_id: userId }, raw: true });
     }
 
     static async create(data) {
-        const { username, firstName, lastName, email, password, phone, address, license_number, specialization_id, certification_id, experience } = data;
-        const hashedPassword = await bcrypt.hash(password, 10);
-
+        const transaction = await sequelize.transaction();
         try {
-            await exec('BEGIN TRANSACTION');
-            const userInfo = await run(
-                'INSERT INTO users (username, first_name, last_name, email, password, role, phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [username, firstName, lastName, email, hashedPassword, 'instructor', phone]
-            );
-            const userId = userInfo.lastID;
+            const user = await User.create({
+                username: data.username,
+                password: data.password || '123456',
+                email: data.email,
+                first_name: data.firstName,
+                last_name: data.lastName,
+                phone: data.phone,
+                role: 'instructor'
+            }, { transaction });
 
-            const instInfo = await run(`
-                INSERT INTO instructors (user_id, license_number, specialization_id, certification_id, experience)
-                VALUES (?, ?, ?, ?, ?)
-            `, [userId, license_number, specialization_id, certification_id, experience]);
-            
-            await exec('COMMIT');
-            return await this.find(instInfo.lastID);
+            const instructor = await Instructor.create({
+                user_id: user.id,
+                license_number: data.license_number || data.license,
+                specialization_id: data.specialization_id,
+                certification_id: data.certification_id,
+                experience: data.experience || 0,
+                salary: data.salary || 0,
+                status: data.status || 'active',
+                availability: data.availability !== undefined ? data.availability : 1
+            }, { transaction });
+
+            await transaction.commit();
+            return { ...instructor.get({ plain: true }), firstName: user.first_name, lastName: user.last_name, email: user.email };
         } catch (error) {
-            await exec('ROLLBACK');
+            await transaction.rollback();
             throw error;
         }
     }
 
     static async update(id, data) {
-        const instructor = await this.find(id);
-        if (!instructor) return null;
+        const instructor = await Instructor.findByPk(id, { include: [User] });
+        if (!instructor) throw new Error('Instructor not found');
 
+        const transaction = await sequelize.transaction();
         try {
-            await exec('BEGIN TRANSACTION');
-            
-            // Build User update fields
-            const userFields = [];
-            const userValues = [];
-            if (data.username) { userFields.push('username = ?'); userValues.push(data.username); }
-            if (data.firstName) { userFields.push('first_name = ?'); userValues.push(data.firstName); }
-            if (data.lastName) { userFields.push('last_name = ?'); userValues.push(data.lastName); }
-            if (data.email) { userFields.push('email = ?'); userValues.push(data.email); }
-            if (data.phone) { userFields.push('phone = ?'); userValues.push(data.phone); }
-            if (data.profilePicture) { userFields.push('avatar = ?'); userValues.push(data.profilePicture); }
-
-            if (userFields.length > 0) {
-                userValues.push(instructor.user_id);
-                await run(`UPDATE users SET ${userFields.join(', ')} WHERE id = ?`, userValues);
+            if (data.firstName || data.lastName || data.email || data.phone) {
+                await instructor.User.update({
+                    first_name: data.firstName || instructor.User.first_name,
+                    last_name: data.lastName || instructor.User.last_name,
+                    email: data.email || instructor.User.email,
+                    phone: data.phone || instructor.User.phone
+                }, { transaction });
             }
 
-            // Build Instructor update fields
-            const instFields = [];
-            const instValues = [];
-            if (data.license_number) { instFields.push('license_number = ?'); instValues.push(data.license_number); }
-            if (data.specialization_id) { instFields.push('specialization_id = ?'); instValues.push(data.specialization_id); }
-            if (data.certification_id) { instFields.push('certification_id = ?'); instValues.push(data.certification_id); }
-            if (data.experience !== undefined) { instFields.push('experience = ?'); instValues.push(data.experience); }
-            if (data.availability !== undefined) { instFields.push('availability = ?'); instValues.push(data.availability); }
-            if (data.status) { instFields.push('status = ?'); instValues.push(data.status); }
+            await instructor.update({
+                license_number: data.license_number || data.license || instructor.license_number,
+                specialization_id: data.specialization_id || instructor.specialization_id,
+                certification_id: data.certification_id || instructor.certification_id,
+                experience: data.experience !== undefined ? data.experience : instructor.experience,
+                salary: data.salary !== undefined ? data.salary : instructor.salary,
+                status: data.status || instructor.status,
+                availability: data.availability !== undefined ? data.availability : instructor.availability
+            }, { transaction });
 
-            if (instFields.length > 0) {
-                instValues.push(id);
-                await run(`UPDATE instructors SET ${instFields.join(', ')} WHERE id = ?`, instValues);
-            }
-
-            await exec('COMMIT');
-            return await this.find(id);
+            await transaction.commit();
+            return instructor.get({ plain: true });
         } catch (error) {
-            await exec('ROLLBACK');
+            await transaction.rollback();
             throw error;
         }
     }
 
     static async delete(id) {
-        const instructor = await get('SELECT user_id FROM instructors WHERE id = ?', [id]);
+        const instructor = await Instructor.findByPk(id);
         if (!instructor) return false;
-
-        try {
-            await exec('BEGIN TRANSACTION');
-            await run('DELETE FROM instructors WHERE id = ?', [id]);
-            await run('DELETE FROM users WHERE id = ?', [instructor.user_id]);
-            await exec('COMMIT');
-            return true;
-        } catch (error) {
-            await exec('ROLLBACK');
-            throw error;
-        }
-    }
-
-    static async deleteByUserId(userId) {
-        const instructor = await this.findByUserId(userId);
-        if (!instructor) return false;
-        return await this.delete(instructor.id);
+        await User.destroy({ where: { id: instructor.user_id } });
+        return true;
     }
 }
 
-module.exports = InstructorModel;
+module.exports = { Instructor, InstructorModel };

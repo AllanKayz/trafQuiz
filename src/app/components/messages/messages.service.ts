@@ -43,10 +43,22 @@ export class MessagesService {
   }
 
   uploadAttachment(file: File): Observable<any> {
-    // This requires file system handling in Electron. 
-    // For now, returning a mock URL as base64 or similar could be handled in main process
-    // For a local app, we might just copy to a local folders.
-    return of({ success: true, url: 'local://attachment_placeholder' });
+    const reader = new FileReader();
+    return new Observable(observer => {
+        reader.onload = () => {
+            const buffer = reader.result;
+            from(window.electronAPI.invoke('upload-attachment', {
+                name: file.name,
+                type: file.type,
+                data: buffer
+            })).subscribe(res => {
+                observer.next(res);
+                observer.complete();
+            }, err => observer.error(err));
+        };
+        reader.onerror = (err) => observer.error(err);
+        reader.readAsArrayBuffer(file);
+    });
   }
 
   getRecipientInfo(id: number): Observable<any> {

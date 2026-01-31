@@ -11,6 +11,7 @@ declare global {
   interface Window {
     electronAPI: {
       invoke: (channel: string, ...args: any[]) => Promise<any>;
+      on: (channel: string, callback: (...args: any[]) => void) => void;
     };
   }
 }
@@ -1265,14 +1266,4 @@ export class TraffiquizService {
     return from(window.electronAPI.invoke('delete-account', { id: userId, password })).pipe(tap(() => this.logout()));
   }
 
-  public sendMessage(recipientId: string, senderId: string, message: string): Observable<any> {
-    const user = this.userSignal();
-    const payload = {
-      recipientId,
-      senderId,
-      senderName: user?.username || 'User',
-      text: message
-    };
-    return from(window.electronAPI.invoke('send-message', payload));
-  }
 }

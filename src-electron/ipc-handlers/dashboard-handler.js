@@ -1,5 +1,11 @@
 const { ipcMain } = require('electron');
-const { get } = require('../db');
+const { User } = require('../models/UserModel');
+const { Student } = require('../models/StudentModel');
+const { Instructor } = require('../models/InstructorModel');
+const { Exam } = require('../models/ExamModel');
+const { Lesson } = require('../models/OperationalModels');
+const { sequelize } = require('../database');
+const { Op } = require('sequelize');
 
 ipcMain.handle('get-dashboard-stats', async (event, params) => {
     try {
@@ -7,45 +13,71 @@ ipcMain.handle('get-dashboard-stats', async (event, params) => {
         const stats = {};
 
         if (role === 'admin') {
-            const studentCountRow = await get('SELECT count(*) as count FROM students WHERE status="active"');
-            const instructorCountRow = await get('SELECT count(*) as count FROM instructors');
-            const examCountRow = await get('SELECT count(*) as count FROM exams WHERE date(start_time) = date("now")');
-            const revenueRow = await get('SELECT sum(amount) as total FROM payments WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")');
+            stats.total_students = await Student.count({ where: { status: 'active' } });
+            stats.total_instructors = await Instructor.count();
             
-            const passRateRow = await get('SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate FROM student_exams');
+            // For date comparisons, we can use Sequelize Op or raw sql
+            const today = new Date().toISOString().split('T')[0];
+            stats.exams_today = await Exam.count({
+                where: sequelize.where(sequelize.fn('date', sequelize.col('start_time')), today)
+            });
+
+            // Revenue - needs Payment model, but let's assume it's in OperationalModels or similar
+            // For now, if Payment model not yet refactored, use raw query via sequelize
+            const [revenueResult] = await sequelize.query(`
+                SELECT sum(amount) as total FROM payments
+                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
+            `);
+            stats.monthly_revenue = revenueResult[0]?.total || 0;
             
-            stats.total_students = studentCountRow.count;
-            stats.monthly_revenue = revenueRow.total || 0;
-            stats.exams_today = examCountRow.count;
-            stats.pass_rate = Math.round(passRateRow.rate || 0);
+            const [passRateResult] = await sequelize.query(`
+                SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
+                FROM student_exams
+            `);
+            stats.pass_rate = Math.round(passRateResult[0]?.rate || 0);
             stats.system_alerts = 0;
             
         } else if (role === 'instructor') {
-            const instructorRow = await get('SELECT id FROM instructors WHERE user_id = ?', [userId]);
-            const instructorId = instructorRow ? instructorRow.id : null;
+            const instructor = await Instructor.findOne({ where: { user_id: userId } });
+            const instructorId = instructor?.id;
 
-            const lessonsTodayRow = await get('SELECT count(*) as count FROM lessons WHERE instructor_id = ? AND date(start_time) = date("now")', [instructorId]);
-            const assignedStudentsRow = await get('SELECT count(*) as count FROM lessons WHERE instructor_id = ?', [instructorId]);
-             
-             stats.lessons_today = lessonsTodayRow.count;
-             stats.assigned_students = assignedStudentsRow.count;
+            const today = new Date().toISOString().split('T')[0];
+            stats.lessons_today = instructorId ? await Lesson.count({
+                where: {
+                    instructor_id: instructorId,
+                    [Op.and]: sequelize.where(sequelize.fn('date', sequelize.col('start_time')), today)
+                }
+            }) : 0;
+
+            stats.assigned_students = instructorId ? await Lesson.count({
+                where: { instructor_id: instructorId },
+                distinct: true,
+                col: 'student_id'
+            }) : 0;
+
              stats.reports_pending = 0;
              stats.vehicle_issues = 0;
 
         } else if (role === 'student') {
-            const studentRow = await get('SELECT id FROM students WHERE user_id = ?', [userId]);
-            const studentId = studentRow ? studentRow.id : null;
+            const student = await Student.findOne({ where: { user_id: userId } });
+            const studentId = student?.id;
 
-            const lessonsAttendedRow = await get('SELECT count(*) as count FROM lessons WHERE student_id = ? AND status="completed"', [studentId]);
-            const examsTakenRow = await get('SELECT count(*) as count FROM student_exams WHERE student_id = ?', [studentId]);
-            const upcomingLessonsRow = await get('SELECT count(*) as count FROM lessons WHERE student_id = ? AND status="upcoming"', [studentId]);
+            stats.lessons_attended = studentId ? await Lesson.count({
+                where: { student_id: studentId, status: 'completed' }
+            }) : 0;
 
-             stats.lessons_attended = lessonsAttendedRow.count;
-             stats.exams_taken = examsTakenRow.count;
-             stats.upcoming_lessons = upcomingLessonsRow.count;
-             
-             const avgScoreRow = await get('SELECT AVG(score) as avg FROM student_exams WHERE student_id = ?', [studentId]);
-             stats.success_rate = Math.round(avgScoreRow.avg || 0);
+            // Student Exams
+            const [examStats] = await sequelize.query(`
+                SELECT count(*) as count, AVG(score) as avg
+                FROM student_exams WHERE student_id = ?
+            `, { replacements: [studentId] });
+
+            stats.exams_taken = examStats[0]?.count || 0;
+            stats.success_rate = Math.round(examStats[0]?.avg || 0);
+
+            stats.upcoming_lessons = studentId ? await Lesson.count({
+                where: { student_id: studentId, status: 'upcoming' }
+            }) : 0;
         }
 
         return { success: true, data: stats };

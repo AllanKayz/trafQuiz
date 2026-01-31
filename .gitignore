@@ -42,3 +42,4 @@ testem.log
 Thumbs.db
 debug.log
 npm_output.log
+*.db
