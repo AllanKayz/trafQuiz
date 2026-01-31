@@ -30,6 +30,7 @@ export class MessagesService {
 
   sendMessage(conversationId: number | null, text: string, type: string = 'text', attachment: any = null, recipientId: number | null = null): Observable<any> {
     const user = this.mainService.currentUser();
+    const senderName = user?.name || (user?.firstName ? `${user.firstName} ${user.lastName}` : (user?.username || 'User'));
     const body = {
       conversationId,
       text,
@@ -37,7 +38,7 @@ export class MessagesService {
       attachment,
       recipientId,
       senderId: user?.id,
-      senderName: user?.username || 'User'
+      senderName: senderName
     };
     return from(window.electronAPI.invoke('send-message', body));
   }
@@ -45,19 +46,19 @@ export class MessagesService {
   uploadAttachment(file: File): Observable<any> {
     const reader = new FileReader();
     return new Observable(observer => {
-        reader.onload = () => {
-            const buffer = reader.result;
-            from(window.electronAPI.invoke('upload-attachment', {
-                name: file.name,
-                type: file.type,
-                data: buffer
-            })).subscribe(res => {
-                observer.next(res);
-                observer.complete();
-            }, err => observer.error(err));
-        };
-        reader.onerror = (err) => observer.error(err);
-        reader.readAsArrayBuffer(file);
+      reader.onload = () => {
+        const buffer = reader.result;
+        from(window.electronAPI.invoke('upload-attachment', {
+          name: file.name,
+          type: file.type,
+          data: buffer
+        })).subscribe(res => {
+          observer.next(res);
+          observer.complete();
+        }, err => observer.error(err));
+      };
+      reader.onerror = (err) => observer.error(err);
+      reader.readAsArrayBuffer(file);
     });
   }
 

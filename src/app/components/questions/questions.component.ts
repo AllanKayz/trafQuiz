@@ -69,10 +69,44 @@ export class QuestionsComponent {
 			case 'addQuestion':
 				this.addQuestionForm();
 				break;
+			case 'bulkUploadQuestions':
+				this.bulkUploadQuestions();
+				break;
 			case 'addCategory':
 				this.manageCategories();
 				break;
 		}
+	}
+
+	private bulkUploadQuestions() {
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.json';
+		input.onchange = (e: any) => {
+			const file = e.target.files[0];
+			if (!file) return;
+			const reader = new FileReader();
+			reader.onload = (re: any) => {
+				try {
+					const questions = JSON.parse(re.target.result);
+					this.trafQuizService.bulkAddQuestions(questions).subscribe({
+						next: (res: any) => {
+							if (res.success) {
+								this.trafQuizService.showNotification('Questions uploaded successfully', 'success');
+								this.trafQuizService.fetchQuestions();
+							} else {
+								this.trafQuizService.showNotification('Error uploading questions: ' + res.message, 'error');
+							}
+						},
+						error: (err) => this.trafQuizService.showNotification('Error uploading questions', 'error')
+					});
+				} catch (err) {
+					this.trafQuizService.showNotification('Invalid JSON file', 'error');
+				}
+			};
+			reader.readAsText(file);
+		};
+		input.click();
 	}
 
 	handleTableAction(event: { action: string, item: any }) {
@@ -83,7 +117,7 @@ export class QuestionsComponent {
 
 		switch (event.action) {
 			case 'edit':
-				this.openQuestionForm(question);
+				this.addQuestionForm(question);
 				break;
 			case 'delete':
 				this.deleteQuestion(questionId);
@@ -94,18 +128,6 @@ export class QuestionsComponent {
 		}
 	}
 
-	private openQuestionForm(question?: Question) {
-		const dialogRef = this.dialog.open(QuestionFormComponent, {
-			width: '600px',
-			data: { question }
-		});
-
-		dialogRef.afterClosed().subscribe(result => {
-			if (result) {
-				this.trafQuizService.fetchQuestions(); // Refresh data
-			}
-		});
-	}
 
 	private deleteQuestion(id: number) {
 		this.trafQuizService.showConfirm('Are you sure you want to delete this question?', 'DELETE').subscribe(() => {
@@ -134,16 +156,17 @@ export class QuestionsComponent {
 	}
 
 	// Helper function to transform questions data back to API structure
-	private transformQuestion(item: Question): ApiResponse {
+	private transformQuestionForForm(item: Question): any {
 		return {
-			id: item.id!,
-			answer: item.options[item.correct],
-			option_a: item.options[0],
-			option_b: item.options[1],
-			option_c: item.options[2],
-			photo: item.image!,
-			question: item.question
-		}
+			question: item.question,
+			option_a: item.options?.[0] || item.option_a || '',
+			option_b: item.options?.[1] || item.option_b || '',
+			option_c: item.options?.[2] || item.option_c || '',
+			answer: item.correct !== -1 ? item.correct : 0,
+			hasImage: item.hasImage,
+			photo: item.image,
+			exam_id: item.exam_id || 1
+		};
 	}
 
 	addQuestionForm(question?: any) {
@@ -153,7 +176,7 @@ export class QuestionsComponent {
 			data: {
 				title: question ? 'Edit Question' : 'Add New Question',
 				fields: this.formConfig.getFormConfig('question'),
-				initialData: question ? this.transformQuestion(question) : {},
+				initialData: question ? this.transformQuestionForForm(question) : {},
 				submitText: question ? 'Update' : 'Create'
 			}
 		});
@@ -168,20 +191,24 @@ export class QuestionsComponent {
 		const questionData = {
 			id: id || 0,
 			question: data.question,
-			category: data.category,
-			difficulty: data.difficulty,
-			options: [data.option1, data.option2, data.option3],
-			correct: data.correctOption,
-			hasImage: data.hasImage,
-			image: data.image
+			option_a: data.option_a,
+			option_b: data.option_b,
+			option_c: data.option_c,
+			answer: data.answer === 0 ? data.option_a : (data.answer === 1 ? data.option_b : data.option_c),
+			photo: data.hasImage ? data.photo : null,
+			exam_id: 1 // Default exam_id if not provided
 		};
 
 		const action = id ? this.trafQuizService.updateQuestion(questionData) : this.trafQuizService.addQuestion(questionData);
 
 		action.subscribe({
-			next: () => {
-				this.trafQuizService.showNotification(`Question ${id ? 'updated' : 'added'} successfully`, 'success');
-				this.trafQuizService.fetchQuestions();
+			next: (res: any) => {
+				if (res.success || res.id) {
+					this.trafQuizService.showNotification(`Question ${id ? 'updated' : 'added'} successfully`, 'success');
+					this.trafQuizService.fetchQuestions();
+				} else {
+					this.trafQuizService.showNotification('Error saving question: ' + (res.message || 'Unknown error'), 'error');
+				}
 			},
 			error: () => this.trafQuizService.showNotification('Error saving question', 'error')
 		});

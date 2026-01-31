@@ -59,19 +59,28 @@ class MessageModel {
         try {
             if (!conversationId && recipientId) {
                 // Find existing private conversation
-                const existing = await Conversation.findOne({
-                    include: [
-                        { model: ConversationParticipant, where: { user_id: senderId } },
-                        { model: ConversationParticipant, where: { user_id: recipientId } }
-                    ],
-                    group: ['Conversation.id'],
-                    having: sequelize.literal('count(ConversationParticipants.id) = 2')
-                });
+                // Find intersection of conversations to ensure we reuse private chat
+                const senderConvs = await ConversationParticipant.findAll({ where: { user_id: senderId }, attributes: ['conversation_id'], raw: true });
+                const recipientConvs = await ConversationParticipant.findAll({ where: { user_id: recipientId }, attributes: ['conversation_id'], raw: true });
 
-                if (existing) {
-                    conversationId = existing.id;
+                const senderIds = senderConvs.map(c => c.conversation_id);
+                const recipientIds = new Set(recipientConvs.map(c => c.conversation_id));
+                
+                const commonIds = senderIds.filter(id => recipientIds.has(id));
+                
+                let foundId = null;
+                for (const id of commonIds) {
+                    const count = await ConversationParticipant.count({ where: { conversation_id: id } });
+                    if (count === 2) {
+                        foundId = id;
+                        break;
+                    }
+                }
+
+                if (foundId) {
+                    conversationId = foundId;
                 } else {
-                    const conv = await Conversation.create({ title: `Chat between ${senderId} and ${recipientId}` }, { transaction });
+                    const conv = await Conversation.create({ title: `Private Chat` }, { transaction });
                     await ConversationParticipant.bulkCreate([
                         { conversation_id: conv.id, user_id: senderId },
                         { conversation_id: conv.id, user_id: recipientId }

@@ -37,7 +37,46 @@ app.get('*', (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
+const http = require('http');
+const server = http.createServer(app);
+
+// Socket.io Setup
+try {
+    const { Server } = require('socket.io');
+    const io = new Server(server, {
+        cors: {
+            origin: ["http://localhost:4200", "http://localhost:3000"], 
+            methods: ["GET", "POST"]
+        }
+    });
+
+    io.on('connection', (socket) => {
+        console.log('User connected:', socket.id);
+        
+        socket.on('join', (userId) => {
+            socket.join(`user_${userId}`);
+            console.log(`User ${userId} joined room user_${userId}`);
+        });
+
+        socket.on('send-message', (data) => {
+            console.log('Broadcasting message:', data);
+            // Forward to recipient
+            if (data.recipientId) {
+                io.to(`user_${data.recipientId}`).emit('new-message', data);
+            }
+        });
+
+        socket.on('disconnect', () => {
+            console.log('User disconnected:', socket.id);
+        });
+    });
+
+    console.log('Socket.io initialized successfully');
+} catch (e) {
+    console.warn('Socket.io not found. Run "npm install socket.io" to enable real-time features. Error:', e.message);
+}
+
+server.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     db.init(); // Initialize DB
 });

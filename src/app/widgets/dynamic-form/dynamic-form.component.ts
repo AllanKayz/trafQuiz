@@ -1,4 +1,5 @@
 import { Component, input, Output, EventEmitter, inject, signal, computed } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 
 import { ReactiveFormsModule, FormGroup, FormBuilder } from '@angular/forms';
@@ -12,6 +13,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { TraffiquizService } from '../../traffiquiz.service';
+import { from } from 'rxjs';
 
 
 export type FieldType =
@@ -29,6 +32,10 @@ export interface FormField {
   hidden?: boolean;
   icon?: string;
   hint?: string;
+  dependsOn?: {
+    field: string;
+    value: any;
+  };
 }
 
 @Component({
@@ -56,6 +63,7 @@ export class DynamicFormComponent {
   private fb = inject(FormBuilder);
   private data = inject(MAT_DIALOG_DATA, { optional: true });
   private dialogRef = inject(MatDialogRef, { optional: true });
+  private trafQuiz = inject(TraffiquizService);
 
   // Input properties with defaults
   // Input properties with defaults using signal inputs
@@ -82,17 +90,27 @@ export class DynamicFormComponent {
     return this.fb.group(group);
   });
 
+  formValues = toSignal(this.form().valueChanges, { initialValue: this.form().value });
+
   loading = signal(false);
   error = signal('');
 
   // Computed properties
   groupedFields = computed(() => {
-    const cols = 1; // Default number of columns
+    this.formValues(); // Track changes
     const fields = this.fields();
-    const groups = [];
+    const form = this.form();
+    const visibleFields = fields.filter(field => {
+      if (field.dependsOn) {
+        const dependentValue = form.get(field.dependsOn.field)?.value;
+        return dependentValue === field.dependsOn.value;
+      }
+      return !field.hidden;
+    });
 
-    for (let i = 0; i < fields.length; i += cols) {
-      groups.push(fields.slice(i, i + cols));
+    const groups = [];
+    for (let i = 0; i < visibleFields.length; i++) {
+      groups.push([visibleFields[i]]);
     }
 
     return groups;
@@ -123,8 +141,34 @@ export class DynamicFormComponent {
     }
   }
 
-  onFileChange(event: any, key: any) {
-    this.selectedFile = event.target.files[0];
+  onFileChange(event: any, key: string) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.loading.set(true);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const buffer = reader.result;
+      from(window.electronAPI.invoke('upload-attachment', {
+        name: file.name,
+        type: file.type,
+        data: buffer
+      })).subscribe({
+        next: (res: any) => {
+          if (res.success) {
+            this.form().get(key)?.setValue(res.url);
+          } else {
+            this.error.set(res.message || 'Error uploading file');
+          }
+          this.loading.set(false);
+        },
+        error: (err: any) => {
+          this.error.set('Error uploading file');
+          this.loading.set(false);
+        }
+      });
+    };
+    reader.readAsArrayBuffer(file);
   }
 
   getFieldControl(key: string) {

@@ -36,16 +36,30 @@ class QuestionModel {
     }
 
     static async create(data) {
-        const question = await Question.create({
+        const questionData = {
             question_text: data.question || data.question_text,
-            option_a: data.option_a,
-            option_b: data.option_b,
-            option_c: data.option_c,
-            answer: data.answer,
-            img_insert: data.photo || data.img_insert,
+            option_a: data.option_a || (data.options ? data.options[0] : ''),
+            option_b: data.option_b || (data.options ? data.options[1] : ''),
+            option_c: data.option_c || (data.options ? data.options[2] : ''),
+            answer: data.answer !== undefined ? data.answer : (data.options ? data.options[data.correct] : ''),
+            img_insert: data.photo || data.img_insert || data.image,
             exam_id: data.exam_id
-        });
+        };
+        const question = await Question.create(questionData);
         return question.get({ plain: true });
+    }
+
+    static async bulkCreate(dataArray) {
+        const questions = dataArray.map(data => ({
+            question_text: data.question || data.question_text,
+            option_a: data.option_a || (data.options ? data.options[0] : ''),
+            option_b: data.option_b || (data.options ? data.options[1] : ''),
+            option_c: data.option_c || (data.options ? data.options[2] : ''),
+            answer: data.answer !== undefined ? data.answer : (data.options ? data.options[data.correct] : ''),
+            img_insert: data.photo || data.img_insert || data.image,
+            exam_id: data.exam_id
+        }));
+        return await Question.bulkCreate(questions);
     }
 
     static async update(id, data) {

@@ -16,6 +16,12 @@
 {"id":"1","title":null,"participant_ids":"[1,2]","last_message_at":"2026-01-13 19:43:56","created_at":"2026-01-11 22:36:13","updated_at":"2026-01-13 19:43:56"}
 ]
 }
+,{"type":"table","name":"conversation_participants","database":"traffiquiz_system","data":
+[
+{"id":"1","conversation_id":"1","user_id":"1","created_at":"2026-01-11 22:36:13","updated_at":"2026-01-11 22:36:13"},
+{"id":"2","conversation_id":"1","user_id":"2","created_at":"2026-01-11 22:36:13","updated_at":"2026-01-11 22:36:13"}
+]
+}
 ,{"type":"table","name":"exams","database":"traffiquiz_system","data":
 [
 {"id":"1","name":"test 1","start_time":"0000-00-00 00:00:00","end_time":"0000-00-00 00:00:00","created_at":"2026-01-17 17:09:08","updated_at":"2026-01-17 17:09:08"},

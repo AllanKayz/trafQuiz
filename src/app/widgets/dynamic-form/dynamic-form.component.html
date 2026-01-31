@@ -11,9 +11,9 @@
   <mat-dialog-content class="form-content" [class.no-padding]="!title()">
     <form [formGroup]="form()" (ngSubmit)="onSubmit()" class="modern-form">
       <div class="fields-grid">
-        @for (row of groupedFields(); track row) {
+        @for (row of groupedFields(); track row[0].key) {
         <div class="form-row">
-          @for (field of row; track field) {
+          @for (field of row; track field.key) {
           <div [class]="'field-col field-span-' + (field.colspan || 1)" [hidden]="field.hidden">
             @switch (field.type) {
             <!-- Text/Number/Email/Password Input -->
@@ -109,7 +109,7 @@
               }
             </mat-form-field>
             }
-            
+
             <!-- Time Picker -->
             @case ('time') {
             <mat-form-field appearance="outline" class="full-width">
@@ -134,8 +134,14 @@
               <div class="file-drop-zone">
                 <mat-icon>cloud_upload</mat-icon>
                 <p>Click or drag file to upload</p>
-                <input type="file" class="hidden-file-input" [formControlName]="field.key"
-                  (change)="onFileChange($event, field.key)" title="{{ field.label }}">
+                <input type="file" class="hidden-file-input" (change)="onFileChange($event, field.key)"
+                  title="{{ field.label }}">
+                @if (form().get(field.key)?.value) {
+                <div class="file-status">
+                  <mat-icon color="primary">check_circle</mat-icon>
+                  <span>File uploaded</span>
+                </div>
+                }
               </div>
               @if (field.hint) {
               <span class="field-hint">{{ field.hint }}</span>

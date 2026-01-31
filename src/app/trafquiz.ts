@@ -16,6 +16,10 @@ export interface Question {
   hasImage?: boolean;
   image?: string;
   flagged?: boolean;
+  exam_id?: number;
+  option_a?: string;
+  option_b?: string;
+  option_c?: string;
 }
 
 /**
@@ -131,6 +135,8 @@ export interface Conversation {
   unread?: number;
   lastMessage?: string;
   lastTime?: string;
+  displayType?: 'conversation' | 'person';
+  last_message_at?: string;
 }
 
 export interface Message {

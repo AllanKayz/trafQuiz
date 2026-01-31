@@ -108,9 +108,14 @@ ipcMain.handle('get-all-users', async () => {
     try {
         const users = await UserModel.findAll();
         // Return without passwords
+        // Return mapped users with name and status
         const safeUsers = users.map(u => {
             const { password, ...rest } = u;
-            return rest;
+            return {
+                ...rest,
+                name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username,
+                status: u.status || 'Active' // Default to Active if not present
+            };
         });
         return { success: true, data: safeUsers };
     } catch (error) {

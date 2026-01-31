@@ -517,6 +517,9 @@ export class TraffiquizService {
         return {
           id: actualUser.id,
           username: actualUser.username || actualUser.name,
+          firstName: actualUser.first_name || actualUser.firstName,
+          lastName: actualUser.last_name || actualUser.lastName,
+          name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
           role: role,
           sidebar: this.menus.admin,
           sidebarIcons: this.menus.icons,
@@ -528,6 +531,9 @@ export class TraffiquizService {
           id: actualUser.user_id || actualUser.id, // Ensure we have users.id
           instructor_id: actualUser.user_id ? actualUser.id : null, // instructors.id
           username: actualUser.username || actualUser.name,
+          firstName: actualUser.first_name || actualUser.firstName,
+          lastName: actualUser.last_name || actualUser.lastName,
+          name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
           role: role,
           sidebar: this.menus.instructor,
           sidebarIcons: this.menus.icons,
@@ -539,6 +545,9 @@ export class TraffiquizService {
           id: actualUser.user_id || actualUser.id, // Ensure we have users.id
           student_id: actualUser.user_id ? actualUser.id : null, // students.id
           username: actualUser.username || actualUser.name,
+          firstName: actualUser.first_name || actualUser.firstName,
+          lastName: actualUser.last_name || actualUser.lastName,
+          name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
           role: role,
           sidebar: this.menus.student,
           sidebarIcons: this.menus.icons,
@@ -625,10 +634,13 @@ export class TraffiquizService {
       id: item.id,
       question: item.question.trim(),
       options: options,
-      correct: options.indexOf(item.answer.trim()),
+      correct: options.indexOf(item.answer?.trim() || ''),
       hasImage: this.isNotEmpty(item.photo),
       image: item.photo,
-      flagged: false
+      flagged: false,
+      option_a: item.option_a,
+      option_b: item.option_b,
+      option_c: item.option_c
     };
   }
 
@@ -709,6 +721,10 @@ export class TraffiquizService {
         }
       })
     );
+  }
+
+  bulkAddQuestions(questions: any[]): Observable<any> {
+    return from(window.electronAPI.invoke('bulk-add-questions', questions));
   }
 
   // Students CRUD

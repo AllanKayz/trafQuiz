@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed, ViewChild, ElementRef, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { TitleCasePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,7 +14,7 @@ import { TraffiquizService } from '../../traffiquiz.service';
 
 @Component({
     selector: 'app-messages',
-    imports: [FormsModule, MatListModule, MatIconModule, MatButtonModule, MatInputModule, MatCardModule, MatProgressSpinnerModule, MatTooltipModule, TitleCasePipe],
+    imports: [CommonModule, FormsModule, MatListModule, MatIconModule, MatButtonModule, MatInputModule, MatCardModule, MatProgressSpinnerModule, MatTooltipModule],
     templateUrl: './messages.component.html',
     styleUrl: './messages.component.css'
 })
@@ -35,6 +35,17 @@ export class MessagesComponent {
     isRecordingSignal = signal(false);
     mediaRecorder: MediaRecorder | null = null;
     audioChunks: any[] = [];
+
+    // Emoji Picker
+    showEmojiPicker = signal(false);
+    emojis = [
+        '😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇',
+        '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚',
+        '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🤩',
+        '🥳', '😏', '😒', '😞', '😔', 'wv', '😤', '😢', '😭', '😱',
+        '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉',
+        '👆', '👇', '🙏', '🤝', '🙌', '👏', '🎉', '✨', '🔥', '❤️'
+    ];
 
     @ViewChild('scrollContainer') scrollContainer?: ElementRef;
 
@@ -122,6 +133,7 @@ export class MessagesComponent {
     }
 
     openConversation(conv: any) {
+        this.showEmojiPicker.set(false);
         if (conv.displayType === 'person') {
             const existing = this.conversations().find(c => c.name === conv.name);
             if (existing) {
@@ -149,10 +161,21 @@ export class MessagesComponent {
     }
 
     toggleRecipientInfo() {
+        this.showEmojiPicker.set(false);
         this.showRecipientInfo.update(v => !v);
         if (this.showRecipientInfo() && !this.recipientData()) {
             this.fetchRecipientInfo();
         }
+    }
+
+    toggleEmojiPicker() {
+        this.showRecipientInfo.set(false);
+        this.showEmojiPicker.update(v => !v);
+    }
+
+    addEmoji(emoji: string) {
+        this.reply += emoji;
+        this.showEmojiPicker.set(false);
     }
 
     fetchRecipientInfo() {

@@ -54,7 +54,7 @@ export class FormConfigService {
         key: 'photo',
         label: 'Question Image',
         type: 'file',
-        hidden: true,
+        dependsOn: { field: 'hasImage', value: true },
         icon: 'image'
       },
       {

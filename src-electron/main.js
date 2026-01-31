@@ -16,7 +16,7 @@ let mainWindow;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
-    height: 800,
+    height: 700,
     icon: path.join(__dirname, '../public/logo.ico'),
     frame: false, // Disable default frame
     titleBarStyle: 'hidden', // Hide default title bar but keep window controls overlay on macOS if needed (optional)

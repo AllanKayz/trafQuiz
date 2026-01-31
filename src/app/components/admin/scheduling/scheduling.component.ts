@@ -75,23 +75,29 @@ export class SchedulingComponent implements AfterViewInit {
 
     tableColumns = signal<TableColumn[]>([
         { key: 'title', header: 'Lesson', type: 'text' },
-        { key: 'startTime', header: 'Time', type: 'date' },
+        { key: 'lessonDate', header: 'Date', type: 'date' },
+        { key: 'lessonTime', header: 'Time', type: 'text' },
         { key: 'instructorName', header: 'Instructor', type: 'text' },
         { key: 'assignedVehicle', header: 'Vehicle', type: 'text' },
         { key: 'status', header: 'Status', type: 'status' }
     ]);
 
     tableData = computed(() => {
-        return this.lessons().map(l => ({
-            ...l,
-            instructorName: l.instructor.name,
-            assignedVehicle: l.assignedVehicleId ?
-                (() => {
-                    const v = this.vehicles().find(v => v.id === l.assignedVehicleId);
-                    return v ? `${v.make} ${v.model} (${v.registration})` : 'Assigned';
-                })() : 'None',
-            status: l.assignedVehicleId ? 'scheduled' : 'pending'
-        }));
+        return this.lessons().map(l => {
+            const dateObj = new Date(l.startTime);
+            return {
+                ...l,
+                lessonDate: l.startTime, // TableComponent can handle string or date object for 'date' type
+                lessonTime: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                instructorName: l.instructor.name,
+                assignedVehicle: l.assignedVehicleId ?
+                    (() => {
+                        const v = this.vehicles().find(v => v.id === l.assignedVehicleId);
+                        return v ? `${v.make} ${v.model} (${v.registration})` : 'Assigned';
+                    })() : 'None',
+                status: l.assignedVehicleId ? 'scheduled' : 'pending'
+            };
+        });
     });
 
     loading = false;

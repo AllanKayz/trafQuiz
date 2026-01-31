@@ -60,6 +60,16 @@ ipcMain.handle('update-question', async (event, question) => {
     }
 });
 
+ipcMain.handle('bulk-add-questions', async (event, questions) => {
+    try {
+        await QuestionModel.bulkCreate(questions);
+        return { success: true };
+    } catch (error) {
+        console.error('Bulk add questions error:', error);
+        return { success: false, message: error.message };
+    }
+});
+
 ipcMain.handle('delete-question', async (event, { id }) => {
     try {
         await QuestionModel.delete(id);
