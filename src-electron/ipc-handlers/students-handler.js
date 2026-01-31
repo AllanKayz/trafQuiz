@@ -1,5 +1,5 @@
 const { ipcMain } = require('electron');
-const StudentModel = require('../models/StudentModel');
+const { StudentModel } = require('../models/StudentModel');
 
 ipcMain.handle('get-students', async (event, params) => {
     try {

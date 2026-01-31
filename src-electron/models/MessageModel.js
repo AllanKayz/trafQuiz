@@ -1,84 +1,114 @@
-const { get, query, run } = require('../db');
+const { Conversation, ConversationParticipant, Message } = require('./MessagingModels');
+const { User } = require('./UserModel');
+const { sequelize } = require('../database');
+const { Op } = require('sequelize');
 
 class MessageModel {
-    /**
-     * Gets all conversations for a user.
-     */
     static async getConversations(userId) {
         // Find conversations where user is a participant
-        // Using LIKE with delimiters for safety or JSON_EACH if available (SQLite 3.38+)
-        // For simplicity and compatibility, we'll use a broad LIKE and then filter in JS if needed
-        const conversations = await query(`
-            SELECT c.*, 
-                   (SELECT text FROM messages WHERE conversation_id = c.id ORDER BY timestamp DESC LIMIT 1) as last_message,
-                   (SELECT sender_name FROM messages WHERE conversation_id = c.id ORDER BY timestamp DESC LIMIT 1) as last_sender
-            FROM conversations c
-            WHERE c.participant_ids LIKE ?
-            ORDER BY c.last_message_at DESC
-        `, [`%${userId}%`]);
-        
-        return conversations.map(c => ({
-            ...c,
-            participants: JSON.parse(c.participant_ids || '[]'),
-            lastMessage: c.last_message,
-            lastSender: c.last_sender
-        }));
+        const participants = await ConversationParticipant.findAll({
+            where: { user_id: userId },
+            include: [{
+                model: Conversation,
+                include: [
+                    {
+                        model: ConversationParticipant,
+                        include: [{ model: User, attributes: ['id', 'first_name', 'last_name', 'username', 'role'] }]
+                    },
+                    {
+                        model: Message,
+                        limit: 1,
+                        order: [['timestamp', 'DESC']]
+                    }
+                ]
+            }]
+        });
+
+        return participants.map(p => {
+            const conv = p.Conversation;
+            const otherParticipants = conv.ConversationParticipants.filter(cp => cp.user_id !== userId);
+            const partner = otherParticipants[0]?.User;
+            const lastMsg = conv.Messages[0];
+
+            return {
+                id: conv.id,
+                title: conv.title,
+                name: partner ? `${partner.first_name} ${partner.last_name}` : conv.title,
+                partnerId: partner?.id,
+                lastMessage: lastMsg?.text,
+                lastSender: lastMsg?.sender_name,
+                last_message_at: conv.last_message_at,
+                unread: 0, // Placeholder
+                participants: conv.ConversationParticipants.map(cp => cp.user_id)
+            };
+        });
     }
 
-    /**
-     * Gets all messages in a conversation.
-     */
     static async getMessages(conversationId) {
-        return await query(`
-            SELECT * FROM messages 
-            WHERE conversation_id = ? 
-            ORDER BY timestamp ASC
-        `, [conversationId]);
+        return await Message.findAll({
+            where: { conversation_id: conversationId },
+            order: [['timestamp', 'ASC']],
+            raw: true
+        });
     }
 
-    /**
-     * Sends a message. If conversationId is null, creates a new conversation.
-     */
     static async sendMessage(data) {
         let { conversationId, senderId, senderName, text, type = 'text', attachment = null, recipientId = null } = data;
 
-        if (!conversationId && recipientId) {
-            // Find existing conversation between these two
-            const existing = await get(`
-                SELECT id FROM conversations 
-                WHERE participant_ids LIKE ? AND participant_ids LIKE ?
-            `, [`%${senderId}%`, `%${recipientId}%`]);
+        const transaction = await sequelize.transaction();
+        try {
+            if (!conversationId && recipientId) {
+                // Find existing private conversation
+                const existing = await Conversation.findOne({
+                    include: [
+                        { model: ConversationParticipant, where: { user_id: senderId } },
+                        { model: ConversationParticipant, where: { user_id: recipientId } }
+                    ],
+                    group: ['Conversation.id'],
+                    having: sequelize.literal('count(ConversationParticipants.id) = 2')
+                });
 
-            if (existing) {
-                conversationId = existing.id;
-            } else {
-                // Create new conversation
-                const title = `Conversation with ${recipientId}`; // Could be refined
-                const participantIds = JSON.stringify([senderId, recipientId]);
-                const convResult = await run(
-                    'INSERT INTO conversations (title, participant_ids) VALUES (?, ?)',
-                    [title, participantIds]
-                );
-                conversationId = convResult.lastID;
+                if (existing) {
+                    conversationId = existing.id;
+                } else {
+                    const conv = await Conversation.create({ title: `Chat between ${senderId} and ${recipientId}` }, { transaction });
+                    await ConversationParticipant.bulkCreate([
+                        { conversation_id: conv.id, user_id: senderId },
+                        { conversation_id: conv.id, user_id: recipientId }
+                    ], { transaction });
+                    conversationId = conv.id;
+                }
             }
+
+            const message = await Message.create({
+                conversation_id: conversationId,
+                sender_id: senderId,
+                sender_name: senderName,
+                text: text,
+                type: type,
+                attachment_url: attachment?.url,
+                attachment_name: attachment?.name,
+                attachment_type: attachment?.type
+            }, { transaction });
+
+            await Conversation.update(
+                { last_message_at: sequelize.literal('CURRENT_TIMESTAMP') },
+                { where: { id: conversationId }, transaction }
+            );
+
+            await transaction.commit();
+            return message.get({ plain: true });
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
         }
-
-        const msgResult = await run(`
-            INSERT INTO messages (conversation_id, sender_id, sender_name, text, type, attachment_url)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `, [conversationId, senderId, senderName, text, type, attachment ? attachment.url : null]);
-
-        // Update last_message_at
-        await run('UPDATE conversations SET last_message_at = CURRENT_TIMESTAMP WHERE id = ?', [conversationId]);
-
-        return await get('SELECT * FROM messages WHERE id = ?', [msgResult.lastID]);
     }
 
-    /**
-     * Mark messages as read.
-     */
     static async markAsRead(conversationId, userId) {
-        return await run('UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ?', [conversationId, userId]);
+        return await Message.update(
+            { is_read: 1 },
+            { where: { conversation_id: conversationId, sender_id: { [Op.ne]: userId } } }
+        );
     }
 }
 
