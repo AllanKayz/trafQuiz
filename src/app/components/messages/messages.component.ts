@@ -86,6 +86,19 @@ export class MessagesComponent {
 
     constructor() {
         this.loadConversations();
+
+        // Listen for new messages
+        if (window.electronAPI && window.electronAPI.on) {
+            window.electronAPI.on('new-message', (msg: any) => {
+                if (this.selectedConversation()?.id === msg.conversation_id) {
+                    this.messages.update(list => [...list, msg]);
+                } else {
+                    // Refresh conversations to show unread/last message
+                    this.loadConversations();
+                }
+            });
+        }
+
         effect(() => {
             // trigger scroll on messages change
             if (this.messages().length > 0) {

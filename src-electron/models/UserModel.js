@@ -1,70 +1,105 @@
-const { get, run } = require('../db');
+const { sequelize } = require('../database');
+const { DataTypes, Model } = require('sequelize');
 const bcrypt = require('bcryptjs');
+
+class User extends Model {}
+
+User.init({
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  username: { type: DataTypes.STRING(100), allowNull: false, unique: true },
+  password: { type: DataTypes.STRING(255), allowNull: false },
+  role: { type: DataTypes.STRING(50), allowNull: false, defaultValue: 'user' },
+  first_name: { type: DataTypes.STRING(100) },
+  last_name: { type: DataTypes.STRING(100) },
+  email: { type: DataTypes.STRING(255) },
+  phone: { type: DataTypes.STRING(255) },
+  avatar: { type: DataTypes.STRING(500) },
+  reset_token: { type: DataTypes.STRING(255) },
+  reset_expires: { type: DataTypes.DATE },
+}, {
+  sequelize,
+  modelName: 'User',
+  tableName: 'users',
+  underscored: true,
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password && !user.password.startsWith('$2y$') && !user.password.startsWith('$2b$')) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    },
+    beforeUpdate: async (user) => {
+        if (user.changed('password') && !user.password.startsWith('$2y$') && !user.password.startsWith('$2b$')) {
+            user.password = await bcrypt.hash(user.password, 10);
+        }
+    }
+  }
+});
 
 class UserModel {
     static async findByEmail(email) {
-        return await get('SELECT * FROM users WHERE email = ?', [email]);
+        return await User.findOne({ where: { email }, raw: true });
     }
 
     static async findByUsername(username) {
-        return await get('SELECT * FROM users WHERE username = ?', [username]);
+        return await User.findOne({ where: { username }, raw: true });
     }
 
     static async find(id) {
-        return await get('SELECT * FROM users WHERE id = ?', [id]);
+        return await User.findByPk(id, { raw: true });
     }
 
     static async verifyPassword(user, password) {
         if (!user || !user.password) return false;
-        // In existing PHP app, passwords are hashed with bcrypt ($2y$).
-        // bcryptjs supports this.
         return await bcrypt.compare(password, user.password);
     }
 
     static async create(data) {
-        const { username, firstName, lastName, email, password, role = 'student', phone } = data;
-        const hashedPassword = await bcrypt.hash(password, 10);
-        
-        try {
-            const info = await run(
-                'INSERT INTO users (username, first_name, last_name, email, password, role, phone) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [username, firstName, lastName, email, hashedPassword, role, phone]
-            );
-            return await this.find(info.lastID);
-        } catch (error) {
-            console.error('Error creating user:', error);
-            throw new Error('Failed to create user: ' + error.message);
-        }
+        // Map camelCase from frontend if needed, but better to keep it consistent
+        const user = await User.create({
+            username: data.username,
+            first_name: data.firstName || data.first_name,
+            last_name: data.lastName || data.last_name,
+            email: data.email,
+            password: data.password,
+            role: data.role,
+            phone: data.phone
+        });
+        return user.get({ plain: true });
     }
 
     static async update(id, data) {
-        const fields = [];
-        const values = [];
+        const user = await User.findByPk(id);
+        if (!user) throw new Error('User not found');
         
-        for (const [key, value] of Object.entries(data)) {
-            if (key === 'id' || key === 'password') continue;
-            // Map camelCase to snake_case
-            const column = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-            fields.push(`${column} = ?`);
-            values.push(value);
-        }
+        // Map fields
+        const updateData = {};
+        if (data.username) updateData.username = data.username;
+        if (data.firstName || data.first_name) updateData.first_name = data.firstName || data.first_name;
+        if (data.lastName || data.last_name) updateData.last_name = data.lastName || data.last_name;
+        if (data.email) updateData.email = data.email;
+        if (data.role) updateData.role = data.role;
+        if (data.phone) updateData.phone = data.phone;
+        if (data.avatar) updateData.avatar = data.avatar;
 
-        if (fields.length === 0) return await this.find(id);
-
-        values.push(id);
-        await run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
-        return await this.find(id);
+        await user.update(updateData);
+        return user.get({ plain: true });
     }
 
     static async updatePassword(id, newPassword) {
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, id]);
+        const user = await User.findByPk(id);
+        if (!user) throw new Error('User not found');
+        user.password = newPassword; // Hook handles hashing
+        await user.save();
         return true;
     }
 
     static async delete(id) {
-        return await run('DELETE FROM users WHERE id = ?', [id]);
+        return await User.destroy({ where: { id } });
+    }
+
+    static async findAll() {
+        return await User.findAll({ raw: true });
     }
 }
 
-module.exports = UserModel;
+module.exports = { User, UserModel };

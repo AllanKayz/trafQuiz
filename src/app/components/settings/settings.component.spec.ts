@@ -8,7 +8,7 @@ class MockService {
   getRawUser() { return { username: 'tester', email: 'a@b.com', firstname: 'Test', lastname: 'User' }; }
   updateProfile(payload: any) { return of(payload); }
   updatePreferences(prefs: any) { return prefs; }
-  openAlertDialog(_) { return null; }
+  openAlertDialog(_: any) { return null; }
 }
 
 describe('SettingsComponent', () => {
@@ -41,7 +41,7 @@ describe('SettingsComponent', () => {
 
   it('should save profile and call service', fakeAsync(() => {
     const spy = spyOn(svc, 'updateProfile').and.callThrough();
-    component.profileForm.controls.firstName.setValue('New');
+    (component.profileForm.controls as any).firstName.setValue('New');
     component.saveProfile();
     tick();
     expect(spy).toHaveBeenCalled();
@@ -49,7 +49,7 @@ describe('SettingsComponent', () => {
 
   it('should save preferences locally', () => {
     const spy = spyOn(svc, 'updatePreferences').and.callThrough();
-    component.prefsForm.controls.theme.setValue('dark');
+    (component.prefsForm.controls as any).theme.setValue('dark');
     component.savePreferences();
     expect(spy).toHaveBeenCalledWith(jasmine.objectContaining({ theme: 'dark' }));
   });

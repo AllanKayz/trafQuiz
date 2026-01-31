@@ -1,15 +1,16 @@
 const { ipcMain } = require('electron');
-const InstructorModel = require('../models/InstructorModel');
+const { InstructorModel } = require('../models/InstructorModel');
 
-ipcMain.handle('get-instructors', async () => {
+ipcMain.handle('get-instructors', async (event) => {
     try {
-        const instructors = await InstructorModel.all();
+        const instructors = await InstructorModel.findAll();
         return { success: true, data: instructors };
     } catch (error) {
         console.error('Get instructors error:', error);
         return { success: false, message: error.message };
     }
 });
+
 ipcMain.handle('add-instructor', async (event, instructor) => {
     try {
         const result = await InstructorModel.create(instructor);

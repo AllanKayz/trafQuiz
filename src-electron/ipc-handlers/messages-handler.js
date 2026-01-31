@@ -1,5 +1,16 @@
-const { ipcMain } = require('electron');
+const { ipcMain, BrowserWindow } = require('electron');
 const MessageModel = require('../models/MessageModel');
+const { saveFile } = require('../utils/file-storage');
+
+ipcMain.handle('upload-attachment', async (event, { name, type, data }) => {
+    try {
+        const result = await saveFile(name, type, data);
+        return { success: true, ...result };
+    } catch (error) {
+        console.error('Upload attachment error:', error);
+        return { success: false, message: error.message };
+    }
+});
 
 ipcMain.handle('get-conversations', async (event, { userId }) => {
     try {
@@ -24,6 +35,10 @@ ipcMain.handle('get-messages', async (event, { conversationId }) => {
 ipcMain.handle('send-message', async (event, data) => {
     try {
         const message = await MessageModel.sendMessage(data);
+        // Notify all windows about new message
+        BrowserWindow.getAllWindows().forEach(win => {
+            win.webContents.send('new-message', message);
+        });
         return { success: true, data: message };
     } catch (error) {
         console.error('Send message error:', error);

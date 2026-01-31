@@ -1,9 +1,13 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const db = require('./db');
+const { runMigrations } = require('./migration-runner');
 
 app.whenReady().then(async () => {
-    await db.init();
+    try {
+        await runMigrations();
+    } catch (err) {
+        console.error('Migration failed during startup:', err);
+    }
     createWindow();
 });
 
