@@ -193,7 +193,26 @@ export class ExamsComponent implements OnInit {
     });
 
     dialogRef.componentInstance.submitted.subscribe(formData => {
-      this.service.addExam(formData).subscribe({
+      // Combine start date/time
+      const start = new Date(formData.start_date);
+      const [startH, startM] = formData.start_time.split(':');
+      start.setHours(parseInt(startH), parseInt(startM));
+
+      // Combine end date/time
+      const end = new Date(formData.end_date);
+      const [endH, endM] = formData.end_time.split(':');
+      end.setHours(parseInt(endH), parseInt(endM));
+
+      const payload = {
+        ...formData,
+        start_time: start.toISOString(),
+        end_time: end.toISOString()
+      };
+
+      delete payload.start_date;
+      delete payload.end_date;
+
+      this.service.addExam(payload).subscribe({
         next: () => {
           this.service.showNotification('Exam created successfully', 'success');
           dialogRef.close();

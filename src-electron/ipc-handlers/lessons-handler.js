@@ -3,7 +3,19 @@ const { LessonModel } = require('../models/LessonModel');
 
 ipcMain.handle('get-lessons', async (event, filters) => {
     try {
-        const lessons = await LessonModel.findAll(filters);
+        const cleanFilters = {};
+        for (const key in filters) {
+            if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+                cleanFilters[key] = filters[key];
+            }
+        }
+        // Specific fix for 'range' if it's not a DB column but a filter param
+        if (cleanFilters.range) {
+             delete cleanFilters.range; 
+             // Logic for range could go here if needed, but for now just prevent crashing
+        }
+        
+        const lessons = await LessonModel.findAll(cleanFilters);
         return { success: true, data: lessons };
     } catch (error) {
         console.error('Get lessons error:', error);

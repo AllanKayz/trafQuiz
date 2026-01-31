@@ -141,3 +141,32 @@ ipcMain.handle('delete-exam', async (event, id) => {
         return { success: false, message: error.message };
     }
 });
+
+ipcMain.handle('get-exam-statistics', async () => {
+    try {
+        const [passResult] = await sequelize.query('SELECT COUNT(*) as count FROM student_exams WHERE score >= 50');
+        const [failResult] = await sequelize.query('SELECT COUNT(*) as count FROM student_exams WHERE score < 50');
+        
+        // Get recent exams with candidate counts
+        const [recentExams] = await sequelize.query(`
+            SELECT e.id, e.name, COUNT(se.id) as candidates 
+            FROM exams e 
+            LEFT JOIN student_exams se ON e.id = se.exam_id 
+            GROUP BY e.id 
+            ORDER BY e.start_time DESC 
+            LIMIT 5
+        `);
+
+        return {
+            success: true,
+            data: {
+                pass_count: passResult[0]?.count || 0,
+                fail_count: failResult[0]?.count || 0,
+                recent_exams: recentExams || []
+            }
+        };
+    } catch (error) {
+        console.error('Get exam statistics error:', error);
+        return { success: false, message: error.message };
+    }
+});

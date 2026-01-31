@@ -108,8 +108,15 @@ export class UpcomingLessonsComponent implements OnInit {
 
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
       const instructor = this.service.instructorsSignal().find(i => i.id === data.instructorId);
+
+      // Combine date and time
+      const date = new Date(data.startDate);
+      const [hours, minutes] = data.startTime.split(':');
+      date.setHours(parseInt(hours), parseInt(minutes));
+
       const payload: Partial<Lesson> = {
         ...data,
+        startTime: date.toISOString(),
         type: 'private',
         studentId: this.user()?.id,
         studentName: this.user()?.username, // or use full name if available

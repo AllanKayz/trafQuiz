@@ -160,6 +160,11 @@ export class SchedulingComponent implements AfterViewInit {
     }
 
     openEditLessonDialog(lesson: Lesson) {
+        const start = new Date(lesson.startTime);
+        const startH = start.getHours().toString().padStart(2, '0');
+        const startM = start.getMinutes().toString().padStart(2, '0');
+        const timeStr = `${startH}:${startM}`;
+
         const dialogRef = this.dialog.open(DynamicFormComponent, {
             width: '600px',
             data: {
@@ -169,7 +174,8 @@ export class SchedulingComponent implements AfterViewInit {
                 initialData: {
                     ...lesson,
                     instructorId: lesson.instructor.id, // Map for form
-                    startTime: new Date(lesson.startTime) // Ensure Date object for datepicker
+                    startDate: start, // Ensure Date object for datepicker
+                    startTime: timeStr
                 }
             }
         });
@@ -182,13 +188,14 @@ export class SchedulingComponent implements AfterViewInit {
     private handleLessonFormSubmit(data: any, dialogRef: any, lessonId?: number) {
         const instructor = this.trafService.instructorsSignal().find(i => i.id === data.instructorId);
 
+        // Combine startDate and startTime
+        const date = new Date(data.startDate);
+        const [hours, minutes] = data.startTime.split(':');
+        date.setHours(parseInt(hours), parseInt(minutes));
+
         // Format Date to YYYY-MM-DD HH:mm:ss for SQL if changed
-        let formattedStartTime = data.startTime;
-        if (data.startTime instanceof Date) {
-            const pad = (n: number) => n < 10 ? '0' + n : n;
-            const d = data.startTime;
-            formattedStartTime = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        }
+        const pad = (n: number) => n < 10 ? '0' + n : n;
+        const formattedStartTime = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 
         const payload: any = {
             ...data,
@@ -198,6 +205,11 @@ export class SchedulingComponent implements AfterViewInit {
                 name: instructor ? `${instructor.firstName} ${instructor.lastName}` : 'Unknown'
             }
         };
+
+        // Remove temp fields and instructorId if not needed directly
+        delete payload.startDate;
+        delete payload.startDate; // safety
+        delete payload.instructorId;
 
         // Remove instructorId from root payload as backend expects matches for its keys or specific mapping
         delete payload.instructorId;

@@ -109,6 +109,23 @@
               }
             </mat-form-field>
             }
+            
+            <!-- Time Picker -->
+            @case ('time') {
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>{{ field.label }}</mat-label>
+              <input matInput type="time" [formControlName]="field.key" title="{{ field.label }}">
+              @if (field.icon) {
+              <mat-icon matPrefix class="field-icon">{{ field.icon }}</mat-icon>
+              }
+              @if (field.hint) {
+              <mat-hint>{{ field.hint }}</mat-hint>
+              }
+              @if (isFieldInvalid(field.key)) {
+              <mat-error>{{ getErrorMessage(field.key) }}</mat-error>
+              }
+            </mat-form-field>
+            }
 
             <!-- File Input -->
             @case ('file') {

@@ -103,3 +103,44 @@ ipcMain.handle('delete-account', async (event, { id, password }) => {
         return { success: false, message: error.message };
     }
 });
+
+ipcMain.handle('get-all-users', async () => {
+    try {
+        const users = await UserModel.findAll();
+        // Return without passwords
+        const safeUsers = users.map(u => {
+            const { password, ...rest } = u;
+            return rest;
+        });
+        return { success: true, data: safeUsers };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('add-user', async (event, userData) => {
+    try {
+        // Basic minimal add-user if not going through student/instructor specific flows
+        // Hash password handled in UserModel.create
+        const newUser = await UserModel.create(userData);
+        const { password, ...rest } = newUser;
+        return { success: true, data: rest };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('delete-user', async (event, { id, role }) => {
+    try {
+        if (role === 'student') {
+            await StudentModel.delete(id); // Should cascade or handle user deletion logic inside
+        } else if (role === 'instructor') {
+            await InstructorModel.delete(id);
+        }
+        // Fallback or specific user delete
+        await UserModel.delete(id);
+        return { success: true };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});

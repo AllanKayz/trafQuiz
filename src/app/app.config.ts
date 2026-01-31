@@ -6,7 +6,7 @@ import { authInterceptor } from './auth.interceptor';
 import { routes } from './app.routes';
 import { VehiclesComponent } from './components/vehicles/vehicles.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MatNativeDateModule, provideNativeDateAdapter } from '@angular/material/core';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -17,6 +17,6 @@ export const appConfig: ApplicationConfig = {
     ]),
     provideAnimationsAsync(),
     provideHttpClient(withInterceptors([authInterceptor])),
-    importProvidersFrom(MatNativeDateModule)
+    provideNativeDateAdapter()
   ]
 };

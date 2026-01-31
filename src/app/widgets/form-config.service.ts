@@ -144,18 +144,32 @@ export class FormConfigService {
         icon: 'assignment'
       },
       {
-        key: 'start_time',
-        label: 'Start Date & Time',
+        key: 'start_date',
+        label: 'Start Date',
         type: 'date',
         validators: [Validators.required],
         icon: 'event'
       },
       {
-        key: 'end_time',
-        label: 'End Date & Time',
+        key: 'start_time',
+        label: 'Start Time',
+        type: 'time',
+        validators: [Validators.required],
+        icon: 'schedule'
+      },
+      {
+        key: 'end_date',
+        label: 'End Date',
         type: 'date',
         validators: [Validators.required],
         icon: 'event_busy'
+      },
+      {
+        key: 'end_time',
+        label: 'End Time',
+        type: 'time',
+        validators: [Validators.required],
+        icon: 'schedule'
       }
     ],
     'schedule-exam': [
@@ -552,11 +566,18 @@ export class FormConfigService {
         icon: 'subject'
       },
       {
-        key: 'startTime',
-        label: 'Preferred Date & Time',
+        key: 'startDate',
+        label: 'Preferred Date',
         type: 'date',
         validators: [Validators.required],
         icon: 'calendar_today'
+      },
+      {
+        key: 'startTime',
+        label: 'Preferred Time',
+        type: 'time',
+        validators: [Validators.required],
+        icon: 'schedule'
       },
       {
         key: 'instructorId',
@@ -696,11 +717,18 @@ export class FormConfigService {
         icon: 'groups'
       },
       {
-        key: 'startTime',
-        label: 'Date & Time',
+        key: 'startDate',
+        label: 'Date',
         type: 'date',
         validators: [Validators.required],
         icon: 'calendar_today'
+      },
+      {
+        key: 'startTime',
+        label: 'Time',
+        type: 'time',
+        validators: [Validators.required],
+        icon: 'schedule'
       },
       {
         key: 'durationMinutes',
