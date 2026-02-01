@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const { QuestionModel } = require('../models/QuestionModel');
+const { broadcastChange } = require('../utils/broadcast');
 
 ipcMain.handle('get-questions', async (event) => {
     try {
@@ -25,6 +26,7 @@ ipcMain.handle('get-questions', async (event) => {
 ipcMain.handle('add-question', async (event, question) => {
     try {
         const result = await QuestionModel.create(question);
+        broadcastChange('questions', 'create', result);
         return { success: true, data: {
             id: result.id,
             question: result.question_text,
@@ -44,6 +46,7 @@ ipcMain.handle('add-question', async (event, question) => {
 ipcMain.handle('update-question', async (event, question) => {
     try {
         const result = await QuestionModel.update(question.id, question);
+        broadcastChange('questions', 'update', result);
         return { success: true, data: {
             id: result.id,
             question: result.question_text,
@@ -63,6 +66,7 @@ ipcMain.handle('update-question', async (event, question) => {
 ipcMain.handle('bulk-add-questions', async (event, questions) => {
     try {
         await QuestionModel.bulkCreate(questions);
+        broadcastChange('questions', 'bulk-create', null);
         return { success: true };
     } catch (error) {
         console.error('Bulk add questions error:', error);
@@ -73,6 +77,7 @@ ipcMain.handle('bulk-add-questions', async (event, questions) => {
 ipcMain.handle('delete-question', async (event, { id }) => {
     try {
         await QuestionModel.delete(id);
+        broadcastChange('questions', 'delete', { id });
         return { success: true };
     } catch (error) {
         console.error('Delete question error:', error);

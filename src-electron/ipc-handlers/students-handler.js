@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const { StudentModel } = require('../models/StudentModel');
+const { broadcastChange } = require('../utils/broadcast');
 
 ipcMain.handle('get-students', async (event, params) => {
     try {
@@ -15,6 +16,7 @@ ipcMain.handle('get-students', async (event, params) => {
 ipcMain.handle('add-student', async (event, student) => {
     try {
          const result = await StudentModel.create(student);
+         broadcastChange('students', 'create', result);
          return { success: true, data: result };
     } catch (error) {
         console.error('Add student error:', error);
@@ -25,6 +27,7 @@ ipcMain.handle('add-student', async (event, student) => {
 ipcMain.handle('update-student', async (event, student) => {
     try {
          const result = await StudentModel.update(student.id, student);
+         broadcastChange('students', 'update', result);
          return { success: true, data: result };
     } catch (error) {
         console.error('Update student error:', error);
@@ -35,6 +38,7 @@ ipcMain.handle('update-student', async (event, student) => {
 ipcMain.handle('delete-student', async (event, { id }) => {
     try {
          const success = await StudentModel.delete(id);
+         if (success) broadcastChange('students', 'delete', { id });
          return { success, message: success ? 'Student deleted' : 'Student not found' };
     } catch (error) {
         console.error('Delete student error:', error);

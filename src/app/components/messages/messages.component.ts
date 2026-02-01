@@ -100,12 +100,16 @@ export class MessagesComponent {
 
         // Listen for new messages
         if (window.electronAPI && window.electronAPI.on) {
-            window.electronAPI.on('new-message', (msg: any) => {
-                if (this.selectedConversation()?.id === msg.conversation_id) {
-                    this.messages.update(list => [...list, msg]);
-                } else {
-                    // Refresh conversations to show unread/last message
-                    this.loadConversations();
+            window.electronAPI.on('data-change', (payload: any) => {
+                if (payload.entity === 'messages' && payload.action === 'new-message') {
+                    const msg = payload.data;
+                    if (this.selectedConversation()?.id === msg.conversation_id) {
+                        this.messages.update(list => [...list, msg]);
+                        setTimeout(() => this.scrollToBottom(), 50);
+                    } else {
+                        // Refresh conversations to show unread/last message
+                        this.loadConversations();
+                    }
                 }
             });
         }

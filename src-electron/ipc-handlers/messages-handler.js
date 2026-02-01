@@ -1,4 +1,5 @@
-const { ipcMain, BrowserWindow } = require('electron');
+const { ipcMain } = require('electron');
+const { broadcastChange } = require('../utils/broadcast');
 const MessageModel = require('../models/MessageModel');
 const { saveFile } = require('../utils/file-storage');
 
@@ -36,9 +37,8 @@ ipcMain.handle('send-message', async (event, data) => {
     try {
         const message = await MessageModel.sendMessage(data);
         // Notify all windows about new message
-        BrowserWindow.getAllWindows().forEach(win => {
-            win.webContents.send('new-message', message);
-        });
+        // Notify all windows about new message
+        broadcastChange('messages', 'new-message', message);
         return { success: true, data: message };
     } catch (error) {
         console.error('Send message error:', error);
@@ -49,6 +49,7 @@ ipcMain.handle('send-message', async (event, data) => {
 ipcMain.handle('mark-messages-read', async (event, { conversationId, userId }) => {
     try {
         await MessageModel.markAsRead(conversationId, userId);
+        broadcastChange('messages', 'mark-read', { conversationId, userId });
         return { success: true };
     } catch (error) {
         console.error('Mark as read error:', error);

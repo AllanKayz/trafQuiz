@@ -377,11 +377,51 @@ export class TraffiquizService {
           this.getSpecializations();
           this.getCertifications();
           this.fetchExams();
+          this.fetchExamDuration().subscribe();
         }
       }
     });
 
     this.startPolling();
+    this.setupRealtimeUpdates();
+  }
+
+  private setupRealtimeUpdates() {
+    window.electronAPI.on('data-change', (payload: any) => {
+      console.log('Real-time update received:', payload);
+      const { entity, action, data } = payload;
+
+      switch (entity) {
+        case 'students':
+          this.fetchStudents();
+          this.fetchDashboardStats(); // students count changes
+          break;
+        case 'instructors':
+          this.fetchInstructors();
+          this.fetchDashboardStats();
+          break;
+        case 'questions':
+          this.fetchQuestions();
+          break;
+        case 'vehicles':
+          this.fetchVehicles();
+          break;
+        case 'exams':
+          this.fetchExams();
+          this.fetchDashboardStats();
+          break;
+        case 'messages':
+          // For messages, we might want to trigger a refresh if the user is viewing messages
+          // Or verify if we should notify the user
+          if (action === 'new-message') {
+            this.showNotification(`New message from ${data.sender_name || 'System'}`, 'info');
+          }
+          break;
+        case 'dashboard':
+          this.fetchDashboardStats();
+          break;
+      }
+    });
   }
 
   private startPolling() {
@@ -653,7 +693,7 @@ export class TraffiquizService {
   }
 
   fetchExamDuration(): Observable<number> {
-    return from(window.electronAPI.invoke('get-exam-duration')).pipe(
+    return from(window.electronAPI.invoke('get-exam-timeframe')).pipe(
       map((response: any) => {
         const minutes = parseInt(response.data?.period || '30', 10);
         return minutes * 60;

@@ -236,10 +236,15 @@ export class ExamsComponent implements OnInit {
     dialogRef.componentInstance.submitted.subscribe(formData => {
       // Find the date for the selected exam session
       const selectedExam = this.service.examsSignal().find(e => e.id == formData.exam_id);
-      if (selectedExam) {
-        const date = new Date(selectedExam.start_time).toISOString().split('T')[0];
-        this.onAutoAllocate({ date, capacity: formData.capacity });
-        dialogRef.close();
+      if (selectedExam && selectedExam.start_time) {
+        const dateObj = new Date(selectedExam.start_time);
+        if (!isNaN(dateObj.getTime())) {
+          const date = dateObj.toISOString().split('T')[0];
+          this.onAutoAllocate({ date, capacity: formData.capacity });
+          dialogRef.close();
+        } else {
+          this.service.showNotification('Selected exam has an invalid start date', 'error');
+        }
       } else {
         this.service.showNotification('Invalid exam session selected', 'error');
       }

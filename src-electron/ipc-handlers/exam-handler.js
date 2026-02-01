@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const { Exam, ExamModel, StudentExamHistory, ExamTimeframe } = require('../models/ExamModel');
+const { broadcastChange } = require('../utils/broadcast');
 const { Question, QuestionModel } = require('../models/QuestionModel');
 const { Student } = require('../models/StudentModel');
 const { sequelize } = require('../database');
@@ -118,7 +119,8 @@ ipcMain.handle('get-exams', async (event) => {
 ipcMain.handle('add-exam', async (event, exam) => {
     try {
         const result = await ExamModel.create(exam);
-        return { success: true, data: result };
+        broadcastChange('exams', 'create', result);
+        return { success: true, id: result.id };
     } catch (error) {
         return { success: false, message: error.message };
     }
@@ -136,6 +138,7 @@ ipcMain.handle('update-exam', async (event, exam) => {
 ipcMain.handle('delete-exam', async (event, id) => {
     try {
         await ExamModel.delete(id);
+        broadcastChange('exams', 'delete', { id });
         return { success: true };
     } catch (error) {
         return { success: false, message: error.message };
@@ -167,6 +170,32 @@ ipcMain.handle('get-exam-statistics', async () => {
         };
     } catch (error) {
         console.error('Get exam statistics error:', error);
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('get-exam-timeframe', async () => {
+    try {
+        const timeframe = await ExamTimeframe.findOne({ where: { exam_id: 0 } });
+        return { success: true, data: { period: timeframe ? timeframe.period : 30 } };
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+});
+
+ipcMain.handle('set-exam-timeframe', async (event, data) => {
+    try {
+        const [timeframe, created] = await ExamTimeframe.findOrCreate({
+            where: { exam_id: 0 },
+            defaults: { period: data.period }
+        });
+        
+        if (!created) {
+            await timeframe.update({ period: data.period });
+        }
+        
+        return { success: true, data: timeframe };
+    } catch (error) {
         return { success: false, message: error.message };
     }
 });

@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const { sequelize } = require('../database');
+const { broadcastChange } = require('../utils/broadcast');
 
 ipcMain.handle('get-financial-stats', async () => {
     try {
@@ -30,6 +31,7 @@ ipcMain.handle('add-payment', async (event, data) => {
         `, {
             replacements: [data.studentId, data.amount, 'income', 'student_payment', data.method, transactionId, 'completed']
         });
+        broadcastChange('finances', 'payment', { transactionId });
         return { success: true, transactionId };
     } catch (error) {
         return { success: false, message: error.message };
@@ -92,6 +94,7 @@ ipcMain.handle('update-payment-status', async (event, { id, status }) => {
         await sequelize.query('UPDATE payments SET status = ? WHERE id = ?', {
             replacements: [status, id]
         });
+        broadcastChange('finances', 'update-status', { id, status });
         return { success: true };
     } catch (error) {
         return { success: false, message: error.message };
@@ -108,6 +111,7 @@ ipcMain.handle('process-salary', async (event, data) => {
         `, {
             replacements: [data.instructorId, data.amount, 'expense', 'salary', data.method, transactionId, 'completed', `Salary Payment`]
         });
+        broadcastChange('finances', 'salary', { transactionId });
         return { success: true };
     } catch (error) {
         return { success: false, message: error.message };
@@ -123,6 +127,7 @@ ipcMain.handle('record-expense', async (event, data) => {
         `, {
             replacements: [data.amount, 'expense', data.category, data.method, transactionId, 'completed', data.description || 'Business Expense']
         });
+        broadcastChange('finances', 'expense', { transactionId });
         return { success: true };
     } catch (error) {
         return { success: false, message: error.message };
