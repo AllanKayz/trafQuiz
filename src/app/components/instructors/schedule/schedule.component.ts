@@ -94,28 +94,99 @@ export class ScheduleComponent {
     });
   }
 
+  private formatForDateTimeLocal(isoString: string): string {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
   reschedule(lesson: Lesson) {
     const dialogRef = this.dialog.open(DynamicFormComponent, {
-      width: '400px',
+      width: '500px',
       data: {
         title: 'Reschedule Lesson',
         submitText: 'Update',
         fields: [
           {
-            name: 'startTime',
-            label: 'New Date & Time',
+            key: 'title',
+            label: 'Lesson Title',
+            type: 'text',
+            required: true,
+            value: lesson.title,
+            icon: 'edit'
+          },
+          {
+            key: 'startTime',
+            label: 'Date & Time',
             type: 'datetime-local',
             required: true,
-            value: lesson.startTime
+            value: this.formatForDateTimeLocal(lesson.startTime),
+            icon: 'calendar_today'
+          },
+          {
+            key: 'durationMinutes',
+            label: 'Duration (min)',
+            type: 'number',
+            required: true,
+            value: lesson.durationMinutes || 60,
+            icon: 'timer'
+          },
+          {
+            key: 'location',
+            label: 'Location',
+            type: 'text',
+            value: lesson.location,
+            icon: 'location_on'
+          },
+          {
+            key: 'type',
+            label: 'Lesson Type',
+            type: 'select',
+            options: [
+              { value: 'private', label: 'Private' },
+              { value: 'group', label: 'Group' }
+            ],
+            value: (lesson.type || 'group').toLowerCase(),
+            icon: 'people'
+          },
+          {
+            key: 'notes',
+            label: 'Notes',
+            type: 'textarea',
+            value: lesson.notes,
+            icon: 'notes'
           }
         ]
       }
     });
 
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
-      this.lessonService.patchLesson(lesson.id, { startTime: new Date(data.startTime).toISOString() }).subscribe(() => {
+      // Partial updates: only send fields that have changed
+      const patch: any = {};
+
+      if (data.title !== lesson.title) patch.title = data.title;
+
+      const newStart = new Date(data.startTime).toISOString();
+      const oldStart = new Date(lesson.startTime).toISOString();
+      if (newStart !== oldStart) patch.startTime = newStart;
+
+      const newDur = Number(data.durationMinutes);
+      if (newDur !== (lesson.durationMinutes || 60)) patch.durationMinutes = newDur;
+
+      if (data.location !== lesson.location) patch.location = data.location;
+      if (data.type !== (lesson.type || 'group').toLowerCase()) patch.type = data.type;
+      if (data.notes !== lesson.notes) patch.notes = data.notes;
+
+      if (Object.keys(patch).length === 0) {
         dialogRef.close();
-        this.trafService.showNotification('Lesson rescheduled', 'success');
+        this.trafService.showNotification('No changes made', 'info');
+        return;
+      }
+
+      this.lessonService.patchLesson(lesson.id, patch).subscribe(() => {
+        dialogRef.close();
+        this.trafService.showNotification('Lesson updated', 'success');
         this.refreshSchedule();
       });
     });

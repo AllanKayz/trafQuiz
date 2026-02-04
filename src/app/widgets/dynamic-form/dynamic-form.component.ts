@@ -18,7 +18,7 @@ import { from } from 'rxjs';
 
 
 export type FieldType =
-  'text' | 'number' | 'email' | 'password' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'time' | 'file';
+  'text' | 'number' | 'email' | 'password' | 'textarea' | 'select' | 'checkbox' | 'radio' | 'date' | 'time' | 'file' | 'datetime-local';
 
 export interface FormField {
   key: string;
@@ -82,7 +82,7 @@ export class DynamicFormComponent {
 
     fields.forEach((field: any) => {
       const validators = field.validators || [];
-      const defaultValue = initialData[field.key] ?? field.defaultValue ?? '';
+      const defaultValue = initialData[field.key] ?? field.defaultValue ?? field.value ?? '';
 
       group[field.key] = this.fb.control(defaultValue, validators);
     });
