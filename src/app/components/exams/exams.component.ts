@@ -228,8 +228,6 @@ export class ExamsComponent implements OnInit {
 
         delete payload.start_date;
         delete payload.end_date;
-        delete payload.start_time;
-        delete payload.end_time;
 
         this.service.addExam(payload).subscribe({
           next: () => {

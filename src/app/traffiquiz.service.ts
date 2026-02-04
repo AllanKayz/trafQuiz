@@ -37,11 +37,12 @@ export class TraffiquizService {
   /**
    * Shows a snackbar notification.
    */
-  public showNotification(message: string, type: 'success' | 'error' | 'info' = 'info', duration: number = 4000) {
+  public showNotification(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info', duration: number = 4000) {
     const titles = {
       success: 'Success',
       error: 'Error',
-      info: 'Information'
+      info: 'Information',
+      warning: 'Warning'
     };
 
     this.alert.open(AlertComponent, {
