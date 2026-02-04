@@ -115,13 +115,106 @@ export class UserAccessComponent {
 
     onUserAdded(dialogRef: MatDialogRef<any>, form: any) {
         if (form.valid) {
-            const newUser = form.value;
-            this.service.addUser(newUser).subscribe(() => {
-                this.service.showNotification('User created successfully', 'success');
-                this.loadUsers();
-                dialogRef.close();
+            const newUser = { ...form.value };
+            let generatedUsername = '';
+            let generatedPassword = '';
+
+            // Auto-generate username if not provided
+            if (!newUser.username && newUser.email) {
+                generatedUsername = newUser.email.split('@')[0];
+                newUser.username = generatedUsername;
+            }
+
+            // Auto-generate password if not provided
+            if (!newUser.password) {
+                generatedPassword = this.generatePassword();
+                newUser.password = generatedPassword;
+            }
+
+            this.service.addUser(newUser).subscribe({
+                next: () => {
+                    const roleLabel = newUser.role === 'admin' ? 'Administrator' :
+                        newUser.role === 'instructor' ? 'Instructor' : 'Student';
+
+                    // If credentials were generated, show them to the admin
+                    if (generatedUsername || generatedPassword) {
+                        this.showCredentialsDialog(
+                            newUser.username,
+                            generatedPassword || newUser.password,
+                            newUser.email,
+                            roleLabel
+                        );
+                    } else {
+                        this.service.showNotification(`${roleLabel} created successfully`, 'success');
+                    }
+
+                    this.loadUsers();
+                    dialogRef.close();
+                },
+                error: (err) => {
+                    this.service.showNotification(`Failed to create user: ${err.message || 'Unknown error'}`, 'error');
+                }
             });
         }
+    }
+
+    private generatePassword(): string {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+        let password = '';
+        for (let i = 0; i < 12; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    }
+
+    private showCredentialsDialog(username: string, password: string, email: string, role: string) {
+        const credentials = `Username: ${username}\nPassword: ${password}\nEmail: ${email}`;
+
+        const dialogRef = this.service.alert.open(require('../../alert/alert.component').AlertComponent, {
+            width: '450px',
+            data: {
+                title: `${role} Created Successfully`,
+                message: `Login credentials have been generated:\n\nUsername: ${username}\nPassword: ${password}\nEmail: ${email}\n\nPlease save these credentials securely and share them with the user.`,
+                type: 'success',
+                buttons: [
+                    { text: 'Copy Credentials', value: 'copy', color: 'primary' },
+                    { text: 'Done', value: 'done', color: 'primary' }
+                ]
+            }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+            if (result === 'copy') {
+                this.copyToClipboard(credentials);
+                this.service.showNotification('Credentials copied to clipboard', 'success');
+            }
+        });
+    }
+
+    private copyToClipboard(text: string): void {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(err => {
+                console.error('Failed to copy to clipboard:', err);
+                this.fallbackCopy(text);
+            });
+        } else {
+            this.fallbackCopy(text);
+        }
+    }
+
+    private fallbackCopy(text: string): void {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+            document.execCommand('copy');
+        } catch (err) {
+            console.error('Fallback copy failed:', err);
+        }
+        document.body.removeChild(textarea);
     }
 
     onPasswordChanged(dialogRef: MatDialogRef<any>, userId: string, pass: string) {

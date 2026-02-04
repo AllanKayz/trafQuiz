@@ -203,7 +203,70 @@ class LessonModel {
   static async update(id, data) {
     const lesson = await Lesson.findByPk(id);
     if (!lesson) throw new Error("Lesson not found");
-    await lesson.update(data);
+
+    // Map camelCase to snake_case for partial updates
+    const mappedData = {};
+
+    if (data.title !== undefined) mappedData.title = data.title;
+    if (data.subject !== undefined) mappedData.subject = data.subject;
+    if (data.startTime !== undefined || data.start_time !== undefined) {
+      mappedData.start_time = data.startTime || data.start_time;
+    }
+    if (
+      data.durationMinutes !== undefined ||
+      data.duration_minutes !== undefined
+    ) {
+      mappedData.duration_minutes =
+        data.durationMinutes || data.duration_minutes;
+    }
+    if (data.instructorId !== undefined || data.instructor_id !== undefined) {
+      mappedData.instructor_id = data.instructorId || data.instructor_id;
+    }
+    if (data.studentId !== undefined || data.student_id !== undefined) {
+      mappedData.student_id = data.studentId || data.student_id;
+    }
+    if (
+      data.assignedVehicleId !== undefined ||
+      data.assigned_vehicle_id !== undefined
+    ) {
+      mappedData.assigned_vehicle_id =
+        data.assignedVehicleId || data.assigned_vehicle_id;
+    }
+    if (data.location !== undefined) mappedData.location = data.location;
+    if (data.onlineLink !== undefined || data.online_link !== undefined) {
+      mappedData.online_link = data.onlineLink || data.online_link;
+    }
+    if (data.status !== undefined) mappedData.status = data.status;
+    if (data.capacity !== undefined) mappedData.capacity = data.capacity;
+    if (data.notes !== undefined) mappedData.notes = data.notes;
+    if (data.type !== undefined) mappedData.type = data.type;
+    if (data.resources !== undefined) mappedData.resources = data.resources;
+
+    // Recalculate end_time if start_time or duration changes
+    if (mappedData.start_time && mappedData.duration_minutes) {
+      const start = new Date(mappedData.start_time);
+      if (!isNaN(start.getTime())) {
+        mappedData.end_time = new Date(
+          start.getTime() + mappedData.duration_minutes * 60000,
+        );
+      }
+    } else if (mappedData.start_time && lesson.duration_minutes) {
+      const start = new Date(mappedData.start_time);
+      if (!isNaN(start.getTime())) {
+        mappedData.end_time = new Date(
+          start.getTime() + lesson.duration_minutes * 60000,
+        );
+      }
+    } else if (mappedData.duration_minutes && lesson.start_time) {
+      const start = new Date(lesson.start_time);
+      if (!isNaN(start.getTime())) {
+        mappedData.end_time = new Date(
+          start.getTime() + mappedData.duration_minutes * 60000,
+        );
+      }
+    }
+
+    await lesson.update(mappedData);
 
     // Return fully hydrated object
     const updated = await this.findAll({ id });

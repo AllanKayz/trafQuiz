@@ -36,12 +36,14 @@ ipcMain.handle("add-lesson", async (event, lesson) => {
   }
 });
 
-ipcMain.handle("update-lesson", async (event, { id, status, notes }) => {
+ipcMain.handle("update-lesson", async (event, payload) => {
   try {
-    const result = await LessonModel.updateStatus(id, status, notes);
-    broadcastChange("lessons", "update-status", result);
+    const { id, ...updateData } = payload;
+    const result = await LessonModel.update(id, updateData);
+    broadcastChange("lessons", "update", result);
     return { success: true, data: result };
   } catch (error) {
+    console.error("Update lesson error:", error);
     return { success: false, message: error.message };
   }
 });

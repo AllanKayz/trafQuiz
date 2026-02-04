@@ -37,10 +37,25 @@
                     <input matInput name="email" ngModel required email placeholder="Email Address">
                 </mat-form-field>
                 <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Phone Number</mat-label>
+                    <input matInput name="phone" ngModel placeholder="Optional">
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Username</mat-label>
+                    <input matInput name="username" ngModel required placeholder="Auto-generated from email if empty">
+                    <mat-hint>Leave empty to auto-generate from email</mat-hint>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                    <mat-label>Initial Password</mat-label>
+                    <input matInput name="password" ngModel required type="text" placeholder="Auto-generated if empty">
+                    <mat-hint>User can change after first login</mat-hint>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
                     <mat-label>Role</mat-label>
                     <mat-select name="role" ngModel required>
                         <mat-option value="student">Student</mat-option>
                         <mat-option value="instructor">Instructor</mat-option>
+                        <mat-option value="admin">Administrator</mat-option>
                     </mat-select>
                 </mat-form-field>
             </mat-dialog-content>

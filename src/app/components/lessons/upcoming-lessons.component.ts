@@ -1,6 +1,7 @@
-import { Component, OnInit, signal, effect, inject, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, effect, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { Lesson } from '../../models/lesson';
 import { LessonService } from '../../services/lesson.service';
 import { LessonCardComponent } from './lesson-card.component';
@@ -18,7 +19,7 @@ import { MessagesService } from '../messages/messages.service';
   templateUrl: './upcoming-lessons.component.html',
   styleUrls: ['./upcoming-lessons.component.css']
 })
-export class UpcomingLessonsComponent implements OnInit {
+export class UpcomingLessonsComponent implements OnInit, OnDestroy {
   private service = inject(TraffiquizService);
   private lessonService = inject(LessonService);
   private messagesService = inject(MessagesService);
@@ -34,11 +35,16 @@ export class UpcomingLessonsComponent implements OnInit {
   selectedLesson: Lesson | null = null;
   range: 'today' | '7days' | 'week' | 'month' = '7days';
   q = '';
+  private subscriptions: Subscription[] = [];
 
   constructor() { }
 
   ngOnInit(): void {
     this.loadLessons();
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   loadLessons() {

@@ -1334,6 +1334,23 @@ export class TraffiquizService {
       return this.addStudent({ ...user, firstName, lastName });
     } else if (user.role === 'instructor') {
       return this.addInstructor({ ...user, firstName, lastName });
+    } else if (user.role === 'admin') {
+      // Admin creation - direct to add-user handler
+      return from(window.electronAPI.invoke('add-user', {
+        ...user,
+        firstName,
+        lastName
+      })).pipe(
+        tap((res: any) => {
+          if (res.success) {
+            this.fetchAllUsers().subscribe(); // Refresh user list
+          }
+        }),
+        catchError((error) => {
+          this.showNotification('Failed to create administrator: ' + error.message, 'error');
+          return throwError(() => error);
+        })
+      );
     }
     return from(window.electronAPI.invoke('add-user', user));
   }
