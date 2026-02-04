@@ -14,6 +14,7 @@ import { TableColumn, TableComponent } from '../../widgets/table/table.component
 import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { MatNativeDateModule } from '@angular/material/core';
+import { AlertComponent } from '../../alert/alert.component';
 
 @Component({
     selector: 'app-user-access',
@@ -170,7 +171,7 @@ export class UserAccessComponent {
     private showCredentialsDialog(username: string, password: string, email: string, role: string) {
         const credentials = `Username: ${username}\nPassword: ${password}\nEmail: ${email}`;
 
-        const dialogRef = this.service.alert.open(require('../../alert/alert.component').AlertComponent, {
+        const dialogRef = this.service.alert.open(AlertComponent, {
             width: '450px',
             data: {
                 title: `${role} Created Successfully`,

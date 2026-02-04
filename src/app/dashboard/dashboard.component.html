@@ -12,7 +12,7 @@
     <nav class="nav-list">
       @for (item of menuItems(); track item) {
       <a class="nav-item" [routerLink]="[item.toLowerCase()]" routerLinkActive="active-link"
-        [routerLinkActiveOptions]="{exact: false}" (click)="sidenavLink()">
+        [routerLinkActiveOptions]="{exact: false}">
         <mat-icon>{{icons()[item.toLowerCase()] || 'circle'}}</mat-icon>
         @if (!isSidenavCollapsed()) {
         <span>{{item}}</span>

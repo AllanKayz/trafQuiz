@@ -1,15 +1,15 @@
 const { ipcMain } = require("electron");
 const { sequelize } = require("../database");
 const { broadcastChange } = require("../utils/broadcast");
+const Payment = require("../models/payment");
+const { Op } = require("sequelize");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
-    const [revenueRes] = await sequelize.query(
-      'SELECT SUM(amount) as total FROM payments WHERE type="income"',
-    );
-    const [expensesRes] = await sequelize.query(
-      'SELECT SUM(amount) as total FROM payments WHERE type="expense"',
-    );
+    const totalRevenue =
+      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
+    const totalExpenses =
+      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
@@ -30,6 +30,7 @@ ipcMain.handle("get-financial-stats", async () => {
 
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
+      d.setDate(1); // Crucial: avoid month-end rollover issues
       d.setMonth(d.getMonth() - i);
       months.push({
         name: monthNames[d.getMonth()],
@@ -43,30 +44,19 @@ ipcMain.handle("get-financial-stats", async () => {
     const labels = months.map((m) => m.name);
 
     for (const m of months) {
+      const monthStr = m.month.toString().padStart(2, "0");
+      const yearStr = m.year.toString();
+
+      // We still use raw query for strftime as it's efficient for SQLite month extraction
+      // OR we could use Op.between if we calculate start/end of month
       const [rev] = await sequelize.query(
-        `
-                SELECT SUM(amount) as total FROM payments 
-                WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?
-            `,
-        {
-          replacements: [
-            m.month.toString().padStart(2, "0"),
-            m.year.toString(),
-          ],
-        },
+        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
+        { replacements: [monthStr, yearStr] },
       );
 
       const [exp] = await sequelize.query(
-        `
-                SELECT SUM(amount) as total FROM payments 
-                WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?
-            `,
-        {
-          replacements: [
-            m.month.toString().padStart(2, "0"),
-            m.year.toString(),
-          ],
-        },
+        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
+        { replacements: [monthStr, yearStr] },
       );
 
       chartRevenue.push(Number(rev[0]?.total) || 0);
@@ -76,12 +66,10 @@ ipcMain.handle("get-financial-stats", async () => {
     return {
       success: true,
       data: {
-        totalRevenue: Number(revenueRes[0]?.total) || 0,
-        totalExpenses: Number(expensesRes[0]?.total) || 0,
-        netProfit:
-          (Number(revenueRes[0]?.total) || 0) -
-          (Number(expensesRes[0]?.total) || 0),
-        projectedRevenue: (Number(revenueRes[0]?.total) || 0) * 1.1,
+        totalRevenue,
+        totalExpenses,
+        netProfit: totalRevenue - totalExpenses,
+        projectedRevenue: totalRevenue * 1.1,
         chartData: {
           labels: labels,
           revenue: chartRevenue,

@@ -37,17 +37,4 @@ export class DashboardComponent {
   toggleSidenav() {
     this.isSidenavCollapsed.update(prev => !prev);
   }
-
-  sidenavLink() {
-    const subscription = this.router.events.subscribe(event => {
-      if (event instanceof NavigationEnd) {
-        if (event.url === '/dashboard/exam') {
-          this.router.navigate(['/exam']);
-        }
-        subscription.unsubscribe();
-      }
-    });
-  }
-
-
 }

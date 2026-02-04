@@ -193,32 +193,55 @@ export class ExamsComponent implements OnInit {
     });
 
     dialogRef.componentInstance.submitted.subscribe(formData => {
-      // Combine start date/time
-      const start = new Date(formData.start_date);
-      const [startH, startM] = formData.start_time.split(':');
-      start.setHours(parseInt(startH), parseInt(startM));
+      try {
+        // Combine start date/time
+        const start = new Date(formData.start_date);
+        if (isNaN(start.getTime())) throw new Error('Invalid start date');
 
-      // Combine end date/time
-      const end = new Date(formData.end_date);
-      const [endH, endM] = formData.end_time.split(':');
-      end.setHours(parseInt(endH), parseInt(endM));
+        if (formData.start_time) {
+          const [startH, startM] = formData.start_time.split(':');
+          start.setHours(parseInt(startH || '0'), parseInt(startM || '0'), 0, 0);
+        }
 
-      const payload = {
-        ...formData,
-        start_time: start.toISOString(),
-        end_time: end.toISOString()
-      };
+        // Combine end date/time
+        const end = new Date(formData.end_date || formData.start_date);
+        if (isNaN(end.getTime())) throw new Error('Invalid end date');
 
-      delete payload.start_date;
-      delete payload.end_date;
+        if (formData.end_time) {
+          const [endH, endM] = formData.end_time.split(':');
+          end.setHours(parseInt(endH || '0'), parseInt(endM || '0'), 0, 0);
+        } else {
+          // Default end time to 1 hour after start if not provided
+          end.setTime(start.getTime() + 60 * 60 * 1000);
+        }
 
-      this.service.addExam(payload).subscribe({
-        next: () => {
-          this.service.showNotification('Exam created successfully', 'success');
-          dialogRef.close();
-        },
-        error: () => this.service.showNotification('Error creating exam', 'error')
-      });
+        if (end <= start) {
+          this.service.showNotification('End time must be after start time', 'warning');
+          return;
+        }
+
+        const payload = {
+          ...formData,
+          start_time: start.toISOString(),
+          end_time: end.toISOString()
+        };
+
+        delete payload.start_date;
+        delete payload.end_date;
+        delete payload.start_time;
+        delete payload.end_time;
+
+        this.service.addExam(payload).subscribe({
+          next: () => {
+            this.service.showNotification('Exam created successfully', 'success');
+            dialogRef.close();
+            this.loadStats();
+          },
+          error: (err) => this.service.showNotification('Error creating exam: ' + err.message, 'error')
+        });
+      } catch (e: any) {
+        this.service.showNotification(e.message, 'error');
+      }
     });
   }
 

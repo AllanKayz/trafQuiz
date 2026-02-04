@@ -1,6 +1,4 @@
-import { Component, OnInit, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-
+import { Component } from '@angular/core';
 import { UpcomingLessonsComponent } from './upcoming-lessons.component';
 
 @Component({
@@ -10,20 +8,5 @@ import { UpcomingLessonsComponent } from './upcoming-lessons.component';
   templateUrl: './lessons.component.html',
   styleUrls: ['./lessons.component.css']
 })
-export class LessonsComponent implements OnInit {
-  @ViewChild(UpcomingLessonsComponent) upcomingLessonsComponent?: UpcomingLessonsComponent;
-
-  private cdr = inject(ChangeDetectorRef);
-  private route = inject(ActivatedRoute);
-
-  ngOnInit(): void {
-    // Force initial load when component is activated
-    this.route.url.subscribe(() => {
-      // Trigger change detection to ensure child component loads
-      setTimeout(() => {
-        this.upcomingLessonsComponent?.loadLessons();
-        this.cdr.detectChanges();
-      }, 0);
-    });
-  }
+export class LessonsComponent {
 }
