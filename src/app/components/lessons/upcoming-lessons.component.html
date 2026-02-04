@@ -30,9 +30,13 @@
       <div class="list-header">
         <h3>Lesson List</h3>
       </div>
-      <ul>@for (l of filteredLessons(); track l.id) {<li (click)="selectLesson(l)" tabindex="0"
-          (keyup.enter)="selectLesson(l)"><app-lesson-card [lesson]="l"
-            [selected]="selectedLesson?.id === l.id"></app-lesson-card></li>}</ul>
+      <ul>
+        @for (l of filteredLessons(); track l.id) {
+        <li (click)="selectLesson(l)" tabindex="0" (keyup.enter)="selectLesson(l)">
+          <app-lesson-card [lesson]="l" [selected]="selectedLesson?.id === l.id"></app-lesson-card>
+        </li>
+        }
+      </ul>
       @if (lessons.length === 0) {
       <div class="empty">No upcoming lessons found.</div>
       }
@@ -65,7 +69,7 @@
             </div>
             <div class="meta-content">
               <span class="meta-label">Instructor</span>
-              <span class="meta-value">{{ selectedLesson.instructor.name }}</span>
+              <span class="meta-value">{{ selectedLesson.instructor?.name || 'Unassigned' }}</span>
             </div>
           </div>
 

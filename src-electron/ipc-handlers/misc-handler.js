@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const { query, get } = require('../db');
+const { broadcastChange } = require('../utils/broadcast');
 
 // Packages
 
@@ -30,6 +31,7 @@ ipcMain.handle('delete-specialization', async (event, { id }) => {
     try {
         const { run } = require('../db');
         await run('DELETE FROM specialization WHERE id = ?', [id]);
+        broadcastChange('specializations', 'delete', { id });
         return { success: true };
     } catch (e) {
         console.error('Delete specialization error:', e);
@@ -41,6 +43,7 @@ ipcMain.handle('update-specialization', async (event, specialization) => {
     try {
         const { run } = require('../db');
         await run('UPDATE specialization SET specialization = ?, description = ? WHERE id = ?', [specialization.specialization, specialization.description, specialization.id]);
+        broadcastChange('specializations', 'update', specialization);
         return { success: true };
     } catch (e) {
         console.error('Update specialization error:', e);
@@ -54,6 +57,7 @@ ipcMain.handle('delete-certification', async (event, { id }) => {
     try {
         const { run } = require('../db');
         await run('DELETE FROM certification WHERE id = ?', [id]);
+        broadcastChange('certifications', 'delete', { id });
         return { success: true };
     } catch (e) {
         console.error('Delete certification error:', e);
@@ -65,6 +69,7 @@ ipcMain.handle('update-certification', async (event, certification) => {
     try {
         const { run } = require('../db');
         await run('UPDATE certification SET certification = ?, description = ? WHERE id = ?', [certification.certification, certification.description, certification.id]);
+        broadcastChange('certifications', 'update', certification);
         return { success: true };
     } catch (e) {
         console.error('Update certification error:', e);
@@ -102,6 +107,7 @@ ipcMain.handle('add-category', async (event, category) => {
         const desc = category.description || '';
         
         const result = await run('INSERT INTO categories (name, description) VALUES (?, ?)', [name, desc]);
+        broadcastChange('categories', 'create', { id: result.lastID, category: name, description: desc });
         return { success: true, id: result.lastID, data: { id: result.lastID, category: name, description: desc } };
     } catch (e) {
         console.error('Add category error:', e);
@@ -115,6 +121,7 @@ ipcMain.handle('update-category', async (event, category) => {
         const name = category.name || category.category;
         const desc = category.description || '';
         await run('UPDATE categories SET name = ?, description = ? WHERE id = ?', [name, desc, category.id]);
+        broadcastChange('categories', 'update', { id: category.id, category: name, description: desc });
         return { success: true };
     } catch (e) {
         console.error('Update category error:', e);
@@ -126,6 +133,7 @@ ipcMain.handle('delete-category', async (event, { id }) => {
     try {
         const { run } = require('../db');
         await run('DELETE FROM categories WHERE id = ?', [id]);
+        broadcastChange('categories', 'delete', { id });
         return { success: true };
     } catch (e) {
         console.error('Delete category error:', e);

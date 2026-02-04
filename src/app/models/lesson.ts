@@ -5,7 +5,7 @@ export interface Lesson {
   startTime: string; // ISO string
   endTime?: string; // ISO string
   durationMinutes?: number;
-  instructor: { id: number; name: string; avatarUrl?: string };
+  instructor?: { id: number; name: string; avatarUrl?: string } | null;
   location?: string;
   onlineLink?: string;
   status: 'upcoming' | 'cancelled' | 'completed' | 'rescheduled' | 'pending' | 'confirmed' | 'declined';

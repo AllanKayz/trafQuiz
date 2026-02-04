@@ -117,7 +117,10 @@ export class StudentsComponent {
 			data: {
 				title: student ? 'Edit Student' : 'Add New Student',
 				fields: fields,
-				initialData: student || {},
+				initialData: student ? {
+					...student,
+					enrollmentDate: student.created_at || new Date().toISOString().split('T')[0]
+				} : {},
 				submitText: student ? 'Update' : 'Add'
 			}
 		});

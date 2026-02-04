@@ -42,23 +42,8 @@ export class UpcomingLessonsComponent implements OnInit {
   }
 
   loadLessons() {
-    this.lessonService.getLessons(this.range).subscribe((ls) => {
-      const user = this.user();
-      let filtered = ls.slice();
-
-      if (user) {
-        if (user.role === 'student') {
-          // Students see group lessons OR lessons they booked
-          filtered = ls.filter(l => l.type === 'group' || l.studentId === user.id);
-        } else if (user.role === 'instructor') {
-          // Instructors see lessons assigned to them
-          filtered = ls.filter(l => l.instructor.id === user.id);
-        }
-        // Admins see everything
-      }
-
-      // sort ascending by startTime
-      this.lessons = filtered.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    this.lessonService.fetchLessons(this.range).subscribe((ls) => {
+      this.lessons = ls;
 
       // Auto-select first lesson if none selected
       if (this.lessons.length > 0) {
@@ -82,7 +67,7 @@ export class UpcomingLessonsComponent implements OnInit {
     return this.lessons.filter((l) => {
       const matchSearch = !q || (
         l.title + ' ' +
-        l.instructor.name + ' ' +
+        (l.instructor?.name || '') + ' ' +
         (l.subject || '') + ' ' +
         (l.studentName || '')
       ).toLowerCase().includes(q);
@@ -182,7 +167,7 @@ export class UpcomingLessonsComponent implements OnInit {
           }
         ],
         initialData: {
-          instructorId: lesson.instructor.id,
+          instructorId: lesson.instructor?.id,
           assignedVehicleId: lesson.assignedVehicleId,
           studentId: lesson.studentId,
           status: lesson.status
@@ -253,7 +238,7 @@ export class UpcomingLessonsComponent implements OnInit {
     const dialogRef = this.dialog.open(DynamicFormComponent, {
       width: '500px',
       data: {
-        title: `Message ${lesson.instructor.name}`,
+        title: `Message ${lesson.instructor?.name || 'Instructor'}`,
         submitText: 'Send',
         fields: [
           { name: 'message', label: 'Your message', type: 'textarea', required: true }
@@ -269,7 +254,7 @@ export class UpcomingLessonsComponent implements OnInit {
         data.message,
         'text',
         null,
-        lesson.instructor.id
+        lesson.instructor?.id
       ).subscribe({
         next: () => {
           dialogRef.close();

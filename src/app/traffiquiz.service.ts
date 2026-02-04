@@ -172,13 +172,13 @@ export class TraffiquizService {
     ]
   }
 
-  questionWidgetConfig = {
+  questionWidgetConfig = signal({
     admin: [
-      { title: '100', data: 'Total Questions', footer: '' },
-      { title: '11', data: 'Categories', footer: '' },
-      { title: '50', data: 'Reviewed', footer: '' }
+      { title: '...', data: 'Total Questions', footer: '' },
+      { title: '...', data: 'Categories', footer: '' },
+      { title: '...', data: 'Reviewed', footer: '' }
     ]
-  }
+  });
 
   studentWidgetConfig = {
     admin: [
@@ -187,18 +187,22 @@ export class TraffiquizService {
     ]
   }
 
-  instructorWidgetConfig = {
+  public instructorWidgetConfig = {
     admin: [
-      { title: '100', data: 'Total Instructors', footer: '' },
-      { title: '10', data: 'Available Instructors', footer: '' }
+      { title: '0', subtitle: 'Total Instructors', icon: 'people', color: 'text-blue-600', bg: 'bg-blue-100', footer: 'Active staff' },
+      { title: '0', subtitle: 'Available Now', icon: 'event_available', color: 'text-green-600', bg: 'bg-green-100', footer: 'Ready for allocation' },
+      { title: '0', subtitle: 'On Lesson', icon: 'directions_car', color: 'text-orange-600', bg: 'bg-orange-100', footer: 'Currently busy' },
     ]
-  }
+  };
+
+  // Add users signal
+  public usersSignal = signal<any[]>([]);
 
   examWidgetConfig = {
     admin: [
       { id: 'analytics', title: 'Overall Pass Rate', data: '0', footer: 'Candidates Passed', icon: 'check_circle' },
       { id: 'group', title: 'Recent Engagement', data: '0', footer: 'Candidates in last session', icon: 'people' },
-      { id: 'history_edu', title: 'Total Sessions', data: '0', footer: 'Recorded Exam Sessions', icon: 'history_edu' },
+      { id: 'history_edu', title: '0', footer: 'Recorded Exam Sessions', icon: 'history_edu' },
     ]
   }
 
@@ -252,7 +256,8 @@ export class TraffiquizService {
 
   public userQuestionWidgets = computed(() => {
     const user = this.userSignal();
-    return user ? this.questionWidgetConfig[user.role as keyof typeof this.questionWidgetConfig] : [];
+    // Assuming admin for now, or expand config for others
+    return user && user.role === 'admin' ? this.questionWidgetConfig().admin : [];
   });
 
   public userStudentWidgets = computed(() => {
@@ -361,6 +366,13 @@ export class TraffiquizService {
     }))
   });
 
+  public categories = computed(() => {
+    return this.categoriesSignal().map(c => ({
+      value: c.id,
+      label: c.category
+    }))
+  });
+
   constructor() {
     this.initializeUser();
     this.initializeTheme();
@@ -371,6 +383,8 @@ export class TraffiquizService {
         this.fetchDashboardStats();
         if (user.role === 'admin' || user.role === 'instructor') {
           this.fetchQuestions();
+          this.fetchQuestionStats();
+          this.fetchCategories();
           this.fetchStudents();
           this.fetchInstructors();
           this.getPackages();
@@ -400,8 +414,22 @@ export class TraffiquizService {
           this.fetchInstructors();
           this.fetchDashboardStats();
           break;
+        case 'specializations':
+          this.getSpecializations();
+          break;
+        case 'certifications':
+          this.getCertifications();
+          break;
+        case 'categories':
+          this.fetchQuestions(); // Categories affect questions
+          this.fetchQuestionStats();
+          break;
+        case 'users':
+          this.fetchAllUsers().subscribe();
+          break;
         case 'questions':
           this.fetchQuestions();
+          this.fetchQuestionStats();
           break;
         case 'vehicles':
           this.fetchVehicles();
@@ -716,7 +744,10 @@ export class TraffiquizService {
       next: (res: any) => {
         if (res.success) {
           this.questionsSignal.set(res.data.map((item: any) => this.transformQuestion(item)));
-          this.questionWidgetConfig.admin[0].title = this.totalQuestions().toString();
+          this.questionWidgetConfig.update(config => ({
+            ...config,
+            admin: config.admin.map((w, i) => i === 0 ? { ...w, title: this.totalQuestions().toString() } : w)
+          }));
         }
       },
       error: (error) => {
@@ -980,6 +1011,35 @@ export class TraffiquizService {
       value: item.id,
       label: item.category
     }))
+  }
+
+  public fetchQuestionStats() {
+    from(window.electronAPI.invoke('get-question-stats')).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.questionWidgetConfig.set({
+            admin: [
+              { title: res.data.total?.toString() || '0', data: 'Total Questions', footer: '' },
+              { title: res.data.categories?.toString() || '0', data: 'Categories', footer: '' },
+              { title: res.data.reviewed?.toString() || '0', data: 'Reviewed', footer: '' }
+            ]
+          });
+        }
+      },
+      error: (err) => console.error('Error fetching question stats:', err)
+    });
+  }
+
+  public fetchCategories() {
+    from(window.electronAPI.invoke('get-question-categories')).subscribe({
+      next: (res: any) => {
+        if (res.success) {
+          this.categoriesSignal.set(res.data);
+          this.setCache('categories_raw', res.data);
+        }
+      },
+      error: (err) => console.error('Error fetching categories:', err)
+    });
   }
 
   getQuestionCategories() {
@@ -1260,6 +1320,7 @@ export class TraffiquizService {
     this.loading.show();
     return from(window.electronAPI.invoke('get-all-users')).pipe(
       map((res: any) => res.success ? res.data : []),
+      tap(users => this.usersSignal.set(users)),
       finalize(() => this.loading.hide())
     );
   }

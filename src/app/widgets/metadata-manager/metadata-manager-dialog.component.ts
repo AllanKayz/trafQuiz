@@ -45,7 +45,7 @@ export interface MetadataManagerData {
             [columns]="data.columns" 
             [data]="data.dataSignal()" 
             [actions]="['edit', 'delete']"
-            (action)="handleAction($event)">
+            (rowAction)="handleAction($event)">
           </app-table>
         </div>
       </div>
@@ -104,6 +104,7 @@ export class MetadataManagerDialogComponent {
   ) { }
 
   handleAction(event: any) {
+    console.log('MetadataManager - Action:', event);
     if (event.action === 'edit') {
       this.openForm(event.item);
     } else if (event.action === 'delete') {
@@ -124,17 +125,20 @@ export class MetadataManagerDialogComponent {
     });
 
     dialogRef.componentInstance.submitted.subscribe(formData => {
-      const action = item ? this.data.updateMethod(formData) : this.data.addMethod(formData);
+      // Merge ID if updating, otherwise use formData as is
+      const payload = item ? { ...formData, id: item.id } : formData;
+      const action = item ? this.data.updateMethod(payload) : this.data.addMethod(payload);
+
       action.subscribe({
         next: (res) => {
-          if (res.success) {
+          if (res && res.success) {
             this.service.showNotification('Saved successfully', 'success');
             dialogRef.close();
           } else {
-            this.service.showNotification(res.message || 'Error saving', 'error');
+            this.service.showNotification((res ? res.message : 'Unknown error') || 'Error saving', 'error');
           }
         },
-        error: (err) => this.service.showNotification('Error saving', 'error')
+        error: (err) => this.service.showNotification('Error saving: ' + err, 'error')
       });
     });
   }

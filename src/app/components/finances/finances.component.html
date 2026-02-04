@@ -87,6 +87,11 @@
               <input matInput type="number" [(ngModel)]="editBuffer().amount" title="Amount">
               <span matPrefix>$&nbsp;</span>
             </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Description</mat-label>
+              <textarea matInput [(ngModel)]="editBuffer().description" rows="3" title="Description"></textarea>
+            </mat-form-field>
           </div>
           <div class="edit-actions">
             <button mat-button (click)="cancelEdit()">Cancel</button>
@@ -98,6 +103,9 @@
           <div class="package-info">
             <span class="pkg-name">{{pkg.package}}</span>
             <span class="pkg-price">${{pkg.amount | number}}</span>
+            @if (pkg.description) {
+              <p class="pkg-description">{{pkg.description}}</p>
+            }
           </div>
           <button mat-icon-button (click)="startEdit(pkg)" matTooltip="Edit Pricing">
             <mat-icon>edit_calendar</mat-icon>

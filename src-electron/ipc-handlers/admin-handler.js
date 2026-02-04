@@ -1,5 +1,6 @@
 const { ipcMain } = require('electron');
 const { Specialization, Certification } = require('../models/MetadataModels');
+const { broadcastChange } = require('../utils/broadcast');
 const { sequelize } = require('../database');
 
 ipcMain.handle('get-specializations', async () => {
@@ -14,6 +15,7 @@ ipcMain.handle('get-specializations', async () => {
 ipcMain.handle('add-specialization', async (event, data) => {
     try {
         const result = await Specialization.create(data);
+        broadcastChange('specializations', 'create', result);
         return { success: true, data: result };
     } catch (error) {
         return { success: false, message: error.message };
@@ -32,6 +34,7 @@ ipcMain.handle('get-certifications', async () => {
 ipcMain.handle('add-certification', async (event, data) => {
     try {
         const result = await Certification.create(data);
+        broadcastChange('certifications', 'create', result);
         return { success: true, data: result };
     } catch (error) {
         return { success: false, message: error.message };

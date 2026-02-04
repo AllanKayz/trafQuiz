@@ -2,6 +2,7 @@ const { ipcMain } = require('electron');
 const { UserModel } = require('../models/UserModel');
 const { StudentModel } = require('../models/StudentModel');
 const { InstructorModel } = require('../models/InstructorModel');
+const { broadcastChange } = require('../utils/broadcast');
 
 ipcMain.handle('login', async (event, credentials) => {
     try {
@@ -74,6 +75,7 @@ ipcMain.handle('update-user', async (event, data) => {
     try {
         const { id, ...payload } = data;
         const result = await UserModel.update(id, payload);
+        broadcastChange('users', 'update', result);
         return { success: true, data: result };
     } catch (error) {
         return { success: false, message: error.message };
@@ -98,6 +100,7 @@ ipcMain.handle('delete-account', async (event, { id, password }) => {
         if (!isValid) return { success: false, message: 'Invalid password' };
 
         await UserModel.delete(id);
+        broadcastChange('users', 'delete', { id });
         return { success: true };
     } catch (error) {
         return { success: false, message: error.message };
@@ -129,6 +132,7 @@ ipcMain.handle('add-user', async (event, userData) => {
         // Hash password handled in UserModel.create
         const newUser = await UserModel.create(userData);
         const { password, ...rest } = newUser;
+        broadcastChange('users', 'create', rest);
         return { success: true, data: rest };
     } catch (error) {
         return { success: false, message: error.message };
@@ -142,8 +146,8 @@ ipcMain.handle('delete-user', async (event, { id, role }) => {
         } else if (role === 'instructor') {
             await InstructorModel.delete(id);
         }
-        // Fallback or specific user delete
         await UserModel.delete(id);
+        broadcastChange('users', 'delete', { id });
         return { success: true };
     } catch (error) {
         return { success: false, message: error.message };

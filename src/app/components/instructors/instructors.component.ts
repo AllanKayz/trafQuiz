@@ -126,7 +126,13 @@ export class InstructorsComponent {
 			data: {
 				title: instructor ? 'Edit Instructor' : 'Add New Instructor',
 				fields: fields,
-				initialData: instructor || {},
+				initialData: instructor ? {
+					...instructor,
+					license: instructor.license_number,
+					specializationType: instructor.specialization_id,
+					certification: instructor.certification_id,
+					available: Boolean(instructor.availability)
+				} : {},
 				submitText: instructor ? 'Update' : 'Add'
 			}
 		});
@@ -154,7 +160,10 @@ export class InstructorsComponent {
 			...data,
 			id: id || 0,
 			license_number: data.license,
-			availability: data.available
+			specialization_id: data.specializationType,
+			certification_id: data.certification,
+			availability: data.available,
+			experience: Number(data.experience)
 		};
 
 		// If password is empty in edit mode, don't send it

@@ -16,6 +16,15 @@ export class LessonService {
   constructor(private http: HttpClient) {
     // Initialise from backend, fallback to mock data on error
     this.fetchLessons().subscribe({ error: () => this.loadMockData() });
+
+    if (window.electronAPI) {
+      window.electronAPI.on('data-change', (payload: any) => {
+        if (payload.entity === 'lessons') {
+          console.log('Real-time lesson update received');
+          this.fetchLessons().subscribe();
+        }
+      });
+    }
   }
 
   private loadMockData() {
@@ -83,9 +92,7 @@ export class LessonService {
   }
 
   getLessons(range?: string, instructorId?: number | string): Observable<Lesson[]> {
-    if (range || instructorId) {
-      this.fetchLessons(range, instructorId).subscribe();
-    }
+    this.fetchLessons(range, instructorId).subscribe();
     return this.lessons$.asObservable();
   }
 
@@ -176,12 +183,12 @@ export class LessonService {
           const lessonType = (lesson.vehicleType || 'car').toLowerCase();
 
           // 1. Find suitable instructor if already assigned, validate capacity & specialization
-          let instructor = instructors.find(i => i.id === lesson.instructor.id);
+          let instructor = instructors.find(i => i.id === lesson.instructor?.id);
 
           if (instructor) {
             // Check instructor capacity for the day (Limit 5)
             const instructorDailyCount = updatedLessons.filter(l =>
-              l.instructor.id === instructor!.id &&
+              l.instructor?.id === instructor!.id &&
               new Date(l.startTime).toDateString() === lessonDate &&
               (l.status === 'confirmed' || l.status === 'upcoming')
             ).length;

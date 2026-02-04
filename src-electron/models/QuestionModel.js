@@ -77,6 +77,21 @@ class QuestionModel {
         return question.get({ plain: true });
     }
 
+    static async count() {
+        return await Question.count();
+    }
+
+    static async countReviewed() {
+        // Assuming a question is "reviewed" if it has an answer or based on some other criteria.
+        // For now, let's count questions with non-empty answers.
+        const { Op } = require('sequelize');
+        return await Question.count({ 
+            where: { 
+                answer: { [Op.ne]: '' } 
+            } 
+        });
+    }
+
     static async delete(id) {
         return await Question.destroy({ where: { id } });
     }

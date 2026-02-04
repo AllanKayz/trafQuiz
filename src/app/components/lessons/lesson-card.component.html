@@ -9,7 +9,7 @@
       <span class="status-indicator" [class]="lesson.status"></span>
     </div>
     <div class="meta">
-      <div class="instructor">{{ lesson.instructor.name }}</div>
+      <div class="instructor">{{ lesson.instructor?.name || 'Unassigned' }}</div>
       @if (lesson.vehicle) {
       <div class="vehicle">{{ lesson.vehicle.make }} • {{ lesson.vehicle.licensePlate }}</div>
       }

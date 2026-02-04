@@ -23,11 +23,7 @@ export class FormConfigService {
         label: 'Category',
         type: 'select',
         validators: [Validators.required],
-        options: [
-          { value: 'rules', label: 'Traffic Rules' },
-          { value: 'signs', label: 'Road Signs' },
-          { value: 'safety', label: 'Safety' }
-        ],
+        options: this.getOptions('category'),
         icon: 'category'
       },
       {
@@ -356,7 +352,7 @@ export class FormConfigService {
         icon: 'phone'
       },
       {
-        key: 'specialization',
+        key: 'specializationType',
         label: 'Specialization',
         type: 'select',
         validators: [Validators.required],
@@ -910,17 +906,7 @@ export class FormConfigService {
     let options: any[] = [];
     switch (feildKey) {
       case 'category':
-        options = this.trafQuiz.questionsSignal().reduce((acc: any[], curr: any) => {
-          // This is a bit hacky, normally there should be a categories signal
-          // But I'll use a mocked list for now or try to get it from local cache if possible
-          // Actually, service.getQuestionCategories() populates localStorage
-          const cached = localStorage.getItem('question_categories');
-          return cached ? JSON.parse(cached) : [
-            { value: 'rules', label: 'Traffic Rules' },
-            { value: 'signs', label: 'Road Signs' },
-            { value: 'safety', label: 'Safety' }
-          ];
-        }, []);
+        options = this.trafQuiz.categories();
         break;
       case 'package':
         options = this.trafQuiz.packages();

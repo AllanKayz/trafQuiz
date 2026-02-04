@@ -25,6 +25,10 @@ class CategoryModel {
         return category.get({ plain: true });
     }
 
+    static async count() {
+        return await Category.count();
+    }
+
     static async delete(id) {
         return await Category.destroy({ where: { id } });
     }

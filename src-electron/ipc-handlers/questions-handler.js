@@ -1,6 +1,27 @@
 const { ipcMain } = require('electron');
 const { QuestionModel } = require('../models/QuestionModel');
+const { CategoryModel } = require('../models/CategoryModel');
 const { broadcastChange } = require('../utils/broadcast');
+
+ipcMain.handle('get-question-stats', async () => {
+    try {
+        const total = await QuestionModel.count();
+        const categories = await CategoryModel.count();
+        const reviewed = await QuestionModel.countReviewed();
+        
+        return { 
+            success: true, 
+            data: {
+                total,
+                categories,
+                reviewed
+            }
+        };
+    } catch (e) {
+        console.error('Get question stats error:', e);
+        return { success: false, message: e.message };
+    }
+});
 
 ipcMain.handle('get-questions', async (event) => {
     try {

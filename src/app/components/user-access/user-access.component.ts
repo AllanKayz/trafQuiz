@@ -42,7 +42,7 @@ export class UserAccessComponent {
     service = inject(TraffiquizService);
     dialog = inject(MatDialog);
 
-    users = signal<any[]>([]);
+    users = computed(() => this.service.usersSignal());
 
     header = 'User Access Management';
     content = 'Manage system users, roles, and security.';
@@ -80,7 +80,6 @@ export class UserAccessComponent {
 
     loadUsers() {
         this.service.fetchAllUsers().subscribe({
-            next: (data) => this.users.set(data || []),
             error: (err) => console.error('Failed to load users:', err)
         });
     }

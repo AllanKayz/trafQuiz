@@ -87,9 +87,9 @@ export class SchedulingComponent implements AfterViewInit {
             const dateObj = new Date(l.startTime);
             return {
                 ...l,
-                lessonDate: l.startTime, // TableComponent can handle string or date object for 'date' type
-                lessonTime: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                instructorName: l.instructor.name,
+                lessonDate: l.startTime,
+                lessonTime: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+                instructorName: l.instructor?.name || 'Unassigned',
                 assignedVehicle: l.assignedVehicleId ?
                     (() => {
                         const v = this.vehicles().find(v => v.id === l.assignedVehicleId);
@@ -125,7 +125,6 @@ export class SchedulingComponent implements AfterViewInit {
         this.loading = true;
         this.lessonService.autoAllocateSchedules().subscribe(res => {
             this.trafService.showNotification(res.message, 'success');
-            this.loadData();
         });
     }
 
@@ -179,7 +178,7 @@ export class SchedulingComponent implements AfterViewInit {
                 fields: this.formConfig.getFormConfig('admin-create-lesson'),
                 initialData: {
                     ...lesson,
-                    instructorId: lesson.instructor.id, // Map for form
+                    instructorId: lesson.instructor?.id || '', // Map for form with null check
                     startDate: start, // Ensure Date object for datepicker
                     startTime: timeStr
                 }
@@ -197,11 +196,10 @@ export class SchedulingComponent implements AfterViewInit {
         // Combine startDate and startTime
         const date = new Date(data.startDate);
         const [hours, minutes] = data.startTime.split(':');
-        date.setHours(parseInt(hours), parseInt(minutes));
+        date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-        // Format Date to YYYY-MM-DD HH:mm:ss for SQL if changed
-        const pad = (n: number) => n < 10 ? '0' + n : n;
-        const formattedStartTime = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        // Use ISO string instead of manual formatting to avoid timezone ambiguity
+        const formattedStartTime = date.toISOString();
 
         const payload: any = {
             ...data,
@@ -226,7 +224,6 @@ export class SchedulingComponent implements AfterViewInit {
             next: () => {
                 this.trafService.showNotification(`Lesson ${lessonId ? 'updated' : 'created'} successfully`, 'success');
                 dialogRef.close();
-                this.loadData();
             },
             error: (err) => {
                 this.trafService.showNotification(`Failed to ${lessonId ? 'update' : 'create'} lesson`, 'error');

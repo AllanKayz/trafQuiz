@@ -12,6 +12,15 @@ export class VehicleService {
 
   constructor(private http: HttpClient, private trafService: TraffiquizService) {
     this.fetchVehicles().subscribe({ error: () => this.loadMock() });
+
+    if (window.electronAPI) {
+      window.electronAPI.on('data-change', (payload: any) => {
+        if (payload.entity === 'vehicles') {
+          console.log('Real-time vehicle update received');
+          this.fetchVehicles().subscribe();
+        }
+      });
+    }
   }
 
   fetchVehicles(role?: string, userId?: string | number): Observable<Vehicle[]> {
