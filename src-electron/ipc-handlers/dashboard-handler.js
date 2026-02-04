@@ -73,6 +73,7 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       stats.allocated_vehicle = instructorId
         ? await Vehicle.findOne({
             where: { instructor_id: instructorId, status: "active" },
+            raw: true,
           })
         : null;
 
@@ -85,6 +86,7 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
             },
             limit: 5,
             order: [["start_time", "ASC"]],
+            raw: true,
           })
         : [];
 

@@ -63,10 +63,12 @@ export class ScheduleComponent {
   }
 
   refreshSchedule() {
-    const userId = this.user()?.id;
-    this.lessonService.getLessons(undefined, userId).subscribe(ls => {
-      this.myLessons.set(ls);
-    });
+    const user = this.user();
+    if (user) {
+      this.lessonService.getLessons(undefined, undefined, user.role, user.id).subscribe(ls => {
+        this.myLessons.set(ls);
+      });
+    }
   }
 
   setViewDate(date: 'today' | 'tomorrow') {

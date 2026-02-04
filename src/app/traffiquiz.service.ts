@@ -241,7 +241,11 @@ export class TraffiquizService {
           case 'next_lesson': return { ...w, data: stats.lessons_today || 0 };
           case 'allocated_vehicle':
             const v = stats.allocated_vehicle;
-            return { ...w, data: v ? `${v.make} ${v.model}` : 'Unallocated', footer: v ? v.registration : 'No vehicle assigned' };
+            return {
+              ...w,
+              data: (v && v.make && v.model) ? `${v.make} ${v.model}` : 'Unallocated',
+              footer: v?.registration || 'No vehicle assigned'
+            };
           case 'upcoming_lessons':
             return { ...w, data: stats.upcoming_lessons?.length || 0, footer: 'View My Schedule' };
           case 'students': return { ...w, data: stats.assigned_students || 0 };

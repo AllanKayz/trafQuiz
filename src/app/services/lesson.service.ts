@@ -77,8 +77,8 @@ export class LessonService {
   /**
    * Fetches lessons using Electron IPC.
    */
-  fetchLessons(range?: string, instructorId?: number | string): Observable<Lesson[]> {
-    return from(window.electronAPI.invoke('get-lessons', { range, instructorId })).pipe(
+  fetchLessons(range?: string, instructorId?: number | string, role?: string, userId?: string | number): Observable<Lesson[]> {
+    return from(window.electronAPI.invoke('get-lessons', { range, instructorId, role, userId })).pipe(
       map((res: any) => {
         if (res.success) return res.data as Lesson[];
         throw new Error(res.message || 'Failed to fetch lessons');
@@ -91,8 +91,8 @@ export class LessonService {
     );
   }
 
-  getLessons(range?: string, instructorId?: number | string): Observable<Lesson[]> {
-    this.fetchLessons(range, instructorId).subscribe();
+  getLessons(range?: string, instructorId?: number | string, role?: string, userId?: string | number): Observable<Lesson[]> {
+    this.fetchLessons(range, instructorId, role, userId).subscribe();
     return this.lessons$.asObservable();
   }
 

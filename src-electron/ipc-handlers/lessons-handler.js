@@ -21,8 +21,12 @@ ipcMain.handle("get-lessons", async (event, filters) => {
         where: { user_id: userId },
       });
       if (instructor) {
-        cleanFilters.instructorId = instructor.id;
+        cleanFilters.instructor_id = instructor.id;
+        delete cleanFilters.instructorId; // Standardize on snake_case for DB query
       }
+    } else if (filters.instructorId) {
+      cleanFilters.instructor_id = filters.instructorId;
+      delete cleanFilters.instructorId;
     }
 
     const lessons = await LessonModel.findAll(cleanFilters);
