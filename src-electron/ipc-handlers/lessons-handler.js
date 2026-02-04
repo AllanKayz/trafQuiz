@@ -14,8 +14,15 @@ ipcMain.handle("get-lessons", async (event, filters) => {
         cleanFilters[key] = filters[key];
       }
     }
-    if (cleanFilters.range) {
-      // Keep the range filter for LessonModel.findAll to handle
+    const { role, userId } = filters;
+    if (role === "instructor" && userId) {
+      const { Instructor } = require("../models/InstructorModel");
+      const instructor = await Instructor.findOne({
+        where: { user_id: userId },
+      });
+      if (instructor) {
+        cleanFilters.instructorId = instructor.id;
+      }
     }
 
     const lessons = await LessonModel.findAll(cleanFilters);

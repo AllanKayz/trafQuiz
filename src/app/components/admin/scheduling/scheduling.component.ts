@@ -210,13 +210,10 @@ export class SchedulingComponent implements AfterViewInit {
             }
         };
 
-        // Remove temp fields and instructorId if not needed directly
+        // Remove temp fields
         delete payload.startDate;
-        delete payload.startDate; // safety
-        delete payload.instructorId;
-
-        // Remove instructorId from root payload as backend expects matches for its keys or specific mapping
-        delete payload.instructorId;
+        delete payload.startTime; // Changed from duplicate startDate to startTime for correctness if following form field naming
+        // Keep instructorId as it's used by the backend update logic
 
         const obs = lessonId ? this.lessonService.patchLesson(lessonId, payload) : this.lessonService.addLesson(payload);
 

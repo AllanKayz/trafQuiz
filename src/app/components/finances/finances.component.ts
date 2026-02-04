@@ -73,10 +73,10 @@ export class FinancesComponent implements AfterViewInit {
     const data = this.stats();
     if (!data) return [];
     return [
-      { title: 'Total Revenue', data: `$${data.totalRevenue.toLocaleString()}`, footer: 'Gross income' },
-      { title: 'Total Expenses', data: `$${data.totalExpenses.toLocaleString()}`, footer: 'Operational costs' },
-      { title: 'Net Profit', data: `$${data.netProfit.toLocaleString()}`, footer: 'After expenses' },
-      { title: 'Projected', data: `$${data.projectedRevenue.toLocaleString()}`, footer: 'Monthly estimate' }
+      { title: 'Total Revenue', data: `$${(data.totalRevenue || 0).toLocaleString()}`, footer: 'Gross income' },
+      { title: 'Total Expenses', data: `$${(data.totalExpenses || 0).toLocaleString()}`, footer: 'Operational costs' },
+      { title: 'Net Profit', data: `$${(data.netProfit || 0).toLocaleString()}`, footer: 'After expenses' },
+      { title: 'Projected', data: `$${(data.projectedRevenue || 0).toLocaleString()}`, footer: 'Monthly estimate' }
     ];
   });
 

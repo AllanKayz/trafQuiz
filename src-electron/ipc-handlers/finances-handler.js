@@ -41,7 +41,9 @@ ipcMain.handle("get-financial-stats", async () => {
 
     const chartRevenue = [];
     const chartExpenses = [];
-    const labels = months.map((m) => m.name);
+    const labels = months.map(
+      (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
+    );
 
     for (const m of months) {
       const monthStr = m.month.toString().padStart(2, "0");

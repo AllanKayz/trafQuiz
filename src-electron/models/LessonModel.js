@@ -7,9 +7,21 @@ class LessonModel {
     const { User } = require("./UserModel");
     const { Op } = require("sequelize");
 
-    const where = { ...filters };
+    const where = {};
     const range = filters.range;
-    delete where.range;
+
+    // Explicitly map allowed filters from camelCase (frontend) to snake_case (DB/Sequelize)
+    if (filters.id) where.id = filters.id;
+    if (filters.instructorId) where.instructor_id = filters.instructorId;
+    if (filters.instructor_id) where.instructor_id = filters.instructor_id;
+    if (filters.studentId) where.student_id = filters.studentId;
+    if (filters.student_id) where.student_id = filters.student_id;
+    if (filters.assignedVehicleId)
+      where.assigned_vehicle_id = filters.assignedVehicleId;
+    if (filters.assigned_vehicle_id)
+      where.assigned_vehicle_id = filters.assigned_vehicle_id;
+    if (filters.status) where.status = filters.status;
+    if (filters.type) where.type = filters.type;
 
     if (range) {
       const now = new Date();

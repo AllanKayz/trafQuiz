@@ -39,14 +39,14 @@ export class SettingsComponent {
   activeTab = signal('profile');
 
   constructor() {
-    const raw = this.service.getRawUser() || {};
+    const user = this.service.currentUser() || {};
 
     this.profileForm = this.fb.group({
-      username: [raw.username || '', Validators.required],
-      firstName: [raw.firstname || raw.firstName || '', Validators.required],
-      lastName: [raw.lastname || raw.lastName || ''],
-      email: [raw.email || '', [Validators.required, Validators.email]],
-      phone: [raw.phone || ''],
+      username: [user.username || '', Validators.required],
+      firstName: [user.firstName || '', Validators.required],
+      lastName: [user.lastName || ''],
+      email: [user.email || '', [Validators.required, Validators.email]],
+      phone: [user.phone || ''],
       changePassword: [false],
       password: [''],
       confirmPassword: ['']

@@ -139,8 +139,8 @@ export class TraffiquizService {
     ],
     instructor: [
       { id: 'next_lesson', title: 'Lessons Today', data: '...', footer: 'Today' },
-      { id: 'pending_reports', title: 'Pending Reports', data: '...', footer: 'To Review' },
-      { id: 'vehicle_issues', title: 'Vehicle Issues', data: '...', footer: 'Active Issues', type: 'warn' },
+      { id: 'allocated_vehicle', title: 'Allocated Vehicle', data: '...', footer: 'Your Vehicle' },
+      { id: 'upcoming_lessons', title: 'Upcoming Lessons', data: '...', footer: 'This Week' },
       { id: 'students', title: 'Assigned Students', data: '...', footer: 'Total' }
     ],
     student: [
@@ -239,8 +239,11 @@ export class TraffiquizService {
       return this.widgetsConfig.instructor.map(w => {
         switch (w.id) {
           case 'next_lesson': return { ...w, data: stats.lessons_today || 0 };
-          case 'pending_reports': return { ...w, data: stats.reports_pending || 0 };
-          case 'vehicle_issues': return { ...w, data: stats.vehicle_issues || 0 };
+          case 'allocated_vehicle':
+            const v = stats.allocated_vehicle;
+            return { ...w, data: v ? `${v.make} ${v.model}` : 'Unallocated', footer: v ? v.registration : 'No vehicle assigned' };
+          case 'upcoming_lessons':
+            return { ...w, data: stats.upcoming_lessons?.length || 0, footer: 'View My Schedule' };
           case 'students': return { ...w, data: stats.assigned_students || 0 };
           default: return w;
         }
@@ -586,8 +589,8 @@ export class TraffiquizService {
         return {
           id: actualUser.id,
           username: actualUser.username || actualUser.name,
-          firstName: actualUser.first_name || actualUser.firstName,
-          lastName: actualUser.last_name || actualUser.lastName,
+          firstName: actualUser.first_name || actualUser.firstName || '',
+          lastName: actualUser.last_name || actualUser.lastName || '',
           name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
           role: role,
           sidebar: this.menus.admin,
@@ -597,11 +600,11 @@ export class TraffiquizService {
         };
       case 'instructor':
         return {
-          id: actualUser.user_id || actualUser.id, // Ensure we have users.id
-          instructor_id: actualUser.user_id ? actualUser.id : null, // instructors.id
+          id: actualUser.user_id || actualUser.id,
+          instructor_id: actualUser.user_id ? actualUser.id : null,
           username: actualUser.username || actualUser.name,
-          firstName: actualUser.first_name || actualUser.firstName,
-          lastName: actualUser.last_name || actualUser.lastName,
+          firstName: actualUser.first_name || actualUser.firstName || '',
+          lastName: actualUser.last_name || actualUser.lastName || '',
           name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
           role: role,
           sidebar: this.menus.instructor,
@@ -611,11 +614,11 @@ export class TraffiquizService {
         };
       case 'student':
         return {
-          id: actualUser.user_id || actualUser.id, // Ensure we have users.id
-          student_id: actualUser.user_id ? actualUser.id : null, // students.id
+          id: actualUser.user_id || actualUser.id,
+          student_id: actualUser.user_id ? actualUser.id : null,
           username: actualUser.username || actualUser.name,
-          firstName: actualUser.first_name || actualUser.firstName,
-          lastName: actualUser.last_name || actualUser.lastName,
+          firstName: actualUser.first_name || actualUser.firstName || '',
+          lastName: actualUser.last_name || actualUser.lastName || '',
           name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
           role: role,
           sidebar: this.menus.student,
@@ -1207,9 +1210,13 @@ export class TraffiquizService {
         const chartData = res.data.chartData;
         const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-        chartData.labels = chartData.labels.map((m: string) => {
+        chartData.labels = (chartData.labels || []).map((m: string) => {
+          if (!m || !m.includes('-')) return m;
           const [year, month] = m.split('-');
-          return `${monthNames[parseInt(month) - 1]} '${year.slice(2)}`;
+          if (!year || !month) return m;
+          const monthNum = parseInt(month);
+          if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) return m;
+          return `${monthNames[monthNum - 1]} '${year.slice(-2)}`;
         });
 
         return { ...res.data, chartData };
