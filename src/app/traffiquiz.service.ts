@@ -478,7 +478,8 @@ export class TraffiquizService {
     try {
       return JSON.parse(cached);
     } catch (e) {
-      console.warn(`Failed to parse cache for ${key}`, e);
+      //console.warn(`Failed to parse cache for ${key}`, e);
+      this.showNotification(`Failed to parse cache for ${key}; ${e}`, 'error');
       return defaultValue;
     }
   }
@@ -487,7 +488,8 @@ export class TraffiquizService {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
-      console.warn(`Failed to set cache for ${key}`, e);
+      //console.warn(`Failed to set cache for ${key}`, e);
+      this.showNotification(`Failed to set cache for ${key}; ${e}`, 'error');
     }
   }
 
@@ -515,7 +517,8 @@ export class TraffiquizService {
 
     return from(window.electronAPI.invoke('update-user', backendPayload)).pipe(
       catchError((err) => {
-        console.warn('Profile update failed; saved locally', err);
+        //console.warn('Profile update failed; saved locally', err);
+        this.showNotification(`Profile updated failed; saved locally: ${err}`, 'error');
         return of(updated);
       })
     );
