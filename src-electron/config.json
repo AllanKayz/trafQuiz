@@ -1,0 +1,7 @@
+{
+  "defaultAdmin": {
+    "username": "admin",
+    "passwordHash": "$2y$10$j8KHrniTKtPcVga7/7HHUeFiPsC3vouihT6HFS85W/AhaAjTay6NG",
+    "email": "admin@gmail.com"
+  }
+}

@@ -8,7 +8,7 @@ ipcMain.handle('get-specializations', async () => {
         const data = await Specialization.findAll({ raw: true });
         return { success: true, data };
     } catch (error) {
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
@@ -18,7 +18,7 @@ ipcMain.handle('add-specialization', async (event, data) => {
         broadcastChange('specializations', 'create', result);
         return { success: true, data: result };
     } catch (error) {
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
@@ -27,7 +27,7 @@ ipcMain.handle('get-certifications', async () => {
         const data = await Certification.findAll({ raw: true });
         return { success: true, data };
     } catch (error) {
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
@@ -37,7 +37,7 @@ ipcMain.handle('add-certification', async (event, data) => {
         broadcastChange('certifications', 'create', result);
         return { success: true, data: result };
     } catch (error) {
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
@@ -47,6 +47,6 @@ ipcMain.handle('get-packages', async () => {
         const [data] = await sequelize.query('SELECT * FROM packages');
         return { success: true, data };
     } catch (error) {
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });

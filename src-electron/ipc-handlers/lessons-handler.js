@@ -33,7 +33,7 @@ ipcMain.handle("get-lessons", async (event, filters) => {
     return { success: true, data: lessons };
   } catch (error) {
     console.error("Get lessons error:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -43,7 +43,7 @@ ipcMain.handle("add-lesson", async (event, lesson) => {
     broadcastChange("lessons", "book", result);
     return { success: true, data: result };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -55,7 +55,7 @@ ipcMain.handle("update-lesson", async (event, payload) => {
     return { success: true, data: result };
   } catch (error) {
     console.error("Update lesson error:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -65,6 +65,6 @@ ipcMain.handle("delete-lesson", async (event, { id }) => {
     broadcastChange("lessons", "delete", { id });
     return { success: true };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });

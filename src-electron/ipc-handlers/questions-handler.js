@@ -2,6 +2,7 @@ const { ipcMain } = require('electron');
 const { QuestionModel } = require('../models/QuestionModel');
 const { CategoryModel } = require('../models/CategoryModel');
 const { broadcastChange } = require('../utils/broadcast');
+const { isAdmin } = require('../utils/session');
 
 ipcMain.handle('get-question-stats', async () => {
     try {
@@ -19,7 +20,7 @@ ipcMain.handle('get-question-stats', async () => {
         };
     } catch (e) {
         console.error('Get question stats error:', e);
-        return { success: false, message: e.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
@@ -40,12 +41,13 @@ ipcMain.handle('get-questions', async (event) => {
         return { success: true, data };
     } catch (error) {
         console.error('Get questions error:', error);
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
 ipcMain.handle('add-question', async (event, question) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const result = await QuestionModel.create(question);
         broadcastChange('questions', 'create', result);
         return { success: true, data: {
@@ -60,12 +62,13 @@ ipcMain.handle('add-question', async (event, question) => {
         }};
     } catch (error) {
         console.error('Add question error:', error);
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
 ipcMain.handle('update-question', async (event, question) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const result = await QuestionModel.update(question.id, question);
         broadcastChange('questions', 'update', result);
         return { success: true, data: {
@@ -80,28 +83,30 @@ ipcMain.handle('update-question', async (event, question) => {
         }};
     } catch (error) {
         console.error('Update question error:', error);
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
 ipcMain.handle('bulk-add-questions', async (event, questions) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         await QuestionModel.bulkCreate(questions);
         broadcastChange('questions', 'bulk-create', null);
         return { success: true };
     } catch (error) {
         console.error('Bulk add questions error:', error);
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });
 
 ipcMain.handle('delete-question', async (event, { id }) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         await QuestionModel.delete(id);
         broadcastChange('questions', 'delete', { id });
         return { success: true };
     } catch (error) {
         console.error('Delete question error:', error);
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });

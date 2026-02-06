@@ -124,6 +124,6 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
     return { success: true, data: stats };
   } catch (error) {
     console.error("Dashboard stats error:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });

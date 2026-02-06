@@ -120,7 +120,7 @@ ipcMain.handle("get-exam-questions", async (event, userId) => {
     };
   } catch (error) {
     console.error("Error fetching exam questions:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -129,7 +129,7 @@ ipcMain.handle("get-exams", async (event) => {
     const exams = await ExamModel.findAll();
     return { success: true, data: exams };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -139,7 +139,7 @@ ipcMain.handle("add-exam", async (event, exam) => {
     broadcastChange("exams", "create", result);
     return { success: true, id: result.id };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -148,7 +148,7 @@ ipcMain.handle("update-exam", async (event, exam) => {
     const result = await ExamModel.update(exam.id, exam);
     return { success: true, data: result };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -158,7 +158,7 @@ ipcMain.handle("delete-exam", async (event, id) => {
     broadcastChange("exams", "delete", { id });
     return { success: true };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -190,7 +190,7 @@ ipcMain.handle("get-exam-statistics", async () => {
     };
   } catch (error) {
     console.error("Get exam statistics error:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -202,7 +202,7 @@ ipcMain.handle("get-exam-timeframe", async () => {
       data: { period: timeframe ? timeframe.period : 30 },
     };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -219,6 +219,6 @@ ipcMain.handle("set-exam-timeframe", async (event, data) => {
 
     return { success: true, data: timeframe };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });

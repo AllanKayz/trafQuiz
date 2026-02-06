@@ -25,7 +25,7 @@ ipcMain.handle("get-vehicles", async (event, { role, userId } = {}) => {
     return { success: true, data: vehicles };
   } catch (error) {
     console.error("Error fetching vehicles:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -36,7 +36,7 @@ ipcMain.handle("add-vehicle", async (event, data) => {
     return { success: true, data: newVehicle };
   } catch (error) {
     console.error("Error adding vehicle:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -47,7 +47,7 @@ ipcMain.handle("update-vehicle", async (event, { id, ...data }) => {
     return { success: true, data: updatedVehicle };
   } catch (error) {
     console.error("Error updating vehicle:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -58,7 +58,7 @@ ipcMain.handle("delete-vehicle", async (event, id) => {
     return { success: true };
   } catch (error) {
     console.error("Error deleting vehicle:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -81,7 +81,7 @@ ipcMain.handle("report-vehicle-issue", async (event, data) => {
     return { success: true, data: issue };
   } catch (error) {
     console.error("Error reporting vehicle issue:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -108,6 +108,6 @@ ipcMain.handle("log-vehicle-activity", async (event, data) => {
     return { success: true, data: log };
   } catch (error) {
     console.error("Error logging vehicle activity:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });

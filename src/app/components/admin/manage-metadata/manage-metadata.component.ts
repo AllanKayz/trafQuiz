@@ -68,7 +68,7 @@ export class ManageMetadataComponent {
 
   loadCategories() {
     // Service doesn't expose categories signal properly, let's fetch raw
-    window.electronAPI.invoke('get-question-categories').then((res: any) => {
+    window.electronAPI['get-question-categories']().then((res: any) => {
       if (res.success) {
         this._categories.set(res.data);
       }

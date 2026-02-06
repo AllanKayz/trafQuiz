@@ -24,6 +24,6 @@ ipcMain.handle('get-student-progress', async (event, { userId, studentId }) => {
         return { success: true, data: progress };
     } catch (error) {
         console.error('Error fetching student progress:', error);
-        return { success: false, message: error.message };
+        return { success: false, message: 'Internal service error' };
     }
 });

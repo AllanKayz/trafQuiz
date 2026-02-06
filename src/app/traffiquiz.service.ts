@@ -9,10 +9,7 @@ import { LoadingService } from './loading.service';
 
 declare global {
   interface Window {
-    electronAPI: {
-      invoke: (channel: string, ...args: any[]) => Promise<any>;
-      on: (channel: string, callback: (...args: any[]) => void) => void;
-    };
+    electronAPI: any;
   }
 }
 
@@ -515,7 +512,7 @@ export class TraffiquizService {
       backendPayload.id = raw.id;
     }
 
-    return from(window.electronAPI.invoke('update-user', backendPayload)).pipe(
+    return from(window.electronAPI['update-user']( backendPayload)).pipe(
       catchError((err) => {
         //console.warn('Profile update failed; saved locally', err);
         this.showNotification(`Profile updated failed; saved locally: ${err}`, 'error');
@@ -641,7 +638,7 @@ export class TraffiquizService {
   // --- IPC METHODS ---
 
   login(payload: any): Observable<any> {
-    return from(window.electronAPI.invoke('login', payload)).pipe(
+    return from(window.electronAPI['login']( payload)).pipe(
       tap((response: any) => {
         if (response.success) {
           const sessionData = { ...response.user, roleData: response.roleData };
@@ -660,11 +657,11 @@ export class TraffiquizService {
   }
 
   forgotPassword(username: string): Observable<any> {
-    return from(window.electronAPI.invoke('forgot-password', { username }));
+    return from(window.electronAPI['forgot-password']( { username }));
   }
 
   resetPassword(payload: any): Observable<any> {
-    return from(window.electronAPI.invoke('reset-password', payload));
+    return from(window.electronAPI['reset-password']( payload));
   }
 
 
@@ -672,7 +669,7 @@ export class TraffiquizService {
     const user = this.userSignal();
     const studentId = user?.id; // Pass student ID for fair distribution
 
-    from(window.electronAPI.invoke('get-exam-questions', studentId)).subscribe({
+    from(window.electronAPI['get-exam-questions']( studentId)).subscribe({
       next: (res: any) => {
         if (res.success) {
           const mappedQuestions = res.data.questions.map((item: any) => this.transformQuestion(item));
@@ -732,7 +729,7 @@ export class TraffiquizService {
   }
 
   fetchExamDuration(): Observable<number> {
-    return from(window.electronAPI.invoke('get-exam-timeframe')).pipe(
+    return from(window.electronAPI['get-exam-timeframe']()).pipe(
       map((response: any) => {
         const minutes = parseInt(response.data?.period || '30', 10);
         return minutes * 60;
@@ -749,7 +746,7 @@ export class TraffiquizService {
   // Questions CRUD
   fetchQuestions() {
     this.loading.show();
-    from(window.electronAPI.invoke('get-questions')).pipe(
+    from(window.electronAPI['get-questions']()).pipe(
       finalize(() => this.loading.hide())
     ).subscribe({
       next: (res: any) => {
@@ -769,7 +766,7 @@ export class TraffiquizService {
   }
 
   deleteQuestion(questionId: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-question', { id: questionId })).pipe(
+    return from(window.electronAPI['delete-question']( { id: questionId })).pipe(
       tap((res: any) => {
         if (res.success) {
           this.questionsSignal.update(list => list.filter(q => q.id !== questionId));
@@ -779,7 +776,7 @@ export class TraffiquizService {
   }
 
   addQuestion(question: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-question', question)).pipe(
+    return from(window.electronAPI['add-question']( question)).pipe(
       tap((res: any) => {
         if (res.success) {
           this.questionsSignal.update(list => [...list, this.transformQuestion(res.data)]);
@@ -789,7 +786,7 @@ export class TraffiquizService {
   }
 
   updateQuestion(question: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-question', question)).pipe(
+    return from(window.electronAPI['update-question']( question)).pipe(
       tap((res: any) => {
         if (res.success) {
           const current = this.questionsSignal();
@@ -806,7 +803,7 @@ export class TraffiquizService {
   }
 
   bulkAddQuestions(questions: any[]): Observable<any> {
-    return from(window.electronAPI.invoke('bulk-add-questions', questions));
+    return from(window.electronAPI['bulk-add-questions']( questions));
   }
 
   // Students CRUD
@@ -817,7 +814,7 @@ export class TraffiquizService {
     const userId = user?.id || '';
     const instructorId = role === 'instructor' ? user?.instructor_id : null;
 
-    from(window.electronAPI.invoke('get-students', { role, userId, instructorId })).pipe(
+    from(window.electronAPI['get-students']( { role, userId, instructorId })).pipe(
       finalize(() => this.loading.hide())
     ).subscribe({
       next: (res: any) => {
@@ -837,7 +834,7 @@ export class TraffiquizService {
   }
 
   fetchVehicles() {
-    from(window.electronAPI.invoke('get-vehicles')).subscribe({
+    from(window.electronAPI['get-vehicles']()).subscribe({
       next: (res: any) => {
         if (res.success) {
           const vehicles = res.data;
@@ -850,7 +847,7 @@ export class TraffiquizService {
   }
 
   addStudent(student: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-student', student)).pipe(
+    return from(window.electronAPI['add-student']( student)).pipe(
       tap((res: any) => {
         if (res.success) {
           this.studentsSignal.update(list => [...list, res.data]);
@@ -860,7 +857,7 @@ export class TraffiquizService {
   }
 
   updateStudent(student: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-student', student)).pipe(
+    return from(window.electronAPI['update-student']( student)).pipe(
       tap((res: any) => {
         if (res.success) {
           const current = this.studentsSignal();
@@ -876,7 +873,7 @@ export class TraffiquizService {
   }
 
   deleteStudent(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-student', { id })).pipe(
+    return from(window.electronAPI['delete-student']( { id })).pipe(
       tap((res: any) => {
         if (res.success) {
           this.studentsSignal.update(list => list.filter(s => s.id !== id));
@@ -893,7 +890,7 @@ export class TraffiquizService {
   // Instructors CRUD
   fetchInstructors() {
     this.loading.show();
-    from(window.electronAPI.invoke('get-instructors')).pipe(
+    from(window.electronAPI['get-instructors']()).pipe(
       finalize(() => this.loading.hide())
     ).subscribe({
       next: (res: any) => {
@@ -913,7 +910,7 @@ export class TraffiquizService {
   }
 
   addInstructor(instructor: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-instructor', instructor)).pipe(
+    return from(window.electronAPI['add-instructor']( instructor)).pipe(
       tap((res: any) => {
         if (res.success) {
           this.instructorsSignal.update(list => [...list, res.data]);
@@ -923,7 +920,7 @@ export class TraffiquizService {
   }
 
   updateInstructor(instructor: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-instructor', instructor)).pipe(
+    return from(window.electronAPI['update-instructor']( instructor)).pipe(
       tap((res: any) => {
         if (res.success) {
           const current = this.instructorsSignal();
@@ -939,7 +936,7 @@ export class TraffiquizService {
   }
 
   deleteInstructor(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-instructor', { id })).pipe(
+    return from(window.electronAPI['delete-instructor']( { id })).pipe(
       tap((res: any) => {
         if (res.success) {
           this.instructorsSignal.update(list => list.filter(i => i.id !== id));
@@ -960,25 +957,25 @@ export class TraffiquizService {
 
 
   addCategory(category: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-category', category)).pipe(
+    return from(window.electronAPI['add-category']( category)).pipe(
       tap(() => this.getQuestionCategories())
     );
   }
 
   updateCategory(category: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-category', category)).pipe(
+    return from(window.electronAPI['update-category']( category)).pipe(
       tap(() => this.getQuestionCategories())
     );
   }
 
   deleteCategory(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-category', id)).pipe(
+    return from(window.electronAPI['delete-category']( id)).pipe(
       tap(() => this.getQuestionCategories())
     );
   }
 
   setExamTimeframe(time: any): Observable<any> {
-    return from(window.electronAPI.invoke('set-exam-timeframe', time)).pipe(
+    return from(window.electronAPI['set-exam-timeframe']( time)).pipe(
       tap(() => this.fetchExamDuration().subscribe())
     );
   }
@@ -992,7 +989,7 @@ export class TraffiquizService {
   }
 
   getPackages() {
-    from(window.electronAPI.invoke('get-packages')).subscribe({
+    from(window.electronAPI['get-packages']()).subscribe({
       next: (res: any) => {
         if (res.success) {
           const pkgs = res.data;
@@ -1008,7 +1005,7 @@ export class TraffiquizService {
   }
 
   updatePackage(pkg: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-package', pkg)).pipe(
+    return from(window.electronAPI['update-package']( pkg)).pipe(
       tap(() => {
         const updatedPackages = this.packagesSignal().map(p => p.id === pkg.id ? { ...p, ...pkg } : p);
         this.packagesSignal.set(updatedPackages);
@@ -1025,7 +1022,7 @@ export class TraffiquizService {
   }
 
   public fetchQuestionStats() {
-    from(window.electronAPI.invoke('get-question-stats')).subscribe({
+    from(window.electronAPI['get-question-stats']()).subscribe({
       next: (res: any) => {
         if (res.success) {
           this.questionWidgetConfig.set({
@@ -1042,7 +1039,7 @@ export class TraffiquizService {
   }
 
   public fetchCategories() {
-    from(window.electronAPI.invoke('get-question-categories')).subscribe({
+    from(window.electronAPI['get-question-categories']()).subscribe({
       next: (res: any) => {
         if (res.success) {
           this.categoriesSignal.set(res.data);
@@ -1054,7 +1051,7 @@ export class TraffiquizService {
   }
 
   getQuestionCategories() {
-    from(window.electronAPI.invoke('get-question-categories')).subscribe({
+    from(window.electronAPI['get-question-categories']()).subscribe({
       next: (res: any) => {
         if (res.success) {
           const cats = res.data;
@@ -1067,7 +1064,7 @@ export class TraffiquizService {
   }
 
   getSpecializations() {
-    from(window.electronAPI.invoke('get-specializations')).subscribe({
+    from(window.electronAPI['get-specializations']()).subscribe({
       next: (res: any) => {
         if (res.success) {
           const sptzn = res.data;
@@ -1095,7 +1092,7 @@ export class TraffiquizService {
     const userId = user?.id || '';
 
     if (!silent) this.loading.show();
-    from(window.electronAPI.invoke('get-dashboard-stats', { role, userId })).pipe(
+    from(window.electronAPI['get-dashboard-stats']( { role, userId })).pipe(
       finalize(() => { if (!silent) this.loading.hide(); })
     ).subscribe({
       next: (res: any) => {
@@ -1108,13 +1105,13 @@ export class TraffiquizService {
   }
 
   autoAllocateExams(date: string, capacity: number): Observable<any> {
-    return from(window.electronAPI.invoke('auto-allocate-exams', { date, capacity }));
+    return from(window.electronAPI['auto-allocate-exams']( { date, capacity }));
   }
 
   getExamStatistics(silent = false): Observable<any> {
     if (!silent) this.loading.show();
-    return from(window.electronAPI.invoke('get-exam-statistics')).pipe(
-      tap(res => {
+    return from(window.electronAPI['get-exam-statistics']()).pipe(
+      tap( (res: any) => {
         if (res.success) this.examStats.set(res.data);
       }),
       finalize(() => { if (!silent) this.loading.hide(); })
@@ -1122,19 +1119,19 @@ export class TraffiquizService {
   }
 
   addSpecialization(specialization: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-specialization', specialization));
+    return from(window.electronAPI['add-specialization']( specialization));
   }
 
   updateSpecialization(specialization: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-specialization', specialization)).pipe(tap(() => this.getSpecializations()));
+    return from(window.electronAPI['update-specialization']( specialization)).pipe(tap(() => this.getSpecializations()));
   }
 
   deleteSpecialization(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-specialization', { id })).pipe(tap(() => this.getSpecializations()));
+    return from(window.electronAPI['delete-specialization']( { id })).pipe(tap(() => this.getSpecializations()));
   }
 
   getCertifications() {
-    from(window.electronAPI.invoke('get-certifications')).subscribe({
+    from(window.electronAPI['get-certifications']()).subscribe({
       next: (res: any) => {
         if (res.success) {
           const cert = res.data;
@@ -1157,15 +1154,15 @@ export class TraffiquizService {
   }
 
   updateCertification(certification: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-certification', certification));
+    return from(window.electronAPI['update-certification']( certification));
   }
 
   addCertification(certification: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-certification', certification)).pipe(tap(() => this.getCertifications()));
+    return from(window.electronAPI['add-certification']( certification)).pipe(tap(() => this.getCertifications()));
   }
 
   deleteCertification(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-certification', { id })).pipe(tap(() => this.getCertifications()));
+    return from(window.electronAPI['delete-certification']( { id })).pipe(tap(() => this.getCertifications()));
   }
 
   openAlertDialog(data: any): MatDialogRef<AlertComponent> {
@@ -1177,8 +1174,8 @@ export class TraffiquizService {
   fetchStudentProgress(studentId?: string): Observable<any> {
     const user = this.userSignal();
     const payload = studentId ? { studentId } : { userId: user?.id };
-    return from(window.electronAPI.invoke('get-student-progress', payload)).pipe(
-      map(res => res.success ? res.data : null),
+    return from(window.electronAPI['get-student-progress']( payload)).pipe(
+      map( (res: any) => res.success ? res.data : null),
       catchError(err => {
         this.showNotification(`Error fetching progress: ${err}`, 'error');
         return of(null);
@@ -1189,21 +1186,21 @@ export class TraffiquizService {
   // --- Financial & Payments Mocks ---
 
   processPayment(paymentData: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-payment', paymentData)).pipe(
-      tap(res => {
+    return from(window.electronAPI['add-payment']( paymentData)).pipe(
+      tap( (res: any) => {
         if (res.success) this.showNotification('Payment processed successfully', 'success');
       })
     );
   }
 
   approvePayment(paymentId: number, status: string): Observable<any> {
-    return from(window.electronAPI.invoke('update-payment-status', { id: paymentId, status })).pipe(
+    return from(window.electronAPI['update-payment-status']( { id: paymentId, status })).pipe(
       tap(() => this.showNotification(`Payment ${status} successfully`, 'success'))
     );
   }
 
   fetchFinancialStats(): Observable<any> {
-    return from(window.electronAPI.invoke('get-financial-stats')).pipe(
+    return from(window.electronAPI['get-financial-stats']()).pipe(
       map((res: any) => {
         if (!res.success) return {
           totalRevenue: 0,
@@ -1232,22 +1229,22 @@ export class TraffiquizService {
   }
 
   fetchTransactions(userId?: string | number, query?: string): Observable<any> {
-    return from(window.electronAPI.invoke('get-transactions', { userId, query })).pipe(
+    return from(window.electronAPI['get-transactions']( { userId, query })).pipe(
       map((res: any) => res.success ? { success: true, data: res.data } : { success: false, data: [] })
     );
   }
 
   processSalary(payload: any): Observable<any> {
-    return from(window.electronAPI.invoke('process-salary', payload)).pipe(
-      tap(res => {
+    return from(window.electronAPI['process-salary']( payload)).pipe(
+      tap( (res: any) => {
         if (res.success) this.showNotification('Salary processed successfully', 'success');
       })
     );
   }
 
   recordExpense(payload: any): Observable<any> {
-    return from(window.electronAPI.invoke('record-expense', payload)).pipe(
-      tap(res => {
+    return from(window.electronAPI['record-expense']( payload)).pipe(
+      tap( (res: any) => {
         if (res.success) this.showNotification('Expense recorded successfully', 'success');
       })
     );
@@ -1333,7 +1330,7 @@ export class TraffiquizService {
 
   fetchAllUsers(): Observable<any[]> {
     this.loading.show();
-    return from(window.electronAPI.invoke('get-all-users')).pipe(
+    return from(window.electronAPI['get-all-users']()).pipe(
       map((res: any) => res.success ? res.data : []),
       tap(users => this.usersSignal.set(users)),
       finalize(() => this.loading.hide())
@@ -1351,7 +1348,7 @@ export class TraffiquizService {
       return this.addInstructor({ ...user, firstName, lastName });
     } else if (user.role === 'admin') {
       // Admin creation - direct to add-user handler
-      return from(window.electronAPI.invoke('add-user', {
+      return from(window.electronAPI['add-user']( {
         ...user,
         firstName,
         lastName
@@ -1367,12 +1364,12 @@ export class TraffiquizService {
         })
       );
     }
-    return from(window.electronAPI.invoke('add-user', user));
+    return from(window.electronAPI['add-user']( user));
   }
 
   fetchExams() {
     this.loading.show();
-    from(window.electronAPI.invoke('get-exams')).pipe(
+    from(window.electronAPI['get-exams']()).pipe(
       finalize(() => this.loading.hide())
     ).subscribe({
       next: (res: any) => {
@@ -1386,33 +1383,33 @@ export class TraffiquizService {
   }
 
   addExam(exam: any): Observable<any> {
-    return from(window.electronAPI.invoke('add-exam', exam)).pipe(
+    return from(window.electronAPI['add-exam']( exam)).pipe(
       tap(() => this.fetchExams())
     );
   }
 
   updateExam(exam: any): Observable<any> {
-    return from(window.electronAPI.invoke('update-exam', exam)).pipe(
+    return from(window.electronAPI['update-exam']( exam)).pipe(
       tap(() => this.fetchExams())
     );
   }
 
   deleteExam(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-exam', id)).pipe(
+    return from(window.electronAPI['delete-exam']( id)).pipe(
       tap(() => this.fetchExams())
     );
   }
 
   public updateUserPassword(userId: string, newPass: string): Observable<any> {
-    return from(window.electronAPI.invoke('update-user-password', { id: userId, password: newPass }));
+    return from(window.electronAPI['update-user-password']( { id: userId, password: newPass }));
   }
 
   public deleteUser(userId: string, role?: string): Observable<any> {
-    return from(window.electronAPI.invoke('delete-user', { id: userId, role }));
+    return from(window.electronAPI['delete-user']( { id: userId, role }));
   }
 
   public deleteAccount(userId: string, password: string): Observable<any> {
-    return from(window.electronAPI.invoke('delete-account', { id: userId, password })).pipe(tap(() => this.logout()));
+    return from(window.electronAPI['delete-account']( { id: userId, password })).pipe(tap(() => this.logout()));
   }
 
 }

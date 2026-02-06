@@ -78,7 +78,7 @@ export class LessonService {
    * Fetches lessons using Electron IPC.
    */
   fetchLessons(range?: string, instructorId?: number | string, role?: string, userId?: string | number): Observable<Lesson[]> {
-    return from(window.electronAPI.invoke('get-lessons', { range, instructorId, role, userId })).pipe(
+    return from(window.electronAPI['get-lessons']( { range, instructorId, role, userId })).pipe(
       map((res: any) => {
         if (res.success) return res.data as Lesson[];
         throw new Error(res.message || 'Failed to fetch lessons');
@@ -97,7 +97,7 @@ export class LessonService {
   }
 
   getLesson(id: number): Observable<Lesson | undefined> {
-    return from(window.electronAPI.invoke('get-lesson', id)).pipe(
+    return from(window.electronAPI['get-lesson']( id)).pipe(
       map((res: any) => {
         if (res.success) return res.data as Lesson;
         return this.lessons$.getValue().find((l) => l.id === id);
@@ -112,7 +112,7 @@ export class LessonService {
   }
 
   cancelLesson(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('update-lesson', { id, status: 'cancelled' })).pipe(
+    return from(window.electronAPI['update-lesson']( { id, status: 'cancelled' })).pipe(
       tap((res: any) => {
         if (res.success) {
           const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, status: 'cancelled' } : l)) as Lesson[];
@@ -128,7 +128,7 @@ export class LessonService {
   }
 
   patchLesson(id: number, payload: Partial<Lesson>): Observable<any> {
-    return from(window.electronAPI.invoke('update-lesson', { id, ...payload })).pipe(
+    return from(window.electronAPI['update-lesson']( { id, ...payload })).pipe(
       tap((res: any) => {
         if (res.success) {
           const updated = this.lessons$.getValue().map((l) => (l.id === id ? { ...l, ...payload, updatedAt: new Date().toISOString() } : l)) as Lesson[];
@@ -145,7 +145,7 @@ export class LessonService {
 
   addLesson(payload: Partial<Lesson>, token?: string): Observable<any> {
     // Token is ignored in Electron/SQLite local mode for now
-    return from(window.electronAPI.invoke('add-lesson', payload)).pipe(
+    return from(window.electronAPI['add-lesson']( payload)).pipe(
       map((res: any) => {
         if (res.success) return res.data as Lesson;
         throw new Error(res.message || 'Failed to create lesson');

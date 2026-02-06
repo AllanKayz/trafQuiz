@@ -19,8 +19,15 @@ function getUploadDir() {
 
 async function saveFile(name, type, buffer) {
     const uploadDir = getUploadDir();
-    const fileName = `${Date.now()}-${name}`;
+    // Use path.basename to prevent directory traversal attacks
+    const safeName = path.basename(name);
+    const fileName = `${Date.now()}-${safeName}`;
     const filePath = path.join(uploadDir, fileName);
+
+    // Ensure the resolved path is still within the upload directory
+    if (!filePath.startsWith(uploadDir)) {
+        throw new Error('Invalid file path');
+    }
 
     fs.writeFileSync(filePath, Buffer.from(buffer));
 

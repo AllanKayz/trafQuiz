@@ -3,9 +3,13 @@ const { sequelize } = require("../database");
 const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
+const { isAdmin } = require("../utils/session");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
+    if (!isAdmin()) {
+      return { success: false, message: "Unauthorized: Admin access required" };
+    }
     const totalRevenue =
       (await Payment.sum("amount", { where: { type: "income" } })) || 0;
     const totalExpenses =
@@ -81,7 +85,7 @@ ipcMain.handle("get-financial-stats", async () => {
     };
   } catch (error) {
     console.error("Get financial stats error:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -108,7 +112,7 @@ ipcMain.handle("add-payment", async (event, data) => {
     broadcastChange("finances", "payment", { transactionId });
     return { success: true, transactionId };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -159,7 +163,7 @@ ipcMain.handle("get-transactions", async (event, filters) => {
     return { success: true, data };
   } catch (error) {
     console.error("Get transactions error:", error);
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -171,7 +175,7 @@ ipcMain.handle("update-payment-status", async (event, { id, status }) => {
     broadcastChange("finances", "update-status", { id, status });
     return { success: true };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -200,7 +204,7 @@ ipcMain.handle("process-salary", async (event, data) => {
     broadcastChange("finances", "salary", { transactionId });
     return { success: true };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });
 
@@ -227,6 +231,6 @@ ipcMain.handle("record-expense", async (event, data) => {
     broadcastChange("finances", "expense", { transactionId });
     return { success: true };
   } catch (error) {
-    return { success: false, message: error.message };
+    return { success: false, message: 'Internal service error' };
   }
 });

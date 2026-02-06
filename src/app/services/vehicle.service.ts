@@ -24,7 +24,7 @@ export class VehicleService {
   }
 
   fetchVehicles(role?: string, userId?: string | number): Observable<Vehicle[]> {
-    return from(window.electronAPI.invoke('get-vehicles', { role, userId })).pipe(
+    return from(window.electronAPI['get-vehicles']( { role, userId })).pipe(
       map((res: any) => {
         if (res.success) return res.data;
         throw new Error(res.message || 'Failed to fetch vehicles');
@@ -51,7 +51,7 @@ export class VehicleService {
   }
 
   reportIssue(issue: { vehicleId: number; instructorId: number; description: string; severity: string }): Observable<any> {
-    return from(window.electronAPI.invoke('report-vehicle-issue', issue)).pipe(
+    return from(window.electronAPI['report-vehicle-issue']( issue)).pipe(
       tap((res: any) => {
         if (res.success) this.trafService.showNotification('Issue reported successfully', 'success');
       }),
@@ -63,7 +63,7 @@ export class VehicleService {
   }
 
   logActivity(log: { vehicleId: number; instructorId: number; mileage: number; fuelLevel: number; notes?: string }): Observable<any> {
-    return from(window.electronAPI.invoke('log-vehicle-activity', log)).pipe(
+    return from(window.electronAPI['log-vehicle-activity']( log)).pipe(
       tap((res: any) => {
         if (res.success) this.trafService.showNotification('Log recorded successfully', 'success');
       }),
@@ -75,7 +75,7 @@ export class VehicleService {
   }
 
   addVehicle(vehicle: Partial<Vehicle>): Observable<Vehicle> {
-    return from(window.electronAPI.invoke('add-vehicle', vehicle)).pipe(
+    return from(window.electronAPI['add-vehicle']( vehicle)).pipe(
       map((res: any) => {
         if (res.success) return res.data;
         throw new Error(res.message || 'Failed to add vehicle');
@@ -89,7 +89,7 @@ export class VehicleService {
   }
 
   updateVehicle(id: number, vehicle: Partial<Vehicle>) {
-    return from(window.electronAPI.invoke('update-vehicle', { id, ...vehicle })).pipe(
+    return from(window.electronAPI['update-vehicle']( { id, ...vehicle })).pipe(
       tap((res: any) => {
         if (res.success) {
           const updated = this.vehicles$.getValue().map(v => v.id === id ? { ...v, ...vehicle, updatedAt: new Date().toISOString() } : v);
@@ -105,7 +105,7 @@ export class VehicleService {
   }
 
   deleteVehicle(id: number) {
-    return from(window.electronAPI.invoke('delete-vehicle', id)).pipe(
+    return from(window.electronAPI['delete-vehicle']( id)).pipe(
       tap((res: any) => {
         if (res.success) {
           const remaining = this.vehicles$.getValue().filter(v => v.id !== id);

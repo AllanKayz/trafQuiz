@@ -10,15 +10,15 @@ export class AdminService {
   constructor(private http: HttpClient) { }
 
   seedLessons(count?: number, token?: string): Observable<any> {
-    return from(window.electronAPI.invoke('seed-lessons', { count }));
+    return from(window.electronAPI['seed-lessons']( { count }));
   }
 
   checkLessons(token?: string): Observable<any> {
-    return from(window.electronAPI.invoke('check-lessons'));
+    return from(window.electronAPI['check-lessons']());
   }
 
   getInstructors(): Observable<any> {
-    return from(window.electronAPI.invoke('get-instructors')).pipe(
+    return from(window.electronAPI['get-instructors']()).pipe(
       map((res: any) => {
         if (res.success) return res.data;
         throw new Error(res.message || 'Failed to fetch instructors');
