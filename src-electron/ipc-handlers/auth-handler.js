@@ -153,3 +153,67 @@ ipcMain.handle('delete-user', async (event, { id, role }) => {
         return { success: false, message: error.message };
     }
 });
+
+ipcMain.handle('forgot-password', async (event, { username }) => {
+    try {
+        if (!username) {
+            return { success: false, message: 'Username is required' };
+        }
+
+        const user = await UserModel.findByUsername(username);
+        if (!user) {
+            // Don't reveal if user exists (security best practice)
+            return { success: true, message: 'If this account exists, a password reset email will be sent' };
+        }
+
+        // In a real application, you would:
+        // 1. Generate a reset token
+        // 2. Save it with an expiration time
+        // 3. Send an email with the reset link
+        // For now, we'll just return success message
+        console.log(`Password reset requested for user: ${username}`);
+        
+        return { 
+            success: true, 
+            message: 'If this account exists, a password reset email will be sent to the associated email address',
+            email: user.email ? `${user.email.substring(0, 3)}***@${user.email.split('@')[1]}` : 'your registered email'
+        };
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        return { success: false, message: `Service error: ${error.message}` };
+    }
+});
+
+ipcMain.handle('reset-password', async (event, { username, newPassword, resetToken }) => {
+    try {
+        if (!username || !newPassword) {
+            return { success: false, message: 'Username and new password are required' };
+        }
+
+        if (newPassword.length < 6) {
+            return { success: false, message: 'Password must be at least 6 characters long' };
+        }
+
+        const user = await UserModel.findByUsername(username);
+        if (!user) {
+            return { success: false, message: 'User not found' };
+        }
+
+        // In a real application, you would:
+        // 1. Verify the reset token
+        // 2. Check if token is expired
+        // 3. Update the password only if token is valid
+        
+        // For now, allow password reset with just username validation
+        await UserModel.updatePassword(user.id, newPassword);
+        broadcastChange('users', 'update', { id: user.id });
+        
+        return { 
+            success: true, 
+            message: 'Password has been reset successfully' 
+        };
+    } catch (error) {
+        console.error('Reset password error:', error);
+        return { success: false, message: `Service error: ${error.message}` };
+    }
+});

@@ -1018,7 +1018,7 @@ export class TraffiquizService implements OnDestroy {
   }
 
   deleteCategory(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-category', id)).pipe(
+    return from(window.electronAPI.invoke('delete-category', { id })).pipe(
       tap(() => this.getQuestionCategories())
     );
   }

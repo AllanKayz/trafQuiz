@@ -222,3 +222,50 @@ ipcMain.handle("set-exam-timeframe", async (event, data) => {
     return { success: false, message: error.message };
   }
 });
+
+ipcMain.handle("auto-allocate-exams", async (event, { date, capacity }) => {
+  try {
+    if (!date || !capacity) {
+      return { success: false, message: 'Date and capacity are required' };
+    }
+
+    // Allocate exams to available students for the given date and capacity
+    const allocations = await StudentExam.findAll({
+      where: {
+        exam_date: date,
+        status: { [Op.in]: ['pending', 'scheduled'] }
+      },
+      limit: capacity,
+      raw: true
+    });
+
+    if (allocations.length === 0) {
+      return { 
+        success: true, 
+        message: `No exams allocated for ${date}`,
+        data: { allocated: 0, date, capacity }
+      };
+    }
+
+    // Update the allocated exams status
+    await StudentExam.update(
+      { status: 'allocated' },
+      {
+        where: {
+          id: allocations.map(a => a.id)
+        }
+      }
+    );
+
+    broadcastChange('exams', 'allocate', { date, count: allocations.length });
+
+    return { 
+      success: true, 
+      message: `${allocations.length} exams allocated successfully`,
+      data: { allocated: allocations.length, date, capacity }
+    };
+  } catch (error) {
+    console.error('Auto-allocate exams error:', error);
+    return { success: false, message: error.message };
+  }
+});
