@@ -171,14 +171,14 @@ export class TitleBarComponent {
   }
 
   minimize() {
-    window.electronAPI.invoke('window:minimize');
+    window.electronAPI['window_minimize']();
   }
 
   maximize() {
-    window.electronAPI.invoke('window:maximize');
+    window.electronAPI['window_maximize']();
   }
 
   close() {
-    window.electronAPI.invoke('window:close');
+    window.electronAPI['window_close']();
   }
 }

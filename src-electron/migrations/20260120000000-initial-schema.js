@@ -403,9 +403,24 @@ module.exports = {
     ]);
 
     // Admin user (123456)
-    await queryInterface.bulkInsert('users', [
-      { id: 1, username: 'admin', password: '$2y$10$j8KHrniTKtPcVga7/7HHUeFiPsC3vouihT6HFS85W/AhaAjTay6NG', role: 'admin', first_name: 'admin', last_name: 'admin', email: 'admin@gmail.com' }
-    ]);
+    let defaultAdmin;
+    try {
+      const config = require('../config.json');
+      defaultAdmin = {
+        id: 1,
+        username: config.defaultAdmin.username,
+        password: config.defaultAdmin.passwordHash,
+        role: 'admin',
+        first_name: 'admin',
+        last_name: 'admin',
+        email: config.defaultAdmin.email
+      };
+    } catch (e) {
+      // Fallback or handle error
+      defaultAdmin = { id: 1, username: 'admin', password: 'CHANGEME', role: 'admin', first_name: 'admin', last_name: 'admin', email: 'admin@gmail.com' };
+    }
+
+    await queryInterface.bulkInsert('users', [defaultAdmin]);
   },
 
   down: async (queryInterface, Sequelize) => {

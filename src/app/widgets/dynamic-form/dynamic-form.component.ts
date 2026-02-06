@@ -149,7 +149,7 @@ export class DynamicFormComponent {
     const reader = new FileReader();
     reader.onload = () => {
       const buffer = reader.result;
-      from(window.electronAPI.invoke('upload-attachment', {
+      from(window.electronAPI['upload-attachment']( {
         name: file.name,
         type: file.type,
         data: buffer

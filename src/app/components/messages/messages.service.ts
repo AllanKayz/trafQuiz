@@ -9,7 +9,7 @@ export class MessagesService {
 
   getConversations(): Observable<Conversation[]> {
     const userId = this.mainService.currentUser()?.id;
-    return from(window.electronAPI.invoke('get-conversations', { userId })).pipe(
+    return from(window.electronAPI['get-conversations']( { userId })).pipe(
       map((res: any) => {
         if (res.success) return res.data as Conversation[];
         return [] as Conversation[];
@@ -19,7 +19,7 @@ export class MessagesService {
   }
 
   getMessages(conversationId: number): Observable<Message[]> {
-    return from(window.electronAPI.invoke('get-messages', { conversationId })).pipe(
+    return from(window.electronAPI['get-messages']( { conversationId })).pipe(
       map((res: any) => {
         if (res.success) return res.data as Message[];
         return [] as Message[];
@@ -40,7 +40,7 @@ export class MessagesService {
       senderId: user?.id,
       senderName: senderName
     };
-    return from(window.electronAPI.invoke('send-message', body));
+    return from(window.electronAPI['send-message']( body));
   }
 
   uploadAttachment(file: File): Observable<any> {
@@ -48,7 +48,7 @@ export class MessagesService {
     return new Observable(observer => {
       reader.onload = () => {
         const buffer = reader.result;
-        from(window.electronAPI.invoke('upload-attachment', {
+        from(window.electronAPI['upload-attachment']( {
           name: file.name,
           type: file.type,
           data: buffer
@@ -64,11 +64,11 @@ export class MessagesService {
 
   getRecipientInfo(id: number): Observable<any> {
     // Fetch user info from UserModel via IPC
-    return from(window.electronAPI.invoke('get-user-info', { id }));
+    return from(window.electronAPI['get-user-info']( { id }));
   }
 
   markAsRead(conversationId: number): Observable<any> {
     const userId = this.mainService.currentUser()?.id;
-    return from(window.electronAPI.invoke('mark-messages-read', { conversationId, userId }));
+    return from(window.electronAPI['mark-messages-read']( { conversationId, userId }));
   }
 }
