@@ -1,6 +1,6 @@
-import { Injectable, inject, signal, computed, effect } from '@angular/core';
-import { Observable, from, of, throwError } from 'rxjs';
-import { catchError, map, tap, filter, finalize } from 'rxjs/operators';
+import { Injectable, inject, signal, computed, effect, OnDestroy } from '@angular/core';
+import { Observable, from, of, throwError, Subject } from 'rxjs';
+import { catchError, map, tap, filter, finalize, takeUntil } from 'rxjs/operators';
 import { AlertComponent } from './alert/alert.component';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ApiResponse, Question, Student, studentApiResponse, Instructor, instructorApiResponse, StudentProgress } from './trafquiz';
@@ -24,10 +24,14 @@ declare global {
 @Injectable({
   providedIn: 'root'
 })
-export class TraffiquizService {
+export class TraffiquizService implements OnDestroy {
 
   public loading = inject(LoadingService);
   public alert = inject(MatDialog);
+
+  // Destroy subject for cleaning up subscriptions
+  private destroy$ = new Subject<void>();
+  private pollingInterval: ReturnType<typeof setInterval> | null = null;
 
   // Convert user data to signal for reactive user state management.
   public userSignal = signal<any>(null);
@@ -90,7 +94,7 @@ export class TraffiquizService {
   public examsSignal = signal<any[]>(this.loadCache('exams_raw', []));
 
   /** A signal for the exam duration in seconds. */
-  examDuration = signal<number>(300); //default 10 minutes
+  examDuration = signal<number>(1800); // default 30 minutes
 
   /** Signal for user's theme preference. */
   public themePreference = signal<'light' | 'dark' | 'system'>('system');
@@ -410,63 +414,79 @@ export class TraffiquizService {
 
   private setupRealtimeUpdates() {
     window.electronAPI.on('data-change', (payload: any) => {
+      // Check if component is still active before processing updates
+      if (!this.userSignal()) return;
+      
       console.log('Real-time update received:', payload);
       const { entity, action, data } = payload;
 
-      switch (entity) {
-        case 'students':
-          this.fetchStudents();
-          this.fetchDashboardStats(); // students count changes
-          break;
-        case 'instructors':
-          this.fetchInstructors();
-          this.fetchDashboardStats();
-          break;
-        case 'specializations':
-          this.getSpecializations();
-          break;
-        case 'certifications':
-          this.getCertifications();
-          break;
-        case 'categories':
-          this.fetchQuestions(); // Categories affect questions
-          this.fetchQuestionStats();
-          break;
-        case 'users':
-          this.fetchAllUsers().subscribe();
-          break;
-        case 'questions':
-          this.fetchQuestions();
-          this.fetchQuestionStats();
-          break;
-        case 'vehicles':
-          this.fetchVehicles();
-          break;
-        case 'exams':
-          this.fetchExams();
-          this.fetchDashboardStats();
-          break;
-        case 'messages':
-          // For messages, we might want to trigger a refresh if the user is viewing messages
-          // Or verify if we should notify the user
-          if (action === 'new-message') {
-            this.showNotification(`New message from ${data.sender_name || 'System'}`, 'info');
-          }
-          break;
-        case 'dashboard':
-          this.fetchDashboardStats();
-          break;
+      try {
+        switch (entity) {
+          case 'students':
+            this.fetchStudents();
+            this.fetchDashboardStats(); // students count changes
+            break;
+          case 'instructors':
+            this.fetchInstructors();
+            this.fetchDashboardStats();
+            break;
+          case 'specializations':
+            this.getSpecializations();
+            break;
+          case 'certifications':
+            this.getCertifications();
+            break;
+          case 'categories':
+            this.fetchQuestions(); // Categories affect questions
+            this.fetchQuestionStats();
+            break;
+          case 'users':
+            this.fetchAllUsers().pipe(
+              takeUntil(this.destroy$)
+            ).subscribe();
+            break;
+          case 'questions':
+            this.fetchQuestions();
+            this.fetchQuestionStats();
+            break;
+          case 'vehicles':
+            this.fetchVehicles();
+            break;
+          case 'exams':
+            this.fetchExams();
+            this.fetchDashboardStats();
+            break;
+          case 'messages':
+            // For messages, we might want to trigger a refresh if the user is viewing messages
+            // Or verify if we should notify the user
+            if (action === 'new-message' && data && data.sender_name) {
+              this.showNotification(`New message from ${data.sender_name}`, 'info');
+            }
+            break;
+          case 'dashboard':
+            this.fetchDashboardStats();
+            break;
+        }
+      } catch (error) {
+        console.error('Error processing real-time update:', error);
       }
     });
   }
 
   private startPolling() {
-    setInterval(() => {
+    // Clear any existing polling interval
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
+    
+    this.pollingInterval = setInterval(() => {
       const user = this.userSignal();
       if (user) {
         this.fetchDashboardStats(true);
         if (user.role === 'admin') {
-          this.getExamStatistics(true).subscribe();
+          this.getExamStatistics(true).pipe(
+            takeUntil(this.destroy$)
+          ).subscribe();
         }
       }
     }, 30000);
@@ -476,9 +496,10 @@ export class TraffiquizService {
     const cached = localStorage.getItem(key);
     if (!cached) return defaultValue;
     try {
-      return JSON.parse(cached);
+      const parsed = JSON.parse(cached);
+      return Array.isArray(parsed) ? parsed : defaultValue;
     } catch (e) {
-      //console.warn(`Failed to parse cache for ${key}`, e);
+      console.warn(`Failed to parse cache for ${key}`, e);
       this.showNotification(`Failed to parse cache for ${key}; ${e}`, 'error');
       return defaultValue;
     }
@@ -488,7 +509,7 @@ export class TraffiquizService {
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
-      //console.warn(`Failed to set cache for ${key}`, e);
+      console.warn(`Failed to set cache for ${key}`, e);
       this.showNotification(`Failed to set cache for ${key}; ${e}`, 'error');
     }
   }
@@ -498,7 +519,8 @@ export class TraffiquizService {
     if (!userJson) return null;
     try {
       return JSON.parse(userJson);
-    } catch {
+    } catch (error) {
+      console.error('Failed to parse stored user data:', error);
       return null;
     }
   }
@@ -517,10 +539,11 @@ export class TraffiquizService {
 
     return from(window.electronAPI.invoke('update-user', backendPayload)).pipe(
       catchError((err) => {
-        //console.warn('Profile update failed; saved locally', err);
-        this.showNotification(`Profile updated failed; saved locally: ${err}`, 'error');
+        console.warn('Profile update failed; saved locally', err);
+        this.showNotification(`Profile update failed; saved locally: ${err}`, 'error');
         return of(updated);
-      })
+      }),
+      takeUntil(this.destroy$)
     );
   }
 
@@ -582,7 +605,9 @@ export class TraffiquizService {
     }
   }
 
-  private formatUser(user: any): any {
+  private formatUser(user: any): any | null {
+    if (!user) return null;
+    
     let actualUser = user;
     if (user && user.roleData) {
       actualUser = { ...user, ...user.roleData };
@@ -591,47 +616,48 @@ export class TraffiquizService {
     // Check role from actualUser
     const role = actualUser?.role;
 
+    // Validate role is one of the expected values
+    if (!['admin', 'instructor', 'student'].includes(role)) {
+      console.warn('Unknown user role:', role);
+      return null;
+    }
+
+    const firstName = actualUser.first_name || actualUser.firstName || '';
+    const lastName = actualUser.last_name || actualUser.lastName || '';
+    const username = actualUser.username || actualUser.name || 'User';
+    const fullName = `${firstName} ${lastName}`.trim() || username;
+
+    const baseUser = {
+      username,
+      firstName,
+      lastName,
+      name: fullName,
+      role: role as 'admin' | 'instructor' | 'student',
+      sidebarIcons: this.menus.icons,
+      widgets: [],
+      data: []
+    };
+
     switch (role) {
       case 'admin':
         return {
+          ...baseUser,
           id: actualUser.id,
-          username: actualUser.username || actualUser.name,
-          firstName: actualUser.first_name || actualUser.firstName || '',
-          lastName: actualUser.last_name || actualUser.lastName || '',
-          name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
-          role: role,
-          sidebar: this.menus.admin,
-          sidebarIcons: this.menus.icons,
-          widgets: [],
-          data: []
+          sidebar: this.menus.admin
         };
       case 'instructor':
         return {
+          ...baseUser,
           id: actualUser.user_id || actualUser.id,
           instructor_id: actualUser.user_id ? actualUser.id : null,
-          username: actualUser.username || actualUser.name,
-          firstName: actualUser.first_name || actualUser.firstName || '',
-          lastName: actualUser.last_name || actualUser.lastName || '',
-          name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
-          role: role,
-          sidebar: this.menus.instructor,
-          sidebarIcons: this.menus.icons,
-          widgets: [],
-          data: []
+          sidebar: this.menus.instructor
         };
       case 'student':
         return {
+          ...baseUser,
           id: actualUser.user_id || actualUser.id,
           student_id: actualUser.user_id ? actualUser.id : null,
-          username: actualUser.username || actualUser.name,
-          firstName: actualUser.first_name || actualUser.firstName || '',
-          lastName: actualUser.last_name || actualUser.lastName || '',
-          name: `${actualUser.first_name || actualUser.firstName || ''} ${actualUser.last_name || actualUser.lastName || ''}`.trim() || actualUser.username,
-          role: role,
-          sidebar: this.menus.student,
-          sidebarIcons: this.menus.icons,
-          widgets: [],
-          data: []
+          sidebar: this.menus.student
         };
       default:
         return null;
@@ -655,6 +681,11 @@ export class TraffiquizService {
   }
 
   logout() {
+    // Clear polling interval
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
     localStorage.removeItem('user');
     this.userSignal.set(null);
   }
@@ -672,14 +703,16 @@ export class TraffiquizService {
     const user = this.userSignal();
     const studentId = user?.id; // Pass student ID for fair distribution
 
-    from(window.electronAPI.invoke('get-exam-questions', studentId)).subscribe({
+    from(window.electronAPI.invoke('get-exam-questions', studentId)).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && res.data && Array.isArray(res.data.questions)) {
           const mappedQuestions = res.data.questions.map((item: any) => this.transformQuestion(item));
           this.questionsSignal.set(mappedQuestions);
 
           // Update duration signal
-          if (res.data.duration) {
+          if (res.data.duration && typeof res.data.duration === 'number') {
             // Convert minutes to seconds
             this.examDuration.set(res.data.duration * 60);
           } else {
@@ -691,7 +724,7 @@ export class TraffiquizService {
         }
       },
       error: (error) => {
-        this.showNotification(`Error Fetching Exam Data: ${error.message}`, 'error');
+        this.showNotification(`Error Fetching Exam Data: ${error?.message || error}`, 'error');
         this.questionsSignal.set([]);
       }
     });
@@ -750,10 +783,11 @@ export class TraffiquizService {
   fetchQuestions() {
     this.loading.show();
     from(window.electronAPI.invoke('get-questions')).pipe(
-      finalize(() => this.loading.hide())
+      finalize(() => this.loading.hide()),
+      takeUntil(this.destroy$)
     ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           this.questionsSignal.set(res.data.map((item: any) => this.transformQuestion(item)));
           this.questionWidgetConfig.update(config => ({
             ...config,
@@ -818,14 +852,19 @@ export class TraffiquizService {
     const instructorId = role === 'instructor' ? user?.instructor_id : null;
 
     from(window.electronAPI.invoke('get-students', { role, userId, instructorId })).pipe(
-      finalize(() => this.loading.hide())
+      finalize(() => this.loading.hide()),
+      takeUntil(this.destroy$)
     ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           const students = res.data;
           this.studentsSignal.set(students);
           this.setCache('students_raw', students);
-          this.widgetsConfig.admin[0].data = this.totalStudents().toString();
+          // Find the students widget by id instead of using hardcoded index
+          const updateWidgets = this.widgetsConfig.admin.map(w => 
+            w.id === 'students' ? { ...w, data: this.totalStudents().toString() } : w
+          );
+          Object.assign(this.widgetsConfig.admin, updateWidgets);
           this.studentWidgetConfig.admin[0].title = this.totalStudents().toString();
           this.studentWidgetConfig.admin[1].title = students.filter((s: any) => s.status === 'active').length.toString();
         }
@@ -837,9 +876,11 @@ export class TraffiquizService {
   }
 
   fetchVehicles() {
-    from(window.electronAPI.invoke('get-vehicles')).subscribe({
+    from(window.electronAPI.invoke('get-vehicles')).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           const vehicles = res.data;
           this.vehiclesSignal.set(vehicles);
           this.setCache('vehicles_raw', vehicles);
@@ -894,14 +935,19 @@ export class TraffiquizService {
   fetchInstructors() {
     this.loading.show();
     from(window.electronAPI.invoke('get-instructors')).pipe(
-      finalize(() => this.loading.hide())
+      finalize(() => this.loading.hide()),
+      takeUntil(this.destroy$)
     ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           const instructors = res.data;
           this.instructorsSignal.set(instructors);
           this.setCache('instructors_raw', instructors);
-          this.widgetsConfig.admin[4].data = this.totalInstructors().toString();
+          // Find the alerts widget by id instead of using hardcoded index
+          const updateWidgets = this.widgetsConfig.admin.map(w => 
+            w.id === 'alerts' ? { ...w, data: this.totalInstructors().toString() } : w
+          );
+          Object.assign(this.widgetsConfig.admin, updateWidgets);
           this.instructorWidgetConfig.admin[0].title = this.totalInstructors().toString();
           this.instructorWidgetConfig.admin[1].title = instructors.filter((i: any) => i.availability === 1).length.toString();
         }
@@ -992,9 +1038,11 @@ export class TraffiquizService {
   }
 
   getPackages() {
-    from(window.electronAPI.invoke('get-packages')).subscribe({
+    from(window.electronAPI.invoke('get-packages')).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           const pkgs = res.data;
           this.packagesSignal.set(pkgs);
           this.setCache('packages_raw', pkgs);
@@ -1025,9 +1073,11 @@ export class TraffiquizService {
   }
 
   public fetchQuestionStats() {
-    from(window.electronAPI.invoke('get-question-stats')).subscribe({
+    from(window.electronAPI.invoke('get-question-stats')).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && res.data) {
           this.questionWidgetConfig.set({
             admin: [
               { title: res.data.total?.toString() || '0', data: 'Total Questions', footer: '' },
@@ -1042,9 +1092,11 @@ export class TraffiquizService {
   }
 
   public fetchCategories() {
-    from(window.electronAPI.invoke('get-question-categories')).subscribe({
+    from(window.electronAPI.invoke('get-question-categories')).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           this.categoriesSignal.set(res.data);
           this.setCache('categories_raw', res.data);
         }
@@ -1054,9 +1106,11 @@ export class TraffiquizService {
   }
 
   getQuestionCategories() {
-    from(window.electronAPI.invoke('get-question-categories')).subscribe({
+    from(window.electronAPI.invoke('get-question-categories')).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           const cats = res.data;
           this.categoriesSignal.set(cats);
           this.setCache('categories_raw', cats);
@@ -1067,9 +1121,11 @@ export class TraffiquizService {
   }
 
   getSpecializations() {
-    from(window.electronAPI.invoke('get-specializations')).subscribe({
+    from(window.electronAPI.invoke('get-specializations')).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           const sptzn = res.data;
           this.specializationsSignal.set(sptzn);
           this.setCache('specializations_raw', sptzn);
@@ -1096,10 +1152,11 @@ export class TraffiquizService {
 
     if (!silent) this.loading.show();
     from(window.electronAPI.invoke('get-dashboard-stats', { role, userId })).pipe(
-      finalize(() => { if (!silent) this.loading.hide(); })
+      finalize(() => { if (!silent) this.loading.hide(); }),
+      takeUntil(this.destroy$)
     ).subscribe({
       next: (res: any) => {
-        if (res.success && res.data) {
+        if (res.success && res.data && typeof res.data === 'object') {
           this.dashboardStats.set(res.data);
         }
       },
@@ -1115,9 +1172,12 @@ export class TraffiquizService {
     if (!silent) this.loading.show();
     return from(window.electronAPI.invoke('get-exam-statistics')).pipe(
       tap(res => {
-        if (res.success) this.examStats.set(res.data);
+        if (res.success && res.data && typeof res.data === 'object') {
+          this.examStats.set(res.data);
+        }
       }),
-      finalize(() => { if (!silent) this.loading.hide(); })
+      finalize(() => { if (!silent) this.loading.hide(); }),
+      takeUntil(this.destroy$)
     );
   }
 
@@ -1134,9 +1194,11 @@ export class TraffiquizService {
   }
 
   getCertifications() {
-    from(window.electronAPI.invoke('get-certifications')).subscribe({
+    from(window.electronAPI.invoke('get-certifications')).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           const cert = res.data;
           this.certificationsSignal.set(cert);
           this.setCache('certifications_raw', cert);
@@ -1334,9 +1396,10 @@ export class TraffiquizService {
   fetchAllUsers(): Observable<any[]> {
     this.loading.show();
     return from(window.electronAPI.invoke('get-all-users')).pipe(
-      map((res: any) => res.success ? res.data : []),
+      map((res: any) => res.success && Array.isArray(res.data) ? res.data : []),
       tap(users => this.usersSignal.set(users)),
-      finalize(() => this.loading.hide())
+      finalize(() => this.loading.hide()),
+      takeUntil(this.destroy$)
     );
   }
 
@@ -1373,10 +1436,11 @@ export class TraffiquizService {
   fetchExams() {
     this.loading.show();
     from(window.electronAPI.invoke('get-exams')).pipe(
-      finalize(() => this.loading.hide())
+      finalize(() => this.loading.hide()),
+      takeUntil(this.destroy$)
     ).subscribe({
       next: (res: any) => {
-        if (res.success) {
+        if (res.success && Array.isArray(res.data)) {
           this.examsSignal.set(res.data);
           this.setCache('exams_raw', res.data);
         }
@@ -1398,7 +1462,7 @@ export class TraffiquizService {
   }
 
   deleteExam(id: number): Observable<any> {
-    return from(window.electronAPI.invoke('delete-exam', id)).pipe(
+    return from(window.electronAPI.invoke('delete-exam', { id })).pipe(
       tap(() => this.fetchExams())
     );
   }
@@ -1412,7 +1476,22 @@ export class TraffiquizService {
   }
 
   public deleteAccount(userId: string, password: string): Observable<any> {
-    return from(window.electronAPI.invoke('delete-account', { id: userId, password })).pipe(tap(() => this.logout()));
+    return from(window.electronAPI.invoke('delete-account', { id: userId, password })).pipe(
+      tap(() => this.logout()),
+      takeUntil(this.destroy$)
+    );
+  }
+
+  ngOnDestroy(): void {
+    // Clear all subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
+    
+    // Clear polling interval
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
   }
 
 }
