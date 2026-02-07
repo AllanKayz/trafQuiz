@@ -47,7 +47,8 @@ export const routes: Routes = [
       },
       {
         path: 'lessons-admin',
-        loadComponent: () => import('./components/admin/admin-tools.component').then(m => m.AdminToolsComponent)
+        loadComponent: () => import('./components/admin/admin-tools.component').then(m => m.AdminToolsComponent),
+        data: { type: 'lessons' }
       },
       {
         path: 'scheduling',
@@ -59,11 +60,13 @@ export const routes: Routes = [
       },
       {
         path: 'finances',
-        loadComponent: () => import('./components/finances/finances.component').then(m => m.FinancesComponent)
+        loadComponent: () => import('./components/finances/finances.component').then(m => m.FinancesComponent),
+        data: { type: 'finances' }
       },
       {
         path: 'payments',
-        loadComponent: () => import('./components/finances/finances.component').then(m => m.FinancesComponent)
+        loadComponent: () => import('./components/finances/finances.component').then(m => m.FinancesComponent),
+        data: { type: 'payments' }
       },
       {
         path: 'reports',
@@ -75,7 +78,8 @@ export const routes: Routes = [
       },
       {
         path: 'metadata',
-        loadComponent: () => import('./components/admin/admin-tools.component').then(m => m.AdminToolsComponent)
+        loadComponent: () => import('./components/admin/admin-tools.component').then(m => m.AdminToolsComponent),
+        data: { type: 'metadata' }
       },
       {
         path: 'useraccess',

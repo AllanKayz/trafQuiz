@@ -133,28 +133,3 @@
     }
   </div>
 </section>
-
-<!-- Modal-->
-<!--div class="modal fade" id="resultsModal" tabindlex="-1" aria-labelledby="resultsModalLabel" aria-hidden="true" [class.show]="showResults()">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <button type="button" class="btn-close float-end mr-auto" data-bs-dismiss="modal" aria-label="Close"
-      (click)="closeModal()"></button>
-      <div class="modal-title" [style.color]="examResults()?.passed ? '#28a745' : '#dc3545'">
-        {{ examResults()?.passed ? 'Congratulations!' : 'Better luck next time' }}
-      </div>
-      <div class="modal-score" id="finalScore">
-        You scored {{ examResults()?.score }} out of {{ totalQuestions()}}
-        ({{ examResults()?.percentage }}%)
-      </div>
-      <div class="modal-details" id="modalDetails">
-        You need 22 out of 25 correct answers to pass.<br>
-        <span id="resultMessage">Please review the highway code and try again.</span>
-      </div>
-      <div class="btn-group" role="group" aria-label="Basic mixed styles example">
-        <button type="button" class="btn btn-primary restart-button modal-btn" (click)="restartExam(true)">🔄 Same Questions</button>
-        <button type="button" class="btn btn-success new-button modal-btn" (click)="restartExam(false)">🆕 New Questions</button>
-      </div>
-    </div>
-  </div>
-</div-->

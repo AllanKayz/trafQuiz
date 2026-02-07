@@ -187,6 +187,7 @@ body {
 /* Main Content */
 .main-content {
     flex: 1;
+    height: 100%;
     padding: 10px 20px;
     display: flex;
     flex-direction: column;
@@ -247,7 +248,7 @@ body {
 .question-content {
     display: flex;
     gap: 10px;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .question-text-area {

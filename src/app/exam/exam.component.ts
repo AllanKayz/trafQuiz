@@ -61,9 +61,13 @@ export class ExamComponent implements OnDestroy {
   });
 
   constructor() {
-    this.UserData = JSON.parse(localStorage['user']);
-    this.examToken.set(this.UserData.token);
-    this.examToken.set(this.UserData.token);
+    const rawUser = this.examService.getRawUser();
+    if (rawUser) {
+      this.UserData = rawUser;
+      this.examToken.set(this.UserData.token);
+    } else {
+      this.router.navigate(['/login']);
+    }
     this.startNewExam(); // Start immediately
 
     // Watch for questions to be loaded and start exam
@@ -107,7 +111,8 @@ export class ExamComponent implements OnDestroy {
       if (!this.isPaused) {
         this.timeRemaining.set(newTime);
         if (newTime <= 0) {
-          this.submitExam();
+          this.timerSubscription?.unsubscribe();
+          this.submitExam(true); // Force submit when time runs out
         }
       }
     });
@@ -172,9 +177,9 @@ export class ExamComponent implements OnDestroy {
     }
   }
 
-  submitExam() {
+  submitExam(force: boolean = false) {
     const flagged = Array.from(this.flaggedQuestions());
-    if (flagged.length === 0) {
+    if (flagged.length === 0 || force) {
       this.timerSubscription?.unsubscribe();
 
       let score = 0;

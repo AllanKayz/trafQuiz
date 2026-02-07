@@ -742,11 +742,18 @@ export class TraffiquizService implements OnDestroy {
       item.option_c.trim()
     ];
 
+    let correctIndex = options.indexOf(item.answer?.trim() || '');
+    // Fallback for case-insensitive match if exact match fails
+    if (correctIndex === -1) {
+      correctIndex = options.findIndex(opt => opt.toLowerCase() === (item.answer?.trim() || '').toLowerCase());
+    }
+
     return {
       id: item.id,
       question: item.question.trim(),
       options: options,
-      correct: options.indexOf(item.answer?.trim() || ''),
+      //correct: options.indexOf(item.answer?.trim() || ''),
+      correct: correctIndex,
       hasImage: this.isNotEmpty(item.photo),
       image: item.photo,
       flagged: false,
