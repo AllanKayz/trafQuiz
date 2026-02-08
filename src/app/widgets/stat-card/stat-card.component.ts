@@ -1,28 +1,41 @@
 import { Component, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.component';
 
 @Component({
     selector: 'app-stat-card',
-    imports: [MatIconModule],
+    imports: [MatIconModule, SkeletonLoaderComponent],
     template: `	
 	    <div class="stat-card animate-slide-up">
-            <div class="icon-section">
-                <div class="icon-wrapper" [class.trend-up]="trend() === 'up'" [class.trend-down]="trend() === 'down'">
-                    <mat-icon>{{icon() || 'analytics'}}</mat-icon>
+            @if (isLoading()) {
+                <div class="skeleton-wrapper" style="width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                         <app-skeleton-loader width="56px" height="56px" borderRadius="12px"></app-skeleton-loader>
+                         <div style="flex: 1;">
+                            <app-skeleton-loader width="60%" height="0.75rem" style="margin-bottom: 8px;"></app-skeleton-loader>
+                            <app-skeleton-loader width="40%" height="1.5rem"></app-skeleton-loader>
+                         </div>
+                    </div>
                 </div>
-            </div>
-            <div class="content">
-                <div class="stat-label">{{title()}}</div>
-                <div class="stat-value">{{data()}}</div>
-                <div class="stat-footer">
-                    @if (trend()) {
-                        <span class="trend-indicator" [class.up]="trend() === 'up'" [class.down]="trend() === 'down'">
-                            <mat-icon>{{trend() === 'up' ? 'trending_up' : 'trending_down'}}</mat-icon>
-                        </span>
-                    }
-                    <span class="footer-text">{{footer()}}</span>
+            } @else {
+                <div class="icon-section">
+                    <div class="icon-wrapper" [class.trend-up]="trend() === 'up'" [class.trend-down]="trend() === 'down'">
+                        <mat-icon>{{icon() || 'analytics'}}</mat-icon>
+                    </div>
                 </div>
-            </div>
+                <div class="content">
+                    <div class="stat-label">{{title()}}</div>
+                    <div class="stat-value">{{data()}}</div>
+                    <div class="stat-footer">
+                        @if (trend()) {
+                            <span class="trend-indicator" [class.up]="trend() === 'up'" [class.down]="trend() === 'down'">
+                                <mat-icon>{{trend() === 'up' ? 'trending_up' : 'trending_down'}}</mat-icon>
+                            </span>
+                        }
+                        <span class="footer-text">{{footer()}}</span>
+                    </div>
+                </div>
+            }
         </div>
     `,
     styles: [`
@@ -104,4 +117,5 @@ export class StatCardComponent {
     footer = input<string>('');
     icon = input<string>('');
     trend = input<'up' | 'down' | null>(null);
+    isLoading = input<boolean>(false);
 }

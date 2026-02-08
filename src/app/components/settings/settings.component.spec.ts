@@ -2,12 +2,15 @@ import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testin
 import { of } from 'rxjs';
 import { SettingsComponent } from './settings.component';
 import { TraffiquizService } from '../../traffiquiz.service';
+import { signal, computed } from '@angular/core';
 
 class MockService {
-  currentUser = () => ({ role: 'student' });
-  getRawUser() { return { username: 'tester', email: 'a@b.com', firstname: 'Test', lastname: 'User' }; }
+  userSignal = signal({ role: 'student', username: 'tester', email: 'a@b.com', firstName: 'Test', lastName: 'User' });
+  currentUser = computed(() => this.userSignal());
+  getRawUser() { return this.userSignal(); }
   updateProfile(payload: any) { return of(payload); }
   updatePreferences(prefs: any) { return prefs; }
+  showNotification(msg: string, type: string) {}
   openAlertDialog(_: any) { return null; }
 }
 
@@ -41,7 +44,9 @@ describe('SettingsComponent', () => {
 
   it('should save profile and call service', fakeAsync(() => {
     const spy = spyOn(svc, 'updateProfile').and.callThrough();
-    (component.profileForm.controls as any).firstName.setValue('New');
+    const firstNameControl = component.profileForm.get('firstName');
+    firstNameControl?.setValue('New');
+    firstNameControl?.markAsDirty();
     component.saveProfile();
     tick();
     expect(spy).toHaveBeenCalled();

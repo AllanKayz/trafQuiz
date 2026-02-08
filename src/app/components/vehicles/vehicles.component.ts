@@ -11,6 +11,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatCardModule } from '@angular/material/card';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Vehicle } from '../../models/vehicle';
 import { VehicleService } from '../../services/vehicle.service';
@@ -20,6 +21,11 @@ import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheade
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { FormConfigService } from '../../widgets/form-config.service';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType, Chart, registerables } from 'chart.js';
+import { SkeletonLoaderComponent } from '../../widgets/skeleton-loader/skeleton-loader.component';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-vehicles',
@@ -38,9 +44,12 @@ import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.co
     MatFormFieldModule,
     MatTooltipModule,
     MatProgressSpinnerModule,
+    MatCardModule,
     TableComponent,
     SectionheaderComponent,
-    StatCardComponent
+    StatCardComponent,
+    BaseChartDirective,
+    SkeletonLoaderComponent
   ],
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
@@ -83,12 +92,6 @@ export class VehiclesComponent {
   loading = false;
   error: string | null = null;
 
-  // ViewChild reference removed as handled by TableComponent
-
-  // Form state for dialogs
-  isEditing = false;
-
-  // Table Configurations
   tableColumns = signal<TableColumn[]>([
     { key: 'registration', header: 'Reg. Number', type: 'text' },
     { key: 'make', header: 'Make', type: 'text' },
@@ -106,8 +109,33 @@ export class VehiclesComponent {
     return actions;
   });
 
-  // Get data from service
-  // tableData is now a signal updated in load()
+  chartData = computed<ChartData<'doughnut'>>(() => {
+    const data = this.tableData();
+    const active = data.filter(v => v.status === 'active').length;
+    const maintenance = data.filter(v => v.status === 'maintenance').length;
+    const retired = data.filter(v => v.status === 'retired').length;
+
+    return {
+      labels: ['Active', 'Maintenance', 'Retired'],
+      datasets: [
+        {
+          data: [active, maintenance, retired],
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+          hoverBackgroundColor: ['#059669', '#d97706', '#dc2626'],
+          borderWidth: 0
+        }
+      ]
+    };
+  });
+
+  chartOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right' }
+    },
+    cutout: '70%'
+  };
 
   constructor() {
     this.load();
@@ -151,7 +179,6 @@ export class VehiclesComponent {
   }
 
   openAdd() {
-    this.isEditing = false;
     const dialogRef = this.dialog.open(DynamicFormComponent, {
       width: '500px',
       data: {
@@ -172,7 +199,6 @@ export class VehiclesComponent {
   }
 
   openEdit(v: Vehicle) {
-    this.isEditing = true;
     const dialogRef = this.dialog.open(DynamicFormComponent, {
       width: '500px',
       data: {
@@ -189,18 +215,18 @@ export class VehiclesComponent {
   }
 
   save(data: any, dialogRef: any) {
-    const obs = (this.isEditing && data.id)
+    const obs = (data.id)
       ? this.vehicleService.updateVehicle(data.id, data)
       : this.vehicleService.addVehicle(data);
 
     obs.subscribe({
       next: () => {
-        this.trafService.showNotification(`Vehicle ${this.isEditing ? 'updated' : 'added'} successfully`, 'success');
+        this.trafService.showNotification(`Vehicle ${data.id ? 'updated' : 'added'} successfully`, 'success');
         dialogRef.close();
         this.load();
       },
       error: () => {
-        this.trafService.showNotification(this.isEditing ? 'Update failed' : 'Create failed', 'error');
+        this.trafService.showNotification(data.id ? 'Update failed' : 'Create failed', 'error');
         dialogRef.componentInstance.loading.set(false);
       }
     });
@@ -237,13 +263,7 @@ export class VehiclesComponent {
   }
 
   submitLog(vehicleId: number, data: any, dialogRef: any) {
-    const payload = {
-      vehicleId: vehicleId,
-      instructorId: this.user()?.id!,
-      ...data
-    };
-
-    this.vehicleService.logActivity(payload as any).subscribe({
+    this.vehicleService.logActivity({ vehicleId, instructorId: this.user()?.id!, ...data } as any).subscribe({
       next: () => {
         this.trafService.showNotification('Activity logged successfully', 'success');
         dialogRef.close();
@@ -273,13 +293,7 @@ export class VehiclesComponent {
   }
 
   submitIssue(vehicleId: number, data: any, dialogRef: any) {
-    const payload = {
-      vehicleId: vehicleId,
-      instructorId: this.user()?.id!,
-      ...data
-    };
-
-    this.vehicleService.reportIssue(payload as any).subscribe({
+    this.vehicleService.reportIssue({ vehicleId, instructorId: this.user()?.id!, ...data } as any).subscribe({
       next: () => {
         this.trafService.showNotification('Issue reported successfully', 'success');
         dialogRef.close();
