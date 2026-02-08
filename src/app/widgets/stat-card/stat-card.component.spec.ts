@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { StatCardComponent } from './stat-card.component';
 
 describe('StatCardComponent', () => {
@@ -14,6 +13,8 @@ describe('StatCardComponent', () => {
 
     fixture = TestBed.createComponent(StatCardComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('title', 'Test Title');
+    fixture.componentRef.setInput('data', '123');
     fixture.detectChanges();
   });
 

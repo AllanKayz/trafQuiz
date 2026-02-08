@@ -158,7 +158,7 @@ export class TraffiquizService implements OnDestroy {
   /** Configuration for Quick Actions. */
   private quickActionsConfig = {
     admin: [
-      { label: 'Add User', icon: 'person_add', route: '/dashboard/useraccess' },
+      { label: 'Add User', icon: 'person_add', action: 'quickAddUser' },
       { label: 'View Finances', icon: 'payments', route: '/dashboard/finances' },
       { label: 'Manage Fleet', icon: 'directions_car', route: '/dashboard/vehicles' },
       { label: 'System Settings', icon: 'settings', route: '/dashboard/settings' }

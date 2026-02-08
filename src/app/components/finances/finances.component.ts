@@ -19,26 +19,19 @@ import { TableColumn, TableComponent } from '../../widgets/table/table.component
 import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { ReceiptPreviewComponent } from './receipt-preview/receipt-preview.component';
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartOptions, ChartType, Chart, registerables } from 'chart.js';
+import { SkeletonLoaderComponent } from '../../widgets/skeleton-loader/skeleton-loader.component';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-finances',
   standalone: true,
   imports: [
-    CommonModule,
-    MatCardModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatButtonModule,
-    MatIconModule,
-    MatProgressBarModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    FormsModule,
-    TableComponent,
-    SectionheaderComponent,
-    StatCardComponent
+    CommonModule, MatCardModule, MatTableModule, MatPaginatorModule, MatButtonModule, MatIconModule, MatProgressBarModule,
+    MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, FormsModule,
+    TableComponent, SectionheaderComponent, StatCardComponent, BaseChartDirective, SkeletonLoaderComponent
   ],
   templateUrl: './finances.component.html',
   styleUrl: './finances.component.css'
@@ -56,17 +49,14 @@ export class FinancesComponent implements AfterViewInit {
   content = computed(() => this.isAdmin() ? 'Track revenue, expenses, and salary payments.' : 'View your transaction history.');
 
   buttons = computed(() => {
-    const admin = this.isAdmin();
-    if (admin) {
+    if (this.isAdmin()) {
       return [
         { name: 'Process Payment', action: 'adminPayment', color: 'primary', icon: 'payments' },
         { name: 'Pay Salary', action: 'processSalary', color: 'accent', icon: 'payments' },
         { name: 'Record Expense', action: 'recordExpense', color: 'warn', icon: 'receipt_long' }
       ];
     }
-    return [
-      { name: 'Make Payment', action: 'makePayment', color: 'primary', icon: 'add' }
-    ];
+    return [{ name: 'Make Payment', action: 'makePayment', color: 'primary', icon: 'add' }];
   });
 
   widgets = computed(() => {
@@ -80,71 +70,62 @@ export class FinancesComponent implements AfterViewInit {
     ];
   });
 
-  // Data Signals
   transactionDataSource = new MatTableDataSource<any>([]);
   transactions = signal<any[]>([]);
   stats = signal<any>(null);
   isLoading = signal<boolean>(false);
   searchQuery = signal<string>('');
 
-  chartMax = computed(() => {
-    const data = this.stats()?.chartData;
-    if (!data) return 1000;
-    const allValues = [...data.revenue, ...data.expenses];
-    return Math.max(...allValues, 1000);
+  chartData = computed<ChartConfiguration['data']>(() => {
+    const stats = this.stats();
+    if (!stats || !stats.chartData) return { labels: [], datasets: [] };
+    return {
+      labels: stats.chartData.labels,
+      datasets: [
+        { data: stats.chartData.revenue, label: 'Revenue', backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: '#3b82f6', fill: 'origin' },
+        { data: stats.chartData.expenses, label: 'Expenses', backgroundColor: 'rgba(239, 68, 68, 0.5)', borderColor: '#ef4444', fill: 'origin' }
+      ]
+    };
   });
 
-  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  chartOptions: ChartOptions = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: true, position: 'top' }, tooltip: { mode: 'index', intersect: false } },
+    scales: { y: { beginAtZero: true }, x: { grid: { display: false } } }
+  };
 
-  // Package Editing State
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
   editingPackageId = signal<number | null>(null);
   editBuffer = signal<any>(null);
 
-  // Table Columns
   tableColumns = computed<TableColumn[]>(() => {
     const admin = this.isAdmin();
     const cols: TableColumn[] = [
       { key: 'payment_date', header: 'Date', type: 'date', width: '120px' },
       { key: 'transaction_id', header: 'Txn ID', type: 'code', width: '150px' },
     ];
-
-    if (admin) {
-      cols.push({ key: 'entity_name', header: 'Entity', type: 'text' });
-    }
-
+    if (admin) cols.push({ key: 'entity_name', header: 'Entity', type: 'text' });
     cols.push(
       { key: 'description_full', header: 'Description', type: 'text' },
       { key: 'method', header: 'Method', type: 'text', width: '100px' },
       { key: 'amount', header: 'Amount', type: 'amount', width: '120px' },
       { key: 'status', header: 'Status', type: 'status', width: '100px' }
     );
-
     return cols;
   });
 
-  // NOTE: Actions now handled per row in tableData for flexibility, but global definition helps TableComponent know what to expect
-  tableActions = computed(() => {
-    // We return a superset of possible actions if needed, or rely on row-specific actions
-    return [];
-  });
+  tableActions = computed(() => []);
 
   tableData = computed(() => {
     const admin = this.isAdmin();
     return this.transactions().map(t => {
       const actions = [];
-      if (t.status === 'completed') {
-        actions.push('receipt');
-      }
+      if (t.status === 'completed') actions.push('receipt');
       if (admin && (t.status === 'pending' || t.status === 'partial')) {
         if (t.status === 'pending') actions.push('activate', 'flag');
         else actions.push('activate');
       }
-
-      return {
-        ...t,
-        description_full: t.notes ? `${t.description} (${t.notes})` : t.description,
-        actions: actions
-      };
+      return { ...t, description_full: t.notes ? `${t.description} (${t.notes})` : t.description, actions };
     });
   });
 
@@ -156,31 +137,18 @@ export class FinancesComponent implements AfterViewInit {
     });
   }
 
-  ngAfterViewInit() {
-    this.transactionDataSource.paginator = this.paginator;
-  }
+  ngAfterViewInit() { this.transactionDataSource.paginator = this.paginator; }
 
   loadData() {
-    const role = this.user()?.role || 'student';
-    const userId = role === 'student' ? this.user()?.id : undefined;
-    const query = this.searchQuery();
-
+    const user = this.user();
+    const userId = user?.role === 'student' ? user?.id : undefined;
     this.isLoading.set(true);
-
-    // Fetch Transactions
-    this.service.fetchTransactions(userId, query).subscribe(res => {
+    this.service.fetchTransactions(userId, this.searchQuery()).subscribe(res => {
       this.transactions.set(res.data || []);
-      this.transactionDataSource.data = res.data || [];
-      this.transactionDataSource.paginator = this.paginator;
       this.isLoading.set(false);
     });
-
-    // Fetch Admin Stats if applicable
     if (this.isAdmin()) {
-      this.service.fetchFinancialStats().subscribe(data => {
-        this.stats.set(data);
-      });
-      // Ensure packages, instructors, and vehicles are loaded for forms
+      this.service.fetchFinancialStats().subscribe(data => this.stats.set(data));
       this.service.getPackages();
       this.service.fetchInstructors();
       this.service.fetchVehicles();
@@ -188,39 +156,20 @@ export class FinancesComponent implements AfterViewInit {
   }
 
   handleTableAction(event: { action: string, item: any }) {
-    if (event.action === 'activate') {
-      this.approvePayment(event.item.id, 'completed');
-    } else if (event.action === 'flag') {
-      this.approvePayment(event.item.id, 'partial');
-    } else if (event.action === 'receipt') {
-      this.openReceipt(event.item);
-    }
+    if (event.action === 'activate') this.approvePayment(event.item.id, 'completed');
+    else if (event.action === 'flag') this.approvePayment(event.item.id, 'partial');
+    else if (event.action === 'receipt') this.openReceipt(event.item);
   }
 
-  applyFilter() {
-    // Handled by effect on searchQuery
-  }
-
-  startEdit(pkg: any) {
-    this.editingPackageId.set(pkg.id);
-    this.editBuffer.set({ ...pkg });
-  }
-
-  cancelEdit() {
-    this.editingPackageId.set(null);
-    this.editBuffer.set(null);
-  }
-
+  startEdit(pkg: any) { this.editingPackageId.set(pkg.id); this.editBuffer.set({ ...pkg }); }
+  cancelEdit() { this.editingPackageId.set(null); this.editBuffer.set(null); }
   savePackage() {
     const pkg = this.editBuffer();
     if (!pkg) return;
-
-    this.service.updatePackage(pkg).subscribe(res => {
-      if (res.status === 200) {
-        this.editingPackageId.set(null);
-        this.editBuffer.set(null);
-        this.service.showNotification('Package updated', 'success');
-      }
+    this.service.updatePackage(pkg).subscribe(() => {
+      this.editingPackageId.set(null);
+      this.editBuffer.set(null);
+      this.service.showNotification('Package updated', 'success');
     });
   }
 
@@ -236,28 +185,13 @@ export class FinancesComponent implements AfterViewInit {
   makePayment() {
     const dialogRef = this.dialog.open(DynamicFormComponent, {
       width: '500px',
-      data: {
-        title: 'Complete Your Payment',
-        submitText: 'Process Payment',
-        fields: this.formConfig.getFormConfig('payment'),
-        initialData: {}
-      }
+      data: { title: 'Complete Your Payment', submitText: 'Process Payment', fields: this.formConfig.getFormConfig('payment'), initialData: {} }
     });
-
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
-      const paymentPayload = { ...data, userId: this.user()?.id };
-
-      this.service.processPayment(paymentPayload).subscribe(res => {
+      this.service.processPayment({ ...data, userId: this.user()?.id }).subscribe(res => {
         if (res && res.success) {
-          dialogRef.close();
-          this.loadData();
-          // Open Receipt Preview
-          this.openReceipt({
-            ...paymentPayload,
-            transaction_id: res.transactionId,
-            status: 'completed',
-            payment_date: new Date()
-          });
+          dialogRef.close(); this.loadData();
+          this.openReceipt({ ...data, transaction_id: res.transactionId, status: 'completed', payment_date: new Date() });
         }
       });
     });
@@ -265,32 +199,15 @@ export class FinancesComponent implements AfterViewInit {
 
   makeAdminPayment() {
     const dialogRef = this.dialog.open(DynamicFormComponent, {
-      width: '600px',
-      maxHeight: '90vh',
-      data: {
-        title: 'Process Student Payment',
-        submitText: 'Record Payment',
-        fields: this.formConfig.getFormConfig('admin-payment'),
-        initialData: {
-          isNewStudent: false,
-          method: 'card'
-        }
-      }
+      width: '600px', maxHeight: '90vh',
+      data: { title: 'Process Student Payment', submitText: 'Record Payment', fields: this.formConfig.getFormConfig('admin-payment'), initialData: { isNewStudent: false, method: 'card' } }
     });
-
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
       this.service.processPayment({ ...data, status: 'completed' }).subscribe(res => {
         if (res && res.success) {
-          dialogRef.close();
-          this.loadData();
+          dialogRef.close(); this.loadData();
           if (data.isNewStudent) this.service.fetchStudents();
-          // Open Receipt Preview
-          this.openReceipt({
-            ...data,
-            transaction_id: res.transactionId,
-            status: 'completed',
-            payment_date: new Date()
-          });
+          this.openReceipt({ ...data, transaction_id: res.transactionId, status: 'completed', payment_date: new Date() });
         }
       });
     });
@@ -299,58 +216,28 @@ export class FinancesComponent implements AfterViewInit {
   processSalary() {
     const dialogRef = this.dialog.open(DynamicFormComponent, {
       width: '500px',
-      data: {
-        title: 'Process Instructor Salary',
-        submitText: 'Pay Salary',
-        fields: this.formConfig.getFormConfig('admin-salary'),
-        initialData: { method: 'cash' }
-      }
+      data: { title: 'Process Instructor Salary', submitText: 'Pay Salary', fields: this.formConfig.getFormConfig('admin-salary'), initialData: { method: 'cash' } }
     });
-
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
-      this.service.processSalary(data).subscribe(res => {
-        if (res && res.success) {
-          dialogRef.close();
-          this.loadData();
-        }
-      });
+      this.service.processSalary(data).subscribe(res => { if (res && res.success) { dialogRef.close(); this.loadData(); } });
     });
   }
 
   recordExpense() {
     const dialogRef = this.dialog.open(DynamicFormComponent, {
       width: '500px',
-      data: {
-        title: 'Record Business Expense',
-        submitText: 'Record Expense',
-        fields: this.formConfig.getFormConfig('admin-expense'),
-        initialData: { method: 'cash', category: 'other' }
-      }
+      data: { title: 'Record Business Expense', submitText: 'Record Expense', fields: this.formConfig.getFormConfig('admin-expense'), initialData: { method: 'cash', category: 'other' } }
     });
-
     dialogRef.componentInstance.submitted.subscribe((data: any) => {
-      this.service.recordExpense(data).subscribe(res => {
-        if (res && res.success) {
-          dialogRef.close();
-          this.loadData();
-        }
-      });
+      this.service.recordExpense(data).subscribe(res => { if (res && res.success) { dialogRef.close(); this.loadData(); } });
     });
   }
 
   approvePayment(id: number, status: string) {
-    this.service.approvePayment(id, status).subscribe(res => {
-      if (res && res.success) {
-        this.loadData();
-      }
-    });
+    this.service.approvePayment(id, status).subscribe(res => { if (res && res.success) this.loadData(); });
   }
 
   openReceipt(transaction: any) {
-    this.dialog.open(ReceiptPreviewComponent, {
-      width: '450px',
-      data: transaction,
-      panelClass: 'receipt-dialog' // Add this class to global styles if needed or remove
-    });
+    this.dialog.open(ReceiptPreviewComponent, { width: '450px', data: transaction, panelClass: 'receipt-dialog' });
   }
 }

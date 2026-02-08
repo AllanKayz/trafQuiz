@@ -27,6 +27,7 @@ export class MessagesComponent {
     selectedConversation = signal<Conversation | null>(null);
     messages = signal<Message[]>([]);
     reply = '';
+    readonly MESSAGE_LIMIT = 1000;
     loading = signal(false);
     searchText = signal('');
 

@@ -94,3 +94,24 @@
 mat-select {
     max-width: 250px;
 }
+
+.view-toggle {
+    display: flex;
+    justify-content: center;
+}
+
+::ng-deep .mat-button-toggle-group {
+    border: var(--glass-border) !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    background: var(--bg-card) !important;
+}
+
+::ng-deep .mat-button-toggle-checked {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.calendar-section {
+    margin-top: 24px;
+}

@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideRouter } from '@angular/router';
 import { PagenotfoundComponent } from './pagenotfound.component';
 
 describe('PagenotfoundComponent', () => {
@@ -8,7 +8,8 @@ describe('PagenotfoundComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [PagenotfoundComponent]
+      imports: [PagenotfoundComponent],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 

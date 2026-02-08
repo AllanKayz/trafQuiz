@@ -3,7 +3,8 @@
     <div class="conversations-sidebar">
         <div class="sidebar-header">
             <h2>Messages</h2>
-            <button mat-icon-button (click)="loadConversations()" [disabled]="loading()">
+            <button mat-icon-button (click)="loadConversations()" [disabled]="loading()"
+                aria-label="Refresh conversations" matTooltip="Refresh conversations">
                 <mat-icon>refresh</mat-icon>
             </button>
         </div>
@@ -12,7 +13,13 @@
             <div class="search-inner">
                 <mat-icon>search</mat-icon>
                 <input type="text" placeholder="Search people or messages..." [ngModel]="searchText()"
-                    (ngModelChange)="searchText.set($event)">
+                    (ngModelChange)="searchText.set($event)" aria-label="Search conversations">
+                @if (searchText()) {
+                <button mat-icon-button class="clear-search-btn" (click)="searchText.set('')" aria-label="Clear search"
+                    matTooltip="Clear search">
+                    <mat-icon>close</mat-icon>
+                </button>
+                }
             </div>
         </div>
 
@@ -73,14 +80,14 @@
                 }
             </div>
             <div class="header-actions">
-                <button mat-icon-button (click)="initiateCall(false)" matTooltip="Voice Call">
+                <button mat-icon-button (click)="initiateCall(false)" matTooltip="Voice Call" aria-label="Voice Call">
                     <mat-icon>call</mat-icon>
                 </button>
-                <button mat-icon-button (click)="initiateCall(true)" matTooltip="Video Call">
+                <button mat-icon-button (click)="initiateCall(true)" matTooltip="Video Call" aria-label="Video Call">
                     <mat-icon>videocam</mat-icon>
                 </button>
                 <button mat-icon-button (click)="toggleRecipientInfo()" [color]="showRecipientInfo() ? 'primary' : ''"
-                    matTooltip="Info">
+                    matTooltip="Info" aria-label="View contact info">
                     <mat-icon>info</mat-icon>
                 </button>
             </div>
@@ -139,20 +146,23 @@
 
         <div class="chat-footer">
             <div class="footer-tools">
-                <button mat-icon-button class="tool-btn" (click)="fileInput.click()" matTooltip="Attach File">
+                <button mat-icon-button class="tool-btn" (click)="fileInput.click()" matTooltip="Attach File"
+                    aria-label="Attach File">
                     <mat-icon>attach_file</mat-icon>
                 </button>
                 <input type="file" #fileInput class="hidden-input" (change)="onFileSelected($event)"
                     title="Upload file">
 
-                <button mat-icon-button class="tool-btn" (click)="imageInput.click()" matTooltip="Send Image">
+                <button mat-icon-button class="tool-btn" (click)="imageInput.click()" matTooltip="Send Image"
+                    aria-label="Send Image">
                     <mat-icon>image</mat-icon>
                 </button>
                 <input type="file" #imageInput class="hidden-input" accept="image/*"
                     (change)="onFileSelected($event, 'image')" title="Upload image">
 
                 <div class="emoji-wrapper">
-                    <button mat-icon-button class="tool-btn" (click)="toggleEmojiPicker()" matTooltip="Emojis">
+                    <button mat-icon-button class="tool-btn" (click)="toggleEmojiPicker()" matTooltip="Emojis"
+                        aria-label="Choose Emoji">
                         <mat-icon>sentiment_satisfied</mat-icon>
                     </button>
                     @if (showEmojiPicker()) {
@@ -173,16 +183,24 @@
             <div class="reply-container">
                 <div class="input-area">
                     <textarea placeholder="Type your message..." [(ngModel)]="reply" (input)="onInput($event)"
-                        (keydown.enter)="$event.preventDefault(); sendReply()"></textarea>
+                        (keydown.enter)="$event.preventDefault(); sendReply()" [maxLength]="MESSAGE_LIMIT"></textarea>
                 </div>
                 <div class="reply-actions">
+                    @if (reply.length > 0) {
+                    <span class="char-count" [class.near-limit]="reply.length > MESSAGE_LIMIT * 0.9"
+                        [class.limit-reached]="reply.length >= MESSAGE_LIMIT">
+                        {{ reply.length }}/{{ MESSAGE_LIMIT }}
+                    </span>
+                    }
                     @if (!reply.trim()) {
                     <button mat-icon-button class="voice-btn" [class.recording]="isRecordingSignal()"
-                        (mousedown)="startRecording()" (mouseup)="stopRecording()" matTooltip="Hold to record">
+                        (mousedown)="startRecording()" (mouseup)="stopRecording()" matTooltip="Hold to record"
+                        aria-label="Voice Message">
                         <mat-icon>{{ isRecordingSignal() ? 'mic' : 'mic_none' }}</mat-icon>
                     </button>
                     }
-                    <button mat-flat-button class="send-btn" [disabled]="!reply.trim()" (click)="sendReply()">
+                    <button mat-flat-button class="send-btn" [disabled]="!reply.trim()" (click)="sendReply()"
+                        aria-label="Send Message">
                         <mat-icon>send</mat-icon>
                     </button>
                 </div>
@@ -203,7 +221,8 @@
     @if (showRecipientInfo()) {
     <div class="recipient-info-sidebar">
         <div class="info-header">
-            <button mat-icon-button (click)="toggleRecipientInfo()">
+            <button mat-icon-button (click)="toggleRecipientInfo()" aria-label="Close contact info"
+                matTooltip="Close contact info">
                 <mat-icon>close</mat-icon>
             </button>
             <h3>Contact Info</h3>

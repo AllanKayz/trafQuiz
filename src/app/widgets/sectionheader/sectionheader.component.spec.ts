@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { SectionheaderComponent } from './sectionheader.component';
 
 describe('SectionheaderComponent', () => {
@@ -14,6 +13,8 @@ describe('SectionheaderComponent', () => {
 
     fixture = TestBed.createComponent(SectionheaderComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('header', 'Test Header');
+    fixture.componentRef.setInput('content', 'Test Content');
     fixture.detectChanges();
   });
 

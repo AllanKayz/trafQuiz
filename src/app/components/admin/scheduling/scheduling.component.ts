@@ -19,6 +19,9 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { TableColumn, TableComponent } from '../../../widgets/table/table.component';
 import { SectionheaderComponent } from '../../../widgets/sectionheader/sectionheader.component';
 import { StatCardComponent } from '../../../widgets/stat-card/stat-card.component';
+import { CalendarViewComponent } from '../../../widgets/calendar-view/calendar-view.component';
+import { CalendarEvent } from 'angular-calendar';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 @Component({
     selector: 'app-scheduling',
@@ -36,7 +39,9 @@ import { StatCardComponent } from '../../../widgets/stat-card/stat-card.componen
         MatNativeDateModule,
         TableComponent,
         SectionheaderComponent,
-        StatCardComponent
+        StatCardComponent,
+        CalendarViewComponent,
+        MatButtonToggleModule
     ],
     templateUrl: './scheduling.component.html',
     styleUrls: ['./scheduling.component.css']
@@ -100,6 +105,18 @@ export class SchedulingComponent implements AfterViewInit {
         });
     });
 
+    calendarEvents = computed<CalendarEvent[]>(() => {
+        return this.lessons().map(l => ({
+            id: l.id,
+            start: new Date(l.startTime),
+            end: new Date(new Date(l.startTime).getTime() + (l.durationMinutes || 60) * 60000),
+            title: `${l.title} (${l.instructor?.name || 'Unassigned'})`,
+            meta: l,
+            color: { primary: '#3b82f6', secondary: '#dbeafe' }
+        }));
+    });
+
+    displayMode = signal<'table' | 'calendar'>('calendar');
     loading = false;
 
     constructor() {

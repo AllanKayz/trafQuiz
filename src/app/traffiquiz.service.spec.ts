@@ -1,24 +1,23 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TraffiquizService } from './traffiquiz.service';
+import { MatDialogModule } from '@angular/material/dialog';
 
 describe('TraffiquizService', () => {
   let service: TraffiquizService;
-  let httpMock: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
+      imports: [MatDialogModule],
       providers: [TraffiquizService]
     });
 
     service = TestBed.inject(TraffiquizService);
-    httpMock = TestBed.inject(HttpTestingController);
     localStorage.clear();
+    // Initialize user signal to avoid null errors in some tests
+    service.userSignal.set({ role: 'admin', username: 'admin' });
   });
 
   afterEach(() => {
-    httpMock.verify();
     localStorage.clear();
   });
 
@@ -36,14 +35,21 @@ describe('TraffiquizService', () => {
     expect(JSON.parse(localStorage.getItem('appSettings') || '{}').notifications).toBe(false);
   });
 
-  it('updateProfile should update local storage and try backend', () => {
-    localStorage.setItem('user', JSON.stringify({ username: 'old' }));
+  it('updateProfile should update local storage and user signal', (done) => {
+    localStorage.setItem('user', JSON.stringify({ username: 'old', role: 'admin' }));
+    const spy = spyOn(window.electronAPI, 'invoke').and.returnValue(Promise.resolve({ success: true }));
+
     service.updateProfile({ username: 'new' }).subscribe(res => {
       expect(localStorage.getItem('user')).toContain('new');
+      expect(service.userSignal()?.username).toBe('new');
+      expect(spy).toHaveBeenCalledWith('update-user', jasmine.objectContaining({ username: 'new' }));
+      done();
     });
+  });
 
-    const req = httpMock.expectOne(r => r.url.includes('/updateuser'));
-    expect(req.request.method).toBe('POST');
-    req.flush({ ok: true });
+  it('currentUser computed signal should reflect userSignal', () => {
+    const testUser = { name: 'Test', role: 'instructor' };
+    service.userSignal.set(testUser);
+    expect(service.currentUser()).toEqual(testUser);
   });
 });
