@@ -88,6 +88,21 @@
   color: var(--text-main);
 }
 
+.clear-search-btn {
+  width: 32px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.clear-search-btn mat-icon {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+
 .conv-list {
   flex: 1;
   overflow-y: auto;
@@ -694,6 +709,23 @@
   align-items: center;
   gap: 8px;
   padding-bottom: 4px;
+}
+
+.char-count {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-right: 4px;
+  transition: color 0.2s;
+}
+
+.char-count.near-limit {
+  color: #f59e0b;
+}
+
+.char-count.limit-reached {
+  color: #ef4444;
+  font-weight: 700;
 }
 
 .send-btn {
