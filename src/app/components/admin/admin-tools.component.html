@@ -25,15 +25,15 @@
         <h3 id="confirmTitle">Confirm seeding</h3>
         <p>You are about to seed <strong>{{ count }}</strong> lesson(s). This will add new lessons to the system. Are you sure you want to continue?</p>
         <div class="confirm-actions">
-          <button class="btn btn-secondary" (click)="cancelConfirm()">Cancel</button>
-          <button class="btn btn-primary" (click)="confirmSeed()">Confirm Seed</button>
+          <button class="btn btn-secondary" (click)="cancelConfirm()" mat-button>Cancel</button>
+          <button class="btn btn-primary" (click)="confirmSeed()" mat-button>Confirm Seed</button>
         </div>
       </div>
     </div>
   }
 
-  <div class="controls-row">
-    <button class="btn btn-outline-primary" (click)="showCreate = true">Create Lesson</button>
+  <div class="controls-layout-row">
+    <button class="btn btn-outline-primary" (click)="showCreate = true" mat-button>Create Lesson</button>
   </div>
 
   <div class="status">
@@ -55,15 +55,15 @@
       <div class="confirm-content" role="document">
         <h3 id="createTitle">Create Lesson</h3>
         <form (submit)="createLesson(); $event.preventDefault();">
-          <div class="form-row">
+          <div class="form-layout-row">
             <label>Title<input [(ngModel)]="newLesson.title" name="title" required /></label>
             <label>Subject<input [(ngModel)]="newLesson.subject" name="subject" /></label>
           </div>
-          <div class="form-row">
+          <div class="form-layout-row">
             <label>Start Time<input type="datetime-local" [(ngModel)]="newLesson.startTimeLocal" name="startTimeLocal" required /></label>
             <label>Duration (min)<input type="number" [(ngModel)]="newLesson.durationMinutes" name="durationMinutes" min="15" /></label>
           </div>
-          <div class="form-row">
+          <div class="form-layout-row">
             <label>Instructor
               <select [(ngModel)]="newLesson.instructorId" name="instructorId">
                 <option [value]="null">-- Select --</option>
@@ -74,16 +74,16 @@
             </label>
             <label>Location<input [(ngModel)]="newLesson.location" name="location" /></label>
           </div>
-          <div class="form-row">
+          <div class="form-layout-row">
             <label>Online Link<input [(ngModel)]="newLesson.onlineLink" name="onlineLink" /></label>
             <label>Capacity<input type="number" [(ngModel)]="newLesson.capacity" name="capacity" min="1" /></label>
           </div>
-          <div class="form-row">
+          <div class="form-layout-row">
             <label>Notes<textarea [(ngModel)]="newLesson.notes" name="notes"></textarea></label>
           </div>
           <div class="confirm-actions">
-            <button type="button" class="btn btn-secondary" (click)="showCreate=false">Cancel</button>
-            <button type="submit" class="btn btn-primary">Create</button>
+            <button type="button" class="btn btn-secondary" (click)="showCreate=false" mat-button>Cancel</button>
+            <button type="submit" class="btn btn-primary" mat-button>Create</button>
           </div>
         </form>
       </div>

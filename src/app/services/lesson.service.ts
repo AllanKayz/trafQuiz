@@ -20,7 +20,7 @@ export class LessonService {
     if (window.electronAPI) {
       window.electronAPI.on('data-change', (payload: any) => {
         if (payload.entity === 'lessons') {
-          console.log('Real-time lesson update received');
+
           this.fetchLessons().subscribe();
         }
       });

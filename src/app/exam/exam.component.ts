@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy, computed, signal, effect } from '@angular/core';
+import { Component, inject, OnDestroy, computed, signal, effect, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TraffiquizService } from '../traffiquiz.service';
@@ -7,15 +7,18 @@ import { interval, Subscription } from 'rxjs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { AlertComponent } from '../alert/alert.component';
 
 @Component({
   selector: 'app-exam',
   standalone: true,
-  imports: [ReactiveFormsModule, FormsModule, MatProgressSpinnerModule, MatProgressBarModule, MatSelectModule, MatDialogModule],
+    imports: [ReactiveFormsModule, FormsModule, MatProgressSpinnerModule, MatProgressBarModule, MatSelectModule, MatButtonModule, MatIconModule, MatDialogModule],
   templateUrl: './exam.component.html',
-  styleUrl: './exam.component.css'
+    styleUrl: './exam.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ExamComponent implements OnDestroy {
   private router = inject(Router);
@@ -255,7 +258,7 @@ export class ExamComponent implements OnDestroy {
 
     /*
     this.alert.afterClosed().subscribe(result => {
-      console.log('Dialog closed', result);
+
     });
     */
   }

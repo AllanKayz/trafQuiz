@@ -1,7 +1,10 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { Validators } from '@angular/forms';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
 import { TraffiquizService } from '../../traffiquiz.service';
 import { Router } from '@angular/router';
 import { ButtonConfigService } from '../../widgets/button-config.service';
@@ -15,7 +18,19 @@ import { MatNativeDateModule } from '@angular/material/core';
 @Component({
 	selector: 'app-students',
 	standalone: true,
-	imports: [MatDialogModule, StatCardComponent, SectionheaderComponent, TableComponent, MatNativeDateModule],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [
+		MatDialogModule,
+		StatCardComponent,
+		SectionheaderComponent,
+		TableComponent,
+		MatNativeDateModule,
+		// Material helpers
+		/* Layout */
+		MatCardModule,
+		MatDividerModule,
+		MatIconModule
+	],
 	templateUrl: './students.component.html',
 	styleUrls: ['./students.component.css']
 })

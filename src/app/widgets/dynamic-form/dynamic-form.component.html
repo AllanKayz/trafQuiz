@@ -12,7 +12,7 @@
     <form [formGroup]="form()" (ngSubmit)="onSubmit()" class="modern-form">
       <div class="fields-grid">
         @for (row of groupedFields(); track row[0].key) {
-        <div class="form-row">
+        <div class="form-layout-row">
           @for (field of row; track field.key) {
           <div [class]="'field-col field-span-' + (field.colspan || 1)" [hidden]="field.hidden">
             @switch (field.type) {

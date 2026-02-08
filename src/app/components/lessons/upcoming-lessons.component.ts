@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, effect, inject, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, effect, inject, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
@@ -6,6 +6,12 @@ import { Lesson } from '../../models/lesson';
 import { LessonService } from '../../services/lesson.service';
 import { LessonCardComponent } from './lesson-card.component';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatListModule } from '@angular/material/list';
+import { MatCardModule } from '@angular/material/card';
 import { TraffiquizService } from '../../traffiquiz.service';
 import { MatDialog } from '@angular/material/dialog';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
@@ -15,7 +21,7 @@ import { MessagesService } from '../messages/messages.service';
 @Component({
   selector: 'app-upcoming-lessons',
   standalone: true,
-  imports: [CommonModule, FormsModule, LessonCardComponent, MatIconModule],
+  imports: [CommonModule, FormsModule, LessonCardComponent, MatIconModule, MatButtonModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatListModule, MatCardModule],
   templateUrl: './upcoming-lessons.component.html',
   styleUrls: ['./upcoming-lessons.component.css']
 })

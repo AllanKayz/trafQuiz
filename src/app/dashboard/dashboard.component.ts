@@ -1,5 +1,5 @@
 
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,8 @@ import { TraffiquizService } from '../traffiquiz.service';
   selector: 'app-dashboard',
   imports: [RouterModule, MatIconModule, ReactiveFormsModule, MatButtonModule, MatTooltipModule],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+    styleUrl: './dashboard.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardComponent {
   private router = inject(Router);

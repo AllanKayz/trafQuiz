@@ -1,19 +1,38 @@
 
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { TraffiquizService } from '../traffiquiz.service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { finalize } from 'rxjs';
 
 import { ManageMetadataComponent } from '../components/admin/manage-metadata/manage-metadata.component';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatDialog } from '@angular/material/dialog';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
+import { EditStudentDialogComponent } from './edit-student-dialog.component';
 
 @Component({
   selector: 'app-admin',
-  imports: [RouterModule, MatFormFieldModule, ReactiveFormsModule, MatProgressSpinnerModule, ManageMetadataComponent],
+  imports: [
+    RouterModule,
+    MatFormFieldModule,
+    MatInputModule,
+    ReactiveFormsModule,
+    MatProgressSpinnerModule,
+    MatButtonModule,
+    MatTabsModule,
+    ManageMetadataComponent,
+    MatCardModule,
+    MatIconModule
+  ],
   templateUrl: './admin.component.html',
-  styleUrl: './admin.component.css'
+  styleUrls: ['./admin.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AdminComponent implements OnInit, OnDestroy {
   adminData: any;
@@ -21,6 +40,7 @@ export class AdminComponent implements OnInit, OnDestroy {
   loggedUser: any;
   isLoading: boolean = true;
   chosenUser: any;
+  dialog = inject(MatDialog);
 
 
   getAdminData: TraffiquizService = inject(TraffiquizService);
@@ -99,7 +119,6 @@ export class AdminComponent implements OnInit, OnDestroy {
         password: this.addStudentForm.value.password?.trim()
       };
 
-      console.log(payload);
 
       this.getAdminData.addInstructor(payload).subscribe({
         next: (res) => {
@@ -132,6 +151,39 @@ export class AdminComponent implements OnInit, OnDestroy {
     this.updateStudentForm.controls.updateUid.setValue(this.chosenUser.id ?? '');
   }
 
+  editStudent(student: any): void {
+    const dialogRef = this.dialog.open(EditStudentDialogComponent, {
+      data: student,
+      width: '500px',
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.chosenUser = result;
+        const payload = {
+          id: result.updateUid,
+          username: result.updateUsername,
+          firstName: result.updateFirstName,
+          lastName: result.updateLastName,
+          email: result.updateEmail,
+          password: result.updatePassword
+        };
+        this.getAdminData.updateStudent(payload).subscribe({
+          next: (res) => {
+            if (res.success) {
+              this.getAdminData.showNotification(res.message, 'success');
+              this.getAdminData.fetchStudents();
+            }
+          },
+          error: (err) => {
+            this.getAdminData.showNotification(err, 'error');
+          }
+        });
+      }
+    });
+  }
+
   deleteStudent(e: Event): void {
     const clickedBtn = e.target as HTMLButtonElement;
     const str = clickedBtn.id;
@@ -154,6 +206,27 @@ export class AdminComponent implements OnInit, OnDestroy {
       });
     }
   }
+
+  /*
+  deleteStudent(student: any): void {
+    this.getAdminData.showConfirm(
+      `Are you sure you want to delete ${student.firstName} ${student.lastName}?`,
+      'Delete',
+      'Confirm Deletion'
+    ).subscribe(() => {
+      this.getAdminData.deleteStudent(student.id).subscribe({
+        next: (res) => {
+          if (res.success) {
+            this.getAdminData.showNotification('Student deleted successfully', 'success');
+            this.getAdminData.fetchStudents();
+          }
+        },
+        error: (err) => {
+          this.getAdminData.showNotification('Error deleting student: ' + err, 'error');
+        }
+      });
+    });
+  }*/
 
   updateStudent(): void {
     if (this.updateStudentForm.valid) {

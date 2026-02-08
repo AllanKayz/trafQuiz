@@ -104,7 +104,7 @@ export class MetadataManagerDialogComponent {
   ) { }
 
   handleAction(event: any) {
-    console.log('MetadataManager - Action:', event);
+
     if (event.action === 'edit') {
       this.openForm(event.item);
     } else if (event.action === 'delete') {

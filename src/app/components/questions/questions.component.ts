@@ -1,4 +1,4 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal, ChangeDetectionStrategy } from '@angular/core';
 import { SectionheaderComponent } from '../../widgets/sectionheader/sectionheader.component';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { TraffiquizService } from '../../traffiquiz.service';
@@ -7,6 +7,9 @@ import { ButtonConfigService } from '../../widgets/button-config.service';
 import { Router } from '@angular/router';
 import { TableColumn, TableComponent } from "../../widgets/table/table.component";
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
 import { QuestionFormComponent } from '../../widgets/question-form/question-form.component';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { FormConfigService } from '../../widgets/form-config.service';
@@ -17,9 +20,19 @@ import { MetadataManagerDialogComponent } from '../../widgets/metadata-manager/m
 @Component({
 	selector: 'app-questions',
 	standalone: true,
-	imports: [SectionheaderComponent, StatCardComponent, TableComponent, MatDialogModule],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	imports: [
+		SectionheaderComponent,
+		StatCardComponent,
+		TableComponent,
+		MatDialogModule,
+		// Material helpers
+		MatCardModule,
+		MatDividerModule,
+		MatIconModule,
+	],
 	templateUrl: './questions.component.html',
-	styleUrl: './questions.component.css'
+	styleUrls: ['./questions.component.css']
 })
 export class QuestionsComponent {
 	header = 'Question Bank';

@@ -16,7 +16,7 @@ export class VehicleService {
     if (window.electronAPI) {
       window.electronAPI.on('data-change', (payload: any) => {
         if (payload.entity === 'vehicles') {
-          console.log('Real-time vehicle update received');
+
           this.fetchVehicles().subscribe();
         }
       });

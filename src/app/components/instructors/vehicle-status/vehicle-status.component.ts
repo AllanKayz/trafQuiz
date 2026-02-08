@@ -35,7 +35,7 @@ import { FormConfigService } from '../../../widgets/form-config.service';
                   <span class="label">Status:</span>
                   <span class="value" [class]="v.status">{{v.status}}</span>
                 </div>
-                <div class="stats-row" style="display:flex; gap:16px; margin-bottom:16px;">
+                <div class="stats-layout-row" style="display:flex; gap:16px; margin-bottom:16px;">
                   <div class="stat-item">
                     <mat-icon style="font-size:18px; width:18px; height:18px; vertical-align:middle;">speed</mat-icon>
                     <span style="font-size:14px; margin-left:4px;">{{v.mileage || 0}} km</span>

@@ -3,7 +3,7 @@
   <!-- Sidebar -->
   <aside class="sidenav" [class.collapsed]="isSidenavCollapsed()">
     <div class="sidebar-header">
-      <button class="toggle-btn" (click)="toggleSidenav()">
+      <button class="toggle-btn" (click)="toggleSidenav()" mat-button>
         <mat-icon>{{isSidenavCollapsed() ? 'menu' : 'menu_open'}}</mat-icon>
       </button>
     </div>

@@ -417,7 +417,7 @@ export class TraffiquizService implements OnDestroy {
       // Check if component is still active before processing updates
       if (!this.userSignal()) return;
       
-      console.log('Real-time update received:', payload);
+
       const { entity, action, data } = payload;
 
       try {

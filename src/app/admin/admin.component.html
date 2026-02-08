@@ -1,99 +1,117 @@
-<section class="co">
-  <div class="d-flex align-items-start">
-    <div class="d-flex flex-column me-3 p-4 shadow-box-right vh-100 sidebar-container">
-
-      <!-- Branding Area -->
-      <div class="brand-header mb-5 mx-auto">
-        <img src="assets/logo.png" alt="TrafQuiz" width="150" height="130">
-      </div>
-
-      <!-- Navigation List -->
-      <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-        <button class="nav-link active mb-3 text-uppercase" id="v-pills-home-tab" data-bs-toggle="pill"
-          data-bs-target="#v-pills-home" type="button" role="tab" aria-controls="v-pills-home"
-          aria-selected="true">Dashboard</button>
-        <button class="nav-link mb-3 text-uppercase" id="v-pills-profile-tab" data-bs-toggle="pill"
-          data-bs-target="#v-pills-profile" type="button" role="tab" aria-controls="v-pills-profile"
-          aria-selected="false">Manage Students</button>
-        <button class="nav-link mb-3 text-uppercase" id="v-pills-disabled-tab" data-bs-toggle="pill"
-          data-bs-target="#v-pills-disabled" type="button" role="tab" aria-controls="v-pills-disabled"
-          aria-selected="false" disabled>Exam Analytics(Coming soon)</button>
-        <button class="nav-link mb-3 text-uppercase" id="v-pills-messages-tab" data-bs-toggle="pill" disabled
-          data-bs-target="#v-pills-messages" type="button" role="tab" aria-controls="v-pills-messages"
-          aria-selected="false" disabled>Reports(Coming soon)</button>
-        <button class="nav-link mb-3 text-uppercase" id="v-pills-metadata-tab" data-bs-toggle="pill"
-          data-bs-target="#v-pills-metadata" type="button" role="tab" aria-controls="v-pills-metadata"
-          aria-selected="false">System Metadata</button>
-        <button class="nav-link mb-3 text-uppercase" id="v-pills-settings-tab" data-bs-toggle="pill"
-          data-bs-target="#v-pills-settings" type="button" role="tab" aria-controls="v-pills-settings"
-          aria-selected="false" disabled>Settings(Coming Soon)</button>
-
-        <!-- Links (Technically not tabs, usually fine if not role=tab, but ideally outside tablist if strict. keeping inside for layout simplicity as nav-links) -->
-        <a class="nav-link mb-3 text-uppercase" [routerLink]="['/dashboard','admin-tools']">Admin Tools</a>
-        <a class="btn btn-outline-danger sticky-bottom" [routerLink]="['/login']">Logout</a>
-      </div>
+<div class="admin-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-header">
+      <img src="assets/logo.png" alt="TrafQuiz" width="140" height="120">
     </div>
-    <div class="tab-content p-4 vh-100 overflow-y-auto" id="v-pills-tabContent">
-      <div class="tab-pane fade show active" id="v-pills-home" role="tabpanel" aria-labelledby="v-pills-home-tab"
-        tabindex="0">
-        <div class="card shadow-sm duration-card">
+    <nav class="nav-buttons">
+      <a [routerLink]="['/dashboard','admin-tools']" mat-button color="primary">
+        <mat-icon class="me-2">dashboard</mat-icon> Admin Tools
+      </a>
+      <a [routerLink]="['/login']" mat-flat-button color="warn" class="mt-auto">
+        <mat-icon class="me-2">logout</mat-icon> Logout
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <mat-tab-group animationDuration="0ms" mat-stretch-tabs="false" mat-align-tabs="start">
+      
+      <!-- Dashboard Tab -->
+      <mat-tab label="Dashboard">
+        <div class="py-4">
           @if (isLoading) {
-          <mat-progress-spinner mode="indeterminate" diameter="150" color="accent"
-            class="button-spinner mx-auto my-auto"></mat-progress-spinner>
+            <div class="d-flex justify-content-center align-items-center" style="height: 300px;">
+              <mat-progress-spinner mode="indeterminate" diameter="50" color="primary"></mat-progress-spinner>
+            </div>
           }
           @if (!isLoading) {
-          <div class="card-body">
-            <h5 class="card-title text-uppercase">Alter Exam Duration</h5>
-            <h6 class="card-subtitle mb-2 text-body-secondary">Current Duration: {{formattedTime}} mins</h6>
-            <form [formGroup]="examTime" (submit)="updateExamDuration()">
-              <div class="input-group mb-3">
-                <input type="number" class="form-control" formControlName="newtime" placeholder="10"
-                  aria-label="Exam Duration" aria-describedby="button-addon2">
-                <button type="submit" class="btn btn-outline-secondary" id="button-addon2">Update</button>
+            <div class="row">
+              <div class="col-md-6 col-lg-4">
+                <mat-card class="content-card">
+                  <mat-card-header>
+                    <mat-card-title>Exam Settings</mat-card-title>
+                    <mat-card-subtitle>Current Duration: {{formattedTime}} mins</mat-card-subtitle>
+                  </mat-card-header>
+                  <mat-card-content class="pt-3">
+                    <form [formGroup]="examTime" (submit)="updateExamDuration()">
+                      <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Exam Duration (minutes)</mat-label>
+                  <input matInput type="number" formControlName="newtime" placeholder="10">
+                        <mat-icon matSuffix>timer</mat-icon>
+                </mat-form-field>
+                      <div class="d-flex justify-content-end">
+                        <button type="submit" mat-flat-button color="primary">Update Duration</button>
+                      </div>
+                    </form>
+                  </mat-card-content>
+                </mat-card>
               </div>
-            </form>
-          </div>
+            </div>
           }
         </div>
-      </div>
-      <div class="tab-pane fade w-100" id="v-pills-profile" role="tabpanel" aria-labelledby="v-pills-profile-tab"
-        tabindex="0">
-        <div class="row mb-4">
-          <div class="border p-4 shadow-sm">
-            <h3 class="h3 fw-bold mb-5">Add New Student</h3>
-            <form class="row g-3" [formGroup]="addStudentForm" (submit)="addStudent()">
-              <div class="col-md-6">
-                <label for="username" class="form-label">Username:</label>
-                <input type="text" class="form-control" formControlName="username" id="username">
-              </div>
-              <div class="col-md-6">
-                <label for="password" class="form-label">Password:</label>
-                <input type="password" class="form-control" formControlName="password" id="password">
-              </div>
-              <div class="col-md-4">
-                <label for="email" class="form-label">Email:</label>
-                <input type="email" class="form-control" formControlName="email" id="email"
-                  placeholder="trafQuiz@mail.com">
-              </div>
-              <div class="col-md-4">
-                <label for="firstname" class="form-label">Firstname:</label>
-                <input type="text" class="form-control" formControlName="firstName" id="firstname">
-              </div>
-              <div class="col-md-4">
-                <label for="lastname" class="form-label">Lastname:</label>
-                <input type="text" class="form-control" formControlName="lastName" id="lastname">
-              </div>
-              <div class="col-12">
-                <button type="submit" class="btn btn-outline-primary w-50 float-end">
-                  Add Student
-                </button>
-              </div>
+      </mat-tab>
+
+      <!-- Manage Students Tab -->
+      <mat-tab label="Manage Students">
+        <div class="py-4">
+          <!-- Add Student Card -->
+          <mat-card class="content-card mb-4">
+            <mat-card-header class="mb-3">
+              <mat-card-title>Add New Student</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+            <form class="layout-row g-3" [formGroup]="addStudentForm" (submit)="addStudent()">
+                <div class="row">
+                  <div class="col-md-6">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Username</mat-label>
+                    <input matInput type="text" formControlName="username" id="username">
+                  </mat-form-field>
+                  </div>
+                  <div class="col-md-6">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Password</mat-label>
+                    <input matInput type="password" formControlName="password" id="password">
+                  </mat-form-field>
+                  </div>
+                  <div class="col-md-4">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Email</mat-label>
+                    <input matInput type="email" formControlName="email" id="email" placeholder="trafQuiz@mail.com">
+                  </mat-form-field>
+                  </div>
+                  <div class="col-md-4">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>First Name</mat-label>
+                    <input matInput type="text" formControlName="firstName" id="firstname">
+                  </mat-form-field>
+                  </div>
+                  <div class="col-md-4">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Last Name</mat-label>
+                    <input matInput type="text" formControlName="lastName" id="lastname">
+                  </mat-form-field>
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end mt-2">
+                  <button type="submit" mat-flat-button color="primary">
+                    <mat-icon>person_add</mat-icon> Add Student
+                  </button>
+                </div>
             </form>
-          </div>
-        </div>
-        <div class="d-flex flex-column justify-content-center border p-4 mx-auto shadow-sm">
-          <h3 class="h3 fw-bold mb-5">Manage Students</h3>
-          <table class="table full_width">
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Student List Card -->
+          <mat-card class="content-card">
+            <mat-card-header class="mb-3">
+              <mat-card-title>Registered Students</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="table-container">
+                <table class="table table-hover align-middle">
             <thead>
               <tr>
                 <th scope="col">#</th>
@@ -104,84 +122,44 @@
               </tr>
             </thead>
             <tbody class="table-group-divider">
-              @for (user of usersList(); track user; let i = $index) {
+                    @for (user of usersList(); track user.id; let i = $index) {
               <tr>
                 <th scope="row">{{i + 1}}</th>
-                <td>{{user.firstName}} {{user.lastName}}</td>
+                      <td class="fw-medium">{{user.firstName}} {{user.lastName}}</td>
                 <td>{{user.username}}</td>
-                <td>{{user.email}}</td>
+                      <td class="text-muted">{{user.email}}</td>
                 <td>
-                  <div class="btn-group btn-group-sm" role="group" aria-label="Small button group">
-                    <button type="button" id="{{user.id}}" class="btn btn-outline-primary" data-bs-toggle="modal"
-                      data-bs-target="#editStudentDetails" (click)="btnEdit($event)">Edit</button>
-                    <button type="button" id="del.{{user.id}}" class="btn btn-outline-danger"
-                      (click)="deleteStudent($event)">Delete</button>
-                  </div>
+                        <div class="action-buttons">
+                          <button type="button" mat-icon-button color="primary" (click)="editStudent(user)" matTooltip="Edit">
+                            <mat-icon>edit</mat-icon>
+                          </button>
+                          <button type="button" mat-icon-button color="warn" (click)="deleteStudent(user)" matTooltip="Delete">
+                            <mat-icon>delete</mat-icon>
+                          </button>
+                    </div>
                 </td>
               </tr>
               }
             </tbody>
           </table>
+              </div>
+            </mat-card-content>
+          </mat-card>
         </div>
-      </div>
-      <div class="tab-pane fade" id="v-pills-disabled" role="tabpanel" aria-labelledby="v-pills-disabled-tab"
-        tabindex="0">feature under development</div>
-      <div class="tab-pane fade" id="v-pills-messages" role="tabpanel" aria-labelledby="v-pills-messages-tab"
-        tabindex="0">feature under development</div>
-      <div class="tab-pane fade w-100" id="v-pills-metadata" role="tabpanel" aria-labelledby="v-pills-metadata-tab"
-        tabindex="0">
-        <app-manage-metadata></app-manage-metadata>
-      </div>
-      <div class="tab-pane fade" id="v-pills-settings" role="tabpanel" aria-labelledby="v-pills-settings-tab"
-        tabindex="0">feature under development</div>
-    </div>
-  </div>
-</section>
+      </mat-tab>
 
-<div class="modal fade" id="editStudentDetails" tabindex="-1" aria-labelledby="editStudentDetailLabel"
-  aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h6 class="modal-title fs-5" id="editStudentDetailLabel">Update Student Details</h6>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <form [formGroup]="updateStudentForm">
-          <div class="mb-3 d-none">
-            <label for="updateUid" class="col-form-label">Uid:</label>
-            <input type="text" class="form-control form-control-sm" formControlName="updateUid" id="updateUid">
-          </div>
-          <div class="mb-3">
-            <label for="updateFirstname" class="col-form-label">Firstname:</label>
-            <input type="text" class="form-control form-control-sm" formControlName="updateFirstName"
-              id="updateFirstname">
-          </div>
-          <div class="mb-3">
-            <label for="updateLastname" class="col-form-label">Lastname:</label>
-            <input type="text" class="form-control form-control-sm" formControlName="updateLastName"
-              id="updateLastname">
-          </div>
-          <div class="mb-3">
-            <label for="updateUsername" class="col-form-label">Username:</label>
-            <input type="text" class="form-control form-control-sm" formControlName="updateUsername"
-              id="updateUsername">
-          </div>
-          <div class="mb-3">
-            <label for="updateEmail" class="col-form-label">Email:</label>
-            <input type="email" class="form-control form-control-sm" formControlName="updateEmail" id="updateEmail">
-          </div>
-          <div class="mb-3">
-            <label for="updatePassword" class="col-form-label">Password:</label>
-            <input type="password" class="form-control form-control-sm" formControlName="updatePassword"
-              id="updatePassword">
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-outline-primary" (click)="updateStudent()">Update</button>
-      </div>
-    </div>
-  </div>
+      <mat-tab label="Exam Analytics (Coming Soon)" disabled>
+          <p>Feature under development</p>
+      </mat-tab>
+      <mat-tab label="Reports (Coming Soon)" disabled>
+          <p>Feature under development</p>
+      </mat-tab>
+      <mat-tab label="System Metadata">
+        <app-manage-metadata></app-manage-metadata>
+      </mat-tab>
+      <mat-tab label="Settings (Coming Soon)" disabled>
+          <p>Feature under development</p>
+      </mat-tab>
+    </mat-tab-group>
+  </main>
 </div>

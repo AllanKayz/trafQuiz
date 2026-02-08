@@ -56,17 +56,17 @@
       </div>
       <div class="action-buttons">
         @if (!isPaused) {
-        <button class="btn btn-secondary" (click)="startNewExam()">New Exam</button>
+          <button mat-stroked-button (click)="startNewExam()">New Exam</button>
         }
-        <button class="btn btn-secondary" (click)="pauseTimer()">{{pauseState}}</button>
-        <button class="btn btn-secondary" (click)="closeExam()">Close</button>
+          <button mat-stroked-button (click)="pauseTimer()">{{pauseState}}</button>
+          <button mat-stroked-button color="warn" (click)="closeExam()">Close</button>
       </div>
     </div>
 
     <!--Pause Window-->
     @if (isPaused) {
     <div class="pausedState">
-      <img src="assets/logo.png" class="rounded mx-auto d-block" alt="Logo">
+        <img src="assets/logo.png" style="border-radius: var(--radius); margin: 0 auto; display: block;" alt="Logo">
     </div>
     }
 
@@ -79,7 +79,7 @@
     </div>
     }
     @if (!loading()) {
-    <div class="question-section my-auto">
+    <div class="question-section" style="margin-top: auto; margin-bottom: auto;">
       <div class="question-content">
         <div class="question-text-area">
           <div class="question-text" id="questionText">
@@ -88,7 +88,7 @@
         </div>
         @if (currentQuestion().hasImage) {
         <div class="question-image" id="questionImage">
-          <img id="questionImg" class="img-fluid py-2 px-2" [src]="currentQuestion().image" alt="Question diagram">
+          <img id="questionImg" style="max-width: 100%; height: auto; padding: 0.5rem;" [src]="currentQuestion().image" alt="Question diagram">
         </div>
         }
       </div>
@@ -106,24 +106,24 @@
     @if (!showResults()) {
     <div class="bottom-actions">
       @if (!loading()) {
-      <button class="btn-nav btn-previous" [disabled]="currentQuestionIndex() === 0" (click)="previousQuestion()">
+      <button class="btn-nav btn-previous" [disabled]="currentQuestionIndex() === 0" (click)="previousQuestion()" mat-stroked-button>
         ← Previous
       </button>
       <div class="question-nav">
         <button class="btn-nav flag-btn" id="flagBtn" [class.flagged]="flaggedQuestions().has(currentQuestionIndex())"
-          (click)="toggleFlag()">
+          (click)="toggleFlag()" mat-button color="accent">
           {{ flaggedQuestions().has(currentQuestionIndex()) ? '🏁 Unflag' : '🏁 Flag Question' }}
         </button>
-        <button class="btn btn-nav review-button" (click)="jumpToNextFlagged()">
+        <button class="btn btn-nav review-button" (click)="jumpToNextFlagged()" mat-stroked-button>
           Jump to Next Flagged →
         </button>
       </div>
-      @if (currentQuestionIndex() < totalQuestions() - 1) { <button class="btn-nav btn-next" (click)="nextQuestion()">
+      @if (currentQuestionIndex() < totalQuestions() - 1) { <button class="btn-nav btn-next" (click)="nextQuestion()" mat-stroked-button>
         Next →
         </button>
         }
         @if (currentQuestionIndex() === totalQuestions() - 1) {
-        <button class="btn btn-nav finish-btn" (click)="submitExam()">
+        <button class="btn btn-nav finish-btn" (click)="submitExam()" mat-raised-button color="primary">
           Submit Exam
         </button>
         }

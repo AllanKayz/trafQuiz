@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, ViewChild, ElementRef, effect } from '@angular/core';
+import { Component, inject, signal, computed, ViewChild, ElementRef, effect, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
@@ -16,7 +16,8 @@ import { TraffiquizService } from '../../traffiquiz.service';
     selector: 'app-messages',
     imports: [CommonModule, FormsModule, MatListModule, MatIconModule, MatButtonModule, MatInputModule, MatCardModule, MatProgressSpinnerModule, MatTooltipModule],
     templateUrl: './messages.component.html',
-    styleUrl: './messages.component.css'
+    styleUrl: './messages.component.css',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MessagesComponent {
     private messagesService = inject(MessagesService);
@@ -273,7 +274,7 @@ export class MessagesComponent {
             window.open(url, '_blank');
         } else {
             // Placeholder: Should ideally be handled via a custom protocol or relative path
-            console.log('Opening local image:', url);
+
         }
     }
 

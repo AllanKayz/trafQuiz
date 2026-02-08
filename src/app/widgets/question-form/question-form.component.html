@@ -7,7 +7,7 @@
 
   <h3>Options</h3>
   @for (option of question.options; track option; let i = $index) {
-    <div class="option-row">
+    <div class="option-layout-row">
       <mat-radio-group [(ngModel)]="question.correct">
         <mat-radio-button [value]="i"></mat-radio-button>
       </mat-radio-group>

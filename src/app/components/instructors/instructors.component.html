@@ -7,6 +7,14 @@
       [footer]="widget.footer" />
   }
 </section>
-<section class="questions-table pt-3">
-  <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="tableActions()" [filterPlaceholder]="'Search questions...'" (rowAction)="handleTableAction($event)"></app-table>
+<section class="material-table-section">
+  <mat-card class="table-card">
+    <mat-card-header class="table-header">
+      <mat-card-title>Instructors List</mat-card-title>
+    </mat-card-header>
+    <mat-divider></mat-divider>
+    <mat-card-content class="table-content">
+      <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="tableActions()" [filterPlaceholder]="'Search instructors...'" (rowAction)="handleTableAction($event)"></app-table>
+    </mat-card-content>
+  </mat-card>
 </section>

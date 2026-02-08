@@ -5,19 +5,24 @@
       <p class="subtitle">{{ isStudent() ? 'Plan your lessons and track your progress' : 'Manage scheduled sessions and
         student requests' }}</p>
     </div>
-    <div class="controls">
+      <div class="controls">
       <div class="search-wrapper">
         <mat-icon>search</mat-icon>
-        <input type="text" placeholder="Search lessons..." [(ngModel)]="q" />
+        <mat-form-field appearance="outline">
+          <input matInput placeholder="Search lessons..." [(ngModel)]="q" />
+        </mat-form-field>
       </div>
-      <select [(ngModel)]="range" (change)="onRangeChange()" title="Select date range">
-        <option value="today">Today</option>
-        <option value="7days">Next 7 days</option>
-        <option value="week">This week</option>
-        <option value="month">This month</option>
-      </select>
+      <mat-form-field appearance="outline">
+        <mat-label>Date Range</mat-label>
+        <mat-select [(ngModel)]="range" (selectionChange)="onRangeChange()">
+          <mat-option value="today">Today</mat-option>
+          <mat-option value="7days">Next 7 days</mat-option>
+          <mat-option value="week">This week</mat-option>
+          <mat-option value="month">This month</mat-option>
+        </mat-select>
+      </mat-form-field>
       @if (isStudent()) {
-      <button class="book-btn" (click)="bookLesson()">
+      <button mat-stroked-button color="primary" (click)="bookLesson()">
         <mat-icon>add</mat-icon>
         Book Private Lesson
       </button>
@@ -45,7 +50,7 @@
     @if (selectedLesson) {
     <section class="detail">
       <div class="detail-header">
-        <div class="title-row">
+        <div class="title-layout-row">
           <h2>{{ selectedLesson.title }}</h2>
           <span class="status-badge" [class]="selectedLesson.status">
             {{ selectedLesson.status | titlecase }}
@@ -135,7 +140,7 @@
             <h4>Virtual Session Link</h4>
             <p>Join the conference using the button below.</p>
           </div>
-          <a [href]="selectedLesson.onlineLink" target="_blank" rel="noopener" class="meeting-link-btn">
+          <a [href]="selectedLesson.onlineLink" target="_blank" rel="noopener" class="meeting-link-btn" mat-button>
             Join Online Room
           </a>
         </div>
@@ -145,12 +150,12 @@
           <!-- Student Actions -->
           @if (isStudent()) {
           @if (selectedLesson.status === 'confirmed' || selectedLesson.status === 'upcoming') {
-          <button class="btn btn-primary" (click)="join(selectedLesson)">
+          <button mat-raised-button color="primary" (click)="join(selectedLesson)">
             <mat-icon>check_circle</mat-icon>
             Join Lesson
           </button>
           }
-          <button class="btn btn-danger" (click)="cancel(selectedLesson)">
+          <button mat-stroked-button color="warn" (click)="cancel(selectedLesson)">
             <mat-icon>cancel</mat-icon>
             Withdraw
           </button>
@@ -159,30 +164,30 @@
           <!-- Instructor/Admin Actions -->
           @if (isInstructor() || isAdmin()) {
           @if (isAdmin()) {
-          <button class="btn btn-primary btn-allocate" (click)="allocate(selectedLesson)">
+          <button mat-stroked-button color="primary" (click)="allocate(selectedLesson)">
             <mat-icon>assignment_ind</mat-icon>
             Allocate
           </button>
           }
           @if (selectedLesson.status === 'pending') {
-          <button class="btn btn-primary" (click)="approve(selectedLesson)">
+          <button mat-stroked-button color="primary" (click)="approve(selectedLesson)">
             <mat-icon>check</mat-icon>
             Approve Request
           </button>
-          <button class="btn btn-danger" (click)="decline(selectedLesson)">
+          <button mat-stroked-button color="warn" (click)="decline(selectedLesson)">
             <mat-icon>block</mat-icon>
             Decline
           </button>
           }
           @if (selectedLesson.status === 'confirmed' || selectedLesson.status === 'upcoming') {
-          <button class="btn btn-danger" (click)="cancel(selectedLesson)">
+          <button mat-stroked-button color="warn" (click)="cancel(selectedLesson)">
             <mat-icon>cancel</mat-icon>
             Cancel Lesson
           </button>
           }
           }
 
-          <button class="btn btn-secondary" (click)="message(selectedLesson)">
+          <button mat-stroked-button (click)="message(selectedLesson)">
             <mat-icon>chat_bubble</mat-icon>
             Contact {{ isStudent() ? 'Instructor' : 'Student' }}
           </button>

@@ -75,7 +75,7 @@ export interface TableColumn {
           }
       
           <tr mat-header-row *matHeaderRowDef="columnKeys()"></tr>
-          <tr mat-row *matRowDef="let row; columns: columnKeys();" class="hover-row"></tr>
+          <tr mat-row *matRowDef="let row; columns: columnKeys();" class="hover-layout-row"></tr>
         </table>
       </div>
     

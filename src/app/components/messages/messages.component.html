@@ -32,7 +32,7 @@
                         <div class="status-dot" [class.offline]="item.displayType === 'person'"></div>
                     </div>
                     <div class="conv-info">
-                        <div class="conv-title-row">
+                        <div class="conv-title-layout-row">
                             <span class="conv-name">{{ item.name }}</span>
                             @if (item.displayType === 'conversation') {
                             <span class="conv-time">{{ formatTime(item.last_message_at) }}</span>
