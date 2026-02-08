@@ -1,6 +1,7 @@
 import { Component, input, computed, ViewChild, signal, Output, EventEmitter, AfterViewInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { SkeletonLoaderComponent } from '../skeleton-loader/skeleton-loader.component';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +18,7 @@ export interface TableColumn {
 
 @Component({
   selector: 'app-table',
-  imports: [CommonModule, MatTableModule, MatPaginatorModule, MatSortModule, MatButtonModule, MatIconModule, MatMenuModule, MatInputModule],
+  imports: [CommonModule, MatTableModule, MatPaginatorModule, MatSortModule, MatButtonModule, MatIconModule, MatMenuModule, MatInputModule, SkeletonLoaderComponent],
   template: `
     <div class="table-container animate-fade-in">
       <div class="filter-section">
@@ -29,6 +30,24 @@ export interface TableColumn {
       </div>
     
       <div class="table-wrapper">
+        @if (isLoading()) {
+          <div class="skeleton-table">
+            <div class="skeleton-header">
+              @for (col of columns(); track col.key) {
+                <div class="skeleton-cell"><app-skeleton-loader width="80%"></app-skeleton-loader></div>
+              }
+              @if (actions().length > 0) { <div class="skeleton-cell"></div> }
+            </div>
+            @for (row of [1,2,3,4,5]; track row) {
+              <div class="skeleton-row">
+                @for (col of columns(); track col.key) {
+                  <div class="skeleton-cell"><app-skeleton-loader [width]="(row % 2 === 0 ? '60%' : '80%')"></app-skeleton-loader></div>
+                }
+                @if (actions().length > 0) { <div class="skeleton-cell"><app-skeleton-loader width="20px" borderRadius="50%"></app-skeleton-loader></div> }
+              </div>
+            }
+          </div>
+        } @else {
         <table mat-table [dataSource]="dataSource()" matSort>
           <!-- Dynamic Columns -->
           @for (column of columns(); track column.key) {
@@ -77,6 +96,7 @@ export interface TableColumn {
           <tr mat-header-row *matHeaderRowDef="columnKeys()"></tr>
           <tr mat-row *matRowDef="let row; columns: columnKeys();" class="hover-row"></tr>
         </table>
+        }
       </div>
     
       <mat-paginator [pageSizeOptions]="pageSizeOptions()" showFirstLastButtons></mat-paginator>
@@ -206,6 +226,28 @@ export interface TableColumn {
         transform: rotate(90deg);
     }
 
+    /* Skeleton Table Styles */
+    .skeleton-table {
+      width: 100%;
+    }
+    .skeleton-header, .skeleton-row {
+      display: flex;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--border-color);
+      align-items: center;
+    }
+    .skeleton-header {
+      background: hsla(var(--primary) / 0.03);
+      height: 48px;
+    }
+    .skeleton-row {
+      height: 52px;
+    }
+    .skeleton-cell {
+      flex: 1;
+      padding: 0 12px;
+    }
+
     /* Paginator */
     mat-paginator {
         border-top: 1px solid var(--border-color);
@@ -244,6 +286,7 @@ export class TableComponent implements AfterViewInit {
   columns = input<TableColumn[]>([]);
   data = input<any[]>([]);
   actions = input<string[]>([]);
+  isLoading = input<boolean>(false);
   pageSizeOptions = input<number[]>([5, 10, 15, 25, 100]);
   filterPlaceholder = input('Filter table...');
 

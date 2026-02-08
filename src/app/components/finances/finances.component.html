@@ -7,7 +7,7 @@
   @if (isAdmin() && stats()) {
   <section class="widgets-grid">
     @for (widget of widgets(); track widget.title) {
-    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
+    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" [isLoading]="isLoading()" />
     }
   </section>
 
@@ -19,21 +19,15 @@
         <span class="badge premium">Last 6 Months</span>
       </div>
     </div>
-    <div class="projections-chart p-4">
-      @for (label of stats().chartData.labels; track label; let i = $index) {
-      <div class="chart-column">
-        <div class="bars-wrapper">
-          <div class="bar-group">
-            <div class="bar revenue-bar" [style.height.%]="(stats().chartData.revenue[i] / chartMax() * 100)"
-              [title]="'Revenue: $' + (stats().chartData.revenue[i] | number)">
-            </div>
-            <div class="bar expense-bar" [style.height.%]="(stats().chartData.expenses[i] / chartMax() * 100)"
-              [title]="'Expense: $' + (stats().chartData.expenses[i] | number)">
-            </div>
-          </div>
-        </div>
-        <span class="x-label">{{label}}</span>
-      </div>
+    <div class="projections-chart p-4" style="height: 300px;">
+      @if (isLoading()) {
+        <app-skeleton-loader height="100%"></app-skeleton-loader>
+      } @else {
+        <canvas baseChart
+          [data]="chartData()"
+          [options]="chartOptions"
+          [type]="'line'">
+        </canvas>
       }
     </div>
   </mat-card>
@@ -49,7 +43,7 @@
     <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
 
-    <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="tableActions()"
+    <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="tableActions()" [isLoading]="isLoading()"
       [filterPlaceholder]="'Search transactions...'" (rowAction)="handleTableAction($event)">
     </app-table>
 

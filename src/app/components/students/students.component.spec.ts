@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
+import { provideRouter } from '@angular/router';
 import { StudentsComponent } from './students.component';
+import { MatDialogModule } from '@angular/material/dialog';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 describe('StudentsComponent', () => {
   let component: StudentsComponent;
@@ -8,7 +10,8 @@ describe('StudentsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [StudentsComponent]
+      imports: [StudentsComponent, MatDialogModule, NoopAnimationsModule],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 

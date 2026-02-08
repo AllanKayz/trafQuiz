@@ -11,12 +11,12 @@
     <div class="section-title">Quick Actions</div>
     <div class="actions-grid">
       @for (action of quickActions(); track action.label) {
-      <a [routerLink]="action.route" matRipple class="action-card">
+      <div (click)="handleAction(action)" matRipple class="action-card">
         <div class="action-icon">
           <mat-icon>{{ action.icon }}</mat-icon>
         </div>
         <span class="action-label">{{ action.label }}</span>
-      </a>
+      </div>
       }
     </div>
   </section>
@@ -26,7 +26,7 @@
     <div class="section-title">Overview</div>
     <div class="stats-grid">
       @for (widget of widgets(); track widget.title) {
-      <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer">
+      <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" [isLoading]="isLoading()">
       </app-stat-card>
       }
     </div>

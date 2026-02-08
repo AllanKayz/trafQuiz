@@ -4,14 +4,35 @@
 
   <section class="widgets-grid">
     @for (widget of widgets(); track widget.title) {
-    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" />
+    <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" [isLoading]="loading" />
     }
   </section>
 
-  <section class="questions-table pt-3">
-    <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="['edit']"
-      [filterPlaceholder]="'Search schedule...'" (rowAction)="handleTableAction($event)"></app-table>
-  </section>
+  <div class="view-toggle mt-4 mb-4">
+    <mat-button-toggle-group [value]="displayMode()" (change)="displayMode.set($event.value)">
+      <mat-button-toggle value="calendar">
+        <mat-icon>calendar_month</mat-icon> Calendar View
+      </mat-button-toggle>
+      <mat-button-toggle value="table">
+        <mat-icon>list</mat-icon> List View
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  @if (displayMode() === 'table') {
+    <section class="questions-table">
+      <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="['edit']" [isLoading]="loading"
+        [filterPlaceholder]="'Search schedule...'" (rowAction)="handleTableAction($event)"></app-table>
+    </section>
+  } @else {
+    <section class="calendar-section animate-fade-in">
+      <app-calendar-view
+        [events]="calendarEvents()"
+        (eventClicked)="openEditLessonDialog($event.meta)"
+        (dayClicked)="openCreateLessonDialog()">
+      </app-calendar-view>
+    </section>
+  }
 
   @if (tableData().length === 0) {
   <div class="no-data">

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { WidgetsComponent } from './widgets.component';
+import { MatDialogModule } from '@angular/material/dialog';
+import { RouterTestingModule } from '@angular/router/testing';
 
 describe('WidgetsComponent', () => {
   let component: WidgetsComponent;
@@ -8,7 +9,7 @@ describe('WidgetsComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [WidgetsComponent]
+      imports: [WidgetsComponent, MatDialogModule, RouterTestingModule]
     })
     .compileComponents();
 

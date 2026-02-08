@@ -1,9 +1,9 @@
-import { Component, computed, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, signal, effect } from '@angular/core';
 import { Validators } from '@angular/forms';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { TraffiquizService } from '../../traffiquiz.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { ButtonConfigService } from '../../widgets/button-config.service';
 import { FormConfigService } from '../../widgets/form-config.service';
 import { TableColumn, TableComponent } from '../../widgets/table/table.component';
@@ -26,6 +26,7 @@ export class StudentsComponent {
 	private trafQuizService = inject(TraffiquizService);
 	private buttonService = inject(ButtonConfigService);
 	private router = inject(Router);
+	private route = inject(ActivatedRoute);
 	private dialog = inject(MatDialog);
 	private formConfig = inject(FormConfigService);
 
@@ -65,7 +66,19 @@ export class StudentsComponent {
 	widgets = input<any[]>(this.widgetsSignal());
 
 	constructor() {
-		//this.trafQuizService.fetchStudents(); // Fetch questions on component initialization
+		effect(() => {
+			const editId = this.route.snapshot.queryParamMap.get('edit');
+			if (editId) {
+				const id = parseInt(editId);
+				const student = this.trafQuizService.studentsSignal().find(s => s.id === id);
+				if (student) {
+					// Need a slight delay to ensure dialog can open if component just loaded
+					setTimeout(() => this.openStudentForm(student), 100);
+					// Clear query param to avoid re-opening
+					this.router.navigate([], { relativeTo: this.route, queryParams: { edit: null }, queryParamsHandling: 'merge' });
+				}
+			}
+		});
 	}
 
 	handleButtonAction(action: string) {
