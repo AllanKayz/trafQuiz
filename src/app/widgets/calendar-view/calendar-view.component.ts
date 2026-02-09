@@ -180,10 +180,10 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
             <div class="cal-events">
               @for (event of $any(day.events) | slice:0:2; track $any(event).id) {
                 <div class="cal-event-chip"
-                     [style.backgroundColor]="event.color?.primary || 'var(--primary-color)'"
-                     [style.borderColor]="event.color?.primary || 'var(--primary-color)'"
+                     [style.backgroundColor]="$any(event).color?.primary || 'var(--primary-color)'"
+                     [style.borderColor]="$any(event).color?.primary || 'var(--primary-color)'"
                      (click)="eventClicked.emit($any(event))"
-                     [matTooltip]="event.title">
+                     [matTooltip]="$any(event).title">
                   {{ $any(event).title }}
                 </div>
               }
