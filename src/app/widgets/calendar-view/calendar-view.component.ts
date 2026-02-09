@@ -198,17 +198,17 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
 
         <ng-template #eventTemplate let-weekEvent="weekEvent" let-tooltipPlacement="tooltipPlacement">
           <div class="custom-event-card"
-               [style.border-left-color]="weekEvent.event.color?.primary"
-               [matTooltip]="weekEvent.event.title"
-               (click)="eventClicked.emit(weekEvent.event)">
+               [style.border-left-color]="$any(weekEvent).event.color?.primary"
+               [matTooltip]="$any(weekEvent).event.title"
+               (click)="eventClicked.emit($any(weekEvent).event)">
             <div class="event-time">
-              {{ weekEvent.event.start | date:'HH:mm' }} - {{ weekEvent.event.end | date:'HH:mm' }}
+              {{ $any(weekEvent).event.start | date:'HH:mm' }} - {{ $any(weekEvent).event.end | date:'HH:mm' }}
             </div>
-            <div class="event-title">{{ weekEvent.event.title }}</div>
-            @if (weekEvent.event.meta?.instructor) {
+            <div class="event-title">{{ $any(weekEvent).event.title }}</div>
+            @if ($any(weekEvent).event.meta?.instructor) {
               <div class="event-instructor">
               <mat-icon>person</mat-icon>
-              <span>{{ weekEvent.event.meta.instructor.name }}</span>
+              <span>{{ $any(weekEvent).event.meta.instructor.name }}</span>
             </div>
             }
           </div>
