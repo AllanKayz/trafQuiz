@@ -112,6 +112,141 @@ mat-select {
     color: white !important;
 }
 
+.scheduling-content {
+  margin-top: 24px;
+}
+
+.calendar-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.unassigned-sidebar {
+  background: var(--bg-card);
+  border: var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 250px);
+  position: sticky;
+  top: 24px;
+}
+
+.sidebar-header {
+  padding: 20px;
+  background: hsla(var(--primary) / 0.05);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-header mat-icon {
+  color: var(--primary-color);
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.unassigned-list {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.unassigned-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.unassigned-item:hover {
+  border-color: var(--primary-color);
+  background: var(--hover-bg);
+  transform: translateX(4px);
+}
+
+.unassigned-item:active {
+  cursor: grabbing;
+}
+
+.drag-active {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: hsla(var(--primary) / 0.1);
+  color: var(--primary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.item-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.item-subtitle {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.drag-handle {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.empty-sidebar {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.empty-sidebar mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 12px;
+  opacity: 0.2;
+}
+
 .calendar-section {
-    margin-top: 24px;
+  min-width: 0; /* Prevent overflow */
+}
+
+@media (max-width: 1200px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .unassigned-sidebar {
+    position: static;
+    max-height: 300px;
+  }
 }
