@@ -583,3 +583,22 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
 .gap-2 { gap: 0.5rem; }
 .gap-4 { gap: 1rem; }
 .gap-6 { gap: 1.5rem; }
+
+/* Aesthetic Section Headers */
+.section-header {
+    position: relative;
+    font-family: 'Google Sans', 'Inter', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 400;
+    color: #202124;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    letter-spacing: -0.5px;
+}
+
+.section-header.with-underline {
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+    width: 100%;
+}

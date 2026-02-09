@@ -51,61 +51,61 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
   ],
   template: `
     <div class="calendar-container animate-fade-in">
-      <div class="calendar-controls">
-        <div class="search-filter-group">
-          <mat-form-field appearance="outline" class="search-field">
-            <mat-label>Search events...</mat-label>
-            <input matInput [(ngModel)]="searchText" (ngModelChange)="onFilterChange()" placeholder="e.g. Instructor name">
-            <mat-icon matSuffix>search</mat-icon>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Filter by Type</mat-label>
-            <mat-select [(ngModel)]="filterType" (selectionChange)="onFilterChange()">
-              <mat-option value="all">All Lessons</mat-option>
-              <mat-option value="individual">Individual</mat-option>
-              <mat-option value="group">Group</mat-option>
-            </mat-select>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="filter-field">
-            <mat-label>Instructor</mat-label>
-            <mat-select [(ngModel)]="filterInstructor" (selectionChange)="onFilterChange()">
-              <mat-option value="all">All Instructors</mat-option>
-              @for (ins of instructors(); track ins.id) {
-                <mat-option [value]="ins.id">{{ ins.firstName }} {{ ins.lastName }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-        </div>
-
-        <div class="view-navigation">
-          <div class="nav-buttons">
+      <div class="calendar-header-bar">
+        <div class="header-start">
+          <div class="title-group">
+            <h2 class="current-period">{{ viewDate | date: (view() === CalendarView.Month ? 'MMMM yyyy' : 'MMM d, yyyy') }}</h2>
+          </div>
+          <div class="nav-group">
             <button mat-icon-button mwlCalendarPreviousView [view]="view()" [(viewDate)]="viewDate" (viewDateChange)="refresh.next()">
               <mat-icon>chevron_left</mat-icon>
-            </button>
-            <button mat-stroked-button mwlCalendarToday [(viewDate)]="viewDate" (viewDateChange)="refresh.next()">
-              Today
             </button>
             <button mat-icon-button mwlCalendarNextView [view]="view()" [(viewDate)]="viewDate" (viewDateChange)="refresh.next()">
               <mat-icon>chevron_right</mat-icon>
             </button>
+            <button mat-stroked-button class="today-btn" mwlCalendarToday [(viewDate)]="viewDate" (viewDateChange)="refresh.next()">
+              Today
+            </button>
           </div>
-          <h2 class="current-period">{{ viewDate | date: (view() === CalendarView.Month ? 'MMMM yyyy' : 'MMM d, yyyy') }}</h2>
         </div>
 
-        <mat-button-toggle-group [value]="viewMode()" (change)="setViewMode($event.value)">
-          <mat-button-toggle value="month">Month</mat-button-toggle>
-          <mat-button-toggle value="week">Week</mat-button-toggle>
-          <mat-button-toggle value="day">Day</mat-button-toggle>
-          <mat-button-toggle value="resources">Resources</mat-button-toggle>
-        </mat-button-toggle-group>
+        <div class="header-end">
+          <div class="search-filter-compact">
+             <mat-form-field appearance="outline" class="compact-field" subscriptSizing="dynamic">
+              <mat-icon matPrefix>search</mat-icon>
+              <input matInput [ngModel]="searchText()" (ngModelChange)="searchText.set($event); onFilterChange()" placeholder="Search">
+            </mat-form-field>
+             <mat-form-field appearance="outline" class="compact-field" subscriptSizing="dynamic">
+              <mat-select [ngModel]="filterType()" (selectionChange)="filterType.set($event.value); onFilterChange()" placeholder="Type">
+                <mat-option value="all">All Types</mat-option>
+                <mat-option value="individual">Individual</mat-option>
+                <mat-option value="group">Group</mat-option>
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" class="compact-field" subscriptSizing="dynamic">
+              <mat-select [ngModel]="filterInstructor()" (selectionChange)="filterInstructor.set($event.value); onFilterChange()" placeholder="Instructor">
+                <mat-option value="all">All Instructors</mat-option>
+                @for (instructor of instructors(); track instructor.id) {
+                  <mat-option [value]="instructor.id">{{ instructor.firstName }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-button-toggle-group [value]="viewMode()" (change)="setViewMode($event.value)" class="view-toggle">
+            <mat-button-toggle value="month">Month</mat-button-toggle>
+            <mat-button-toggle value="week">Week</mat-button-toggle>
+            <mat-button-toggle value="day">Day</mat-button-toggle>
+            <mat-button-toggle value="resources">Resources</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
       </div>
 
-      <div [ngSwitch]="viewMode()" class="calendar-body premium-shadow"
+      <div class="calendar-body google-style"
            mwlDroppable (drop)="externalDrop($event)">
-        <mwl-calendar-month-view
-          *ngSwitchCase="'month'"
+        @switch (viewMode()) {
+          @case ('month') {
+            <mwl-calendar-month-view
           [viewDate]="viewDate"
           [events]="filteredEvents()"
           [refresh]="refresh"
@@ -115,26 +115,9 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
           (eventClicked)="eventClicked.emit($event.event)"
           (eventTimesChanged)="eventTimesChanged.emit($event)">
         </mwl-calendar-month-view>
-
-        <ng-template #monthCellTemplate let-day="day" let-openDay="openDay" let-locale="locale">
-          <div class="cal-cell-top" mwlDroppable (drop)="externalDropOnDate($event, day.date)">
-            <span class="cal-day-badge" *ngIf="day.badgeTotal > 0">{{ day.badgeTotal }}</span>
-            <span class="cal-day-number">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
-          </div>
-          <div class="cal-events" *ngIf="day.events.length > 0">
-            @for (event of day.events | slice:0:2; track $any(event).id) {
-              <div class="cal-event-summary">
-                {{ $any(event).title }}
-              </div>
-            }
-            <div class="cal-more-events" *ngIf="day.events.length > 2">
-              +{{ day.events.length - 2 }} more
-            </div>
-          </div>
-        </ng-template>
-
-        <mwl-calendar-week-view
-          *ngSwitchCase="'week'"
+          }
+          @case ('week') {
+            <mwl-calendar-week-view
           [viewDate]="viewDate"
           [events]="filteredEvents()"
           [refresh]="refresh"
@@ -145,9 +128,9 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
           (eventClicked)="eventClicked.emit($event.event)"
           (eventTimesChanged)="eventTimesChanged.emit($event)">
         </mwl-calendar-week-view>
-
-        <mwl-calendar-day-view
-          *ngSwitchCase="'day'"
+          }
+          @case ('day') {
+            <mwl-calendar-day-view
           [viewDate]="viewDate"
           [events]="filteredEvents()"
           [refresh]="refresh"
@@ -158,8 +141,9 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
           (eventClicked)="eventClicked.emit($event.event)"
           (eventTimesChanged)="eventTimesChanged.emit($event)">
         </mwl-calendar-day-view>
-
-        <div *ngSwitchCase="'resources'" class="resource-view-container">
+          }
+          @case ('resources') {
+            <div class="resource-view-container">
           @for (instructor of selectedInstructors(); track instructor.id) {
             <div class="resource-column">
               <div class="resource-header">
@@ -185,6 +169,32 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
             </div>
           }
         </div>
+          }
+        }
+
+        <ng-template #monthCellTemplate let-day="day" let-openDay="openDay" let-locale="locale">
+          <div class="cal-cell-top" mwlDroppable (drop)="externalDropOnDate($event, day.date)">
+            <span class="cal-day-number">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
+          </div>
+          @if (day.events.length > 0) {
+            <div class="cal-events">
+              @for (event of $any(day.events) | slice:0:2; track $any(event).id) {
+                <div class="cal-event-chip"
+                     [style.backgroundColor]="event.color?.primary || 'var(--primary-color)'"
+                     [style.borderColor]="event.color?.primary || 'var(--primary-color)'"
+                     (click)="eventClicked.emit($any(event))"
+                     [matTooltip]="event.title">
+                  {{ $any(event).title }}
+                </div>
+              }
+              @if (day.events.length > 2) {
+                <div class="cal-more-events">
+                  +{{ day.events.length - 2 }} more
+                </div>
+              }
+            </div>
+          }
+        </ng-template>
 
         <ng-template #eventTemplate let-weekEvent="weekEvent" let-tooltipPlacement="tooltipPlacement">
           <div class="custom-event-card"
@@ -195,10 +205,12 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
               {{ weekEvent.event.start | date:'HH:mm' }} - {{ weekEvent.event.end | date:'HH:mm' }}
             </div>
             <div class="event-title">{{ weekEvent.event.title }}</div>
-            <div class="event-instructor" *ngIf="weekEvent.event.meta?.instructor">
+            @if (weekEvent.event.meta?.instructor) {
+              <div class="event-instructor">
               <mat-icon>person</mat-icon>
               <span>{{ weekEvent.event.meta.instructor.name }}</span>
             </div>
+            }
           </div>
         </ng-template>
       </div>
@@ -220,83 +232,112 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
     </div>
   `,
   styles: [`
+    :host {
+      display: block;
+      --cal-grid-border: #dadce0;
+      --cal-bg: #ffffff;
+      --cal-today-bg: transparent;
+      --cal-weekend-bg: #ffffff;
+      --google-blue: #1a73e8;
+      --text-primary: #3c4043;
+      --text-secondary: #70757a;
+    }
+
     .calendar-container {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
+      font-family: var(--font-sans);
+      background: #fff;
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
-    .calendar-controls {
+    .calendar-header-bar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
       gap: 16px;
-      padding: 8px 0;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e0e0e0;
     }
 
-    .search-filter-group {
+    .header-start {
       display: flex;
-      gap: 12px;
-      flex: 1;
-      min-width: 300px;
-    }
-
-    .search-field, .filter-field {
-      margin-bottom: 0;
-    }
-
-    .view-navigation {
-      display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 4px;
+      gap: 24px;
     }
 
-    .nav-buttons {
+    .header-end {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-group {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
+    .search-filter-compact {
+      display: flex;
+      gap: 8px;
+    }
+
+    .compact-field {
+      width: 140px;
+      font-size: 13px;
+    }
+    
+    .compact-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+      display: none;
+    }
+
+    .today-btn {
+      border-color: #dadce0;
+      color: #3c4043;
+      font-weight: 500;
+    }
+
     .current-period {
       margin: 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-main);
-      font-family: var(--font-display);
+      font-size: 1.375rem;
+      font-weight: 400;
+      color: var(--text-primary);
+      text-transform: capitalize;
     }
 
     .calendar-body {
-      background: var(--bg-card);
-      border: var(--glass-border);
-      border-radius: 20px;
+      background: var(--cal-bg);
+      border: none;
       overflow: hidden;
-      min-height: 650px;
+      min-height: 700px;
     }
 
     .calendar-legend {
       display: flex;
       gap: 24px;
-      justify-content: center;
-      padding: 12px;
-      background: var(--hover-bg);
-      border-radius: 12px;
+      padding: 12px 0;
+      border-top: 1px solid #e0e0e0;
+      margin-top: 8px;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.875rem;
-      color: var(--text-muted);
+      font-size: 0.85rem;
+      color: var(--text-secondary);
       font-weight: 500;
     }
 
     .dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
     }
 
     .dot.individual { background-color: #3b82f6; }
@@ -308,74 +349,124 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
       background-color: transparent !important;
     }
 
+    ::ng-deep .cal-month-view .cal-header {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    ::ng-deep .cal-month-view .cal-header .cal-cell {
+      padding: 8px 0;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 11px;
+      color: var(--text-secondary);
+      border: none;
+    }
+
+    ::ng-deep .cal-month-view .cal-days {
+      border: 1px solid var(--cal-grid-border);
+      border-bottom: none;
+      border-right: none;
+    }
+
     ::ng-deep .cal-month-view .cal-day-cell {
       min-height: 120px !important;
-      transition: background 0.2s ease;
+      border-right: 1px solid var(--cal-grid-border);
+      border-bottom: 1px solid var(--cal-grid-border);
+    }
+
+    ::ng-deep .cal-month-view .cal-day-cell:hover {
+      background-color: #f1f3f4 !important;
+    }
+
+    ::ng-deep .cal-month-view .cal-day-cell.cal-weekend {
+      background-color: var(--cal-weekend-bg);
+    }
+
+    ::ng-deep .cal-month-view .cal-day-cell.cal-today {
+      background-color: var(--cal-today-bg) !important;
+    }
+
+    ::ng-deep .cal-month-view .cal-cell-top {
+      min-height: unset !important;
+      padding: 8px;
       display: flex;
-      flex-direction: column;
+      justify-content: center; /* Center day number like Google */
+    }
+
+    ::ng-deep .cal-month-view .cal-day-number {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-primary);
+      opacity: 0.8;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      margin-bottom: 4px;
+    }
+
+    ::ng-deep .cal-month-view .cal-today .cal-day-number {
+      background-color: var(--google-blue);
+      color: #fff;
+      opacity: 1;
     }
 
     .cal-events {
-      padding: 4px;
+      padding: 0 4px 4px;
       display: flex;
       flex-direction: column;
       gap: 2px;
       flex: 1;
     }
 
-    .cal-event-summary {
-      font-size: 0.7rem;
-      background: hsla(var(--primary) / 0.1);
-      border-left: 3px solid var(--primary-color);
-      padding: 2px 4px;
-      border-radius: 2px;
+    .cal-event-chip {
+      font-size: 12px;
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      color: var(--text-main);
+      font-weight: 500;
+      cursor: pointer;
+      line-height: 1.4;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .cal-event-chip:hover {
+      opacity: 0.9;
     }
 
     .cal-more-events {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      text-align: center;
-      padding-top: 2px;
-    }
-
-    ::ng-deep .cal-month-view .cal-day-cell:hover {
-      background-color: var(--hover-bg) !important;
-    }
-
-    ::ng-deep .cal-month-view .cal-cell-top {
-      min-height: unset !important;
-      padding: 8px;
-    }
-
-    ::ng-deep .cal-month-view .cal-day-number {
-      font-size: 1rem;
+      font-size: 11px;
+      color: var(--text-primary);
       font-weight: 600;
-      opacity: 0.7;
-    }
-
-    ::ng-deep .cal-month-view .cal-today .cal-day-number {
-      color: var(--primary-color);
-      opacity: 1;
-      font-size: 1.25rem;
-    }
-
-    ::ng-deep .cal-event {
-      border-radius: 4px !important;
-      font-size: 0.75rem !important;
-      padding: 2px 6px !important;
-      font-weight: 500 !important;
+      padding-left: 8px;
+      cursor: pointer;
     }
 
     ::ng-deep .cal-week-view .cal-day-headers {
-      border-color: var(--border-color) !important;
+      border-bottom: 1px solid var(--cal-grid-border) !important;
+    }
+
+    ::ng-deep .cal-week-view .cal-header.cal-today {
+      background-color: var(--cal-today-bg) !important;
     }
 
     ::ng-deep .cal-week-view .cal-time-events {
-      border-color: var(--border-color) !important;
+      border-color: var(--cal-grid-border) !important;
+    }
+
+    ::ng-deep .cal-week-view .cal-hour-segment {
+      border-bottom: 1px dotted var(--cal-grid-border);
+    }
+
+    ::ng-deep .cal-week-view .cal-hour:not(:last-child) .cal-hour-segment,
+    ::ng-deep .cal-week-view .cal-hour:last-child :not(:last-child) .cal-hour-segment {
+      border-bottom-color: var(--cal-grid-border);
     }
 
     ::ng-deep .cal-week-view .cal-hour-segment:hover {
@@ -384,28 +475,30 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
 
     .custom-event-card {
       height: 100%;
-      padding: 4px 8px;
+      padding: 6px 10px;
       font-size: 0.75rem;
       border-left: 4px solid var(--primary-color);
       background: var(--bg-card);
       box-shadow: var(--shadow-sm);
-      border-radius: 4px;
+      border-radius: 6px;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
       overflow: hidden;
       cursor: pointer;
       transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      border-left-width: 4px;
     }
 
     .custom-event-card:hover {
-      transform: scale(1.02);
+      transform: translateY(-2px);
       box-shadow: var(--shadow-md);
       z-index: 10;
     }
 
     .event-time {
-      font-size: 0.65rem;
+      font-size: 0.7rem;
       font-weight: 600;
       color: var(--primary-color);
     }
@@ -416,51 +509,54 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-size: 0.8rem;
     }
 
     .event-instructor {
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 0.65rem;
+      gap: 6px;
+      font-size: 0.7rem;
       color: var(--text-muted);
+      margin-top: auto;
     }
 
     .event-instructor mat-icon {
-      font-size: 12px;
-      width: 12px;
-      height: 12px;
+      font-size: 14px;
+      width: 14px;
+      height: 14px;
     }
 
     .resource-view-container {
       display: flex;
       overflow-x: auto;
       gap: 1px;
-      background: var(--border-color);
-      height: 650px;
+      background: var(--cal-grid-border);
+      height: 750px;
     }
 
     .resource-column {
       flex: 1;
-      min-width: 250px;
+      min-width: 280px;
       background: var(--bg-card);
       display: flex;
       flex-direction: column;
     }
 
     .resource-header {
-      padding: 12px;
+      padding: 16px;
       background: hsla(var(--primary) / 0.05);
-      border-bottom: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--cal-grid-border);
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      font-weight: 600;
+      gap: 10px;
+      font-weight: 700;
       color: var(--primary-color);
       position: sticky;
       top: 0;
       z-index: 10;
+      font-family: var(--font-display);
     }
 
     .no-resources {
@@ -482,12 +578,17 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
     }
 
     @media (max-width: 768px) {
-      .calendar-controls {
+      .calendar-header-bar {
         flex-direction: column;
         align-items: stretch;
       }
-      .view-navigation {
-        order: -1;
+      .header-start, .header-end {
+        flex-direction: column;
+        width: 100%;
+        gap: 12px;
+      }
+      .compact-field {
+        width: 100%;
       }
     }
   `]
@@ -507,27 +608,29 @@ export class CalendarViewComponent {
   refresh = new Subject<void>();
   activeDayIsOpen = false;
 
-  searchText = '';
-  filterType = 'all';
-  filterInstructor = 'all';
+  searchText = signal('');
+  filterType = signal('all');
+  filterInstructor = signal('all');
 
   filteredEvents = computed(() => {
     let evs = this.events();
+    const search = this.searchText().toLowerCase();
+    const type = this.filterType();
+    const instructor = this.filterInstructor();
 
-    if (this.searchText) {
-      const search = this.searchText.toLowerCase();
+    if (search) {
       evs = evs.filter(e =>
         e.title.toLowerCase().includes(search) ||
         (e.meta && e.meta.instructor && e.meta.instructor.name.toLowerCase().includes(search))
       );
     }
 
-    if (this.filterType !== 'all') {
-      evs = evs.filter(e => e.meta && e.meta.type === this.filterType);
+    if (type !== 'all') {
+      evs = evs.filter(e => e.meta && e.meta.type === type);
     }
 
-    if (this.filterInstructor !== 'all') {
-      evs = evs.filter(e => e.meta && e.meta.instructorId === this.filterInstructor);
+    if (instructor !== 'all') {
+      evs = evs.filter(e => e.meta && e.meta.instructorId === instructor);
     }
 
     return evs;
@@ -548,8 +651,9 @@ export class CalendarViewComponent {
   }
 
   selectedInstructors = computed(() => {
-    if (this.filterInstructor !== 'all') {
-      return this.instructors().filter(i => i.id === this.filterInstructor);
+    const instructor = this.filterInstructor();
+    if (instructor !== 'all') {
+      return this.instructors().filter(i => i.id === instructor);
     }
     // For resource view, if "all" is selected, we might want to show a few or all.
     // Let's show all if in resource view.
