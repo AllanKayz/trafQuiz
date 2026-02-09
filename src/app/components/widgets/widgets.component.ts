@@ -3,7 +3,7 @@ import { TraffiquizService } from '../../traffiquiz.service';
 import { StatCardComponent } from '../../widgets/stat-card/stat-card.component';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRippleModule } from '@angular/material/core';
-import { RouterLink, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { DynamicFormComponent } from '../../widgets/dynamic-form/dynamic-form.component';
 import { FormConfigService } from '../../widgets/form-config.service';
@@ -11,7 +11,7 @@ import { FormConfigService } from '../../widgets/form-config.service';
 @Component({
   selector: 'app-widgets',
   standalone: true,
-  imports: [StatCardComponent, MatIconModule, MatRippleModule, RouterLink],
+  imports: [StatCardComponent, MatIconModule, MatRippleModule],
   templateUrl: './widgets.component.html',
   styleUrl: './widgets.component.css'
 })
