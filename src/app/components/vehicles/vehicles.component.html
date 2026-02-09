@@ -3,25 +3,35 @@
     (buttonClicked)="handleButtonAction($event)" />
 
   <section class="widgets-grid">
-    <div class="stats-cards">
-      @for (widget of widgets(); track widget.title) {
-      <app-stat-card [title]="widget.title" [data]="widget.data" [footer]="widget.footer" [isLoading]="loading" />
-      }
-    </div>
-    <mat-card class="chart-card">
+    @for (widget of widgets(); track widget.title) {
+    <app-stat-card
+      [title]="widget.title"
+      [data]="widget.data"
+      [footer]="widget.footer"
+      [icon]="widget.icon"
+      [isLoading]="loading" />
+    }
+  </section>
+
+  <section class="charts-section animate-slide-up" *ngIf="!loading || tableData().length > 0">
+    <mat-card class="chart-card premium-shadow">
       <mat-card-header>
-        <mat-card-title>Fleet Status</mat-card-title>
+        <mat-icon mat-card-avatar class="chart-icon">pie_chart</mat-icon>
+        <mat-card-title>Fleet Status Overview</mat-card-title>
+        <mat-card-subtitle>Current distribution of vehicle conditions</mat-card-subtitle>
       </mat-card-header>
-      <mat-card-content style="height: 180px;">
-        @if (loading) {
-          <app-skeleton-loader height="100%"></app-skeleton-loader>
-        } @else {
+      <mat-card-content>
+        <div class="chart-container">
           <canvas baseChart
             [data]="chartData()"
             [options]="chartOptions"
             [type]="'doughnut'">
           </canvas>
-        }
+          <div class="chart-center-label">
+            <span class="total-count">{{ tableData().length }}</span>
+            <span class="total-text">Vehicles</span>
+          </div>
+        </div>
       </mat-card-content>
     </mat-card>
   </section>

@@ -20,8 +20,9 @@ import { TableColumn, TableComponent } from '../../../widgets/table/table.compon
 import { SectionheaderComponent } from '../../../widgets/sectionheader/sectionheader.component';
 import { StatCardComponent } from '../../../widgets/stat-card/stat-card.component';
 import { CalendarViewComponent } from '../../../widgets/calendar-view/calendar-view.component';
-import { CalendarEvent } from 'angular-calendar';
+import { CalendarEvent, CalendarEventTimesChangedEvent } from 'angular-calendar';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { DragAndDropModule } from 'angular-draggable-droppable';
 
 @Component({
     selector: 'app-scheduling',
@@ -41,7 +42,8 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
         SectionheaderComponent,
         StatCardComponent,
         CalendarViewComponent,
-        MatButtonToggleModule
+        MatButtonToggleModule,
+        DragAndDropModule
     ],
     templateUrl: './scheduling.component.html',
     styleUrls: ['./scheduling.component.css']
@@ -89,11 +91,11 @@ export class SchedulingComponent implements AfterViewInit {
 
     tableData = computed(() => {
         return this.lessons().map(l => {
-            const dateObj = new Date(l.startTime);
+            const dateObj = l.startTime ? new Date(l.startTime) : null;
             return {
                 ...l,
                 lessonDate: l.startTime,
-                lessonTime: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+                lessonTime: dateObj ? dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : 'N/A',
                 instructorName: l.instructor?.name || 'Unassigned',
                 assignedVehicle: l.assignedVehicleId ?
                     (() => {
@@ -106,14 +108,34 @@ export class SchedulingComponent implements AfterViewInit {
     });
 
     calendarEvents = computed<CalendarEvent[]>(() => {
-        return this.lessons().map(l => ({
-            id: l.id,
-            start: new Date(l.startTime),
-            end: new Date(new Date(l.startTime).getTime() + (l.durationMinutes || 60) * 60000),
-            title: `${l.title} (${l.instructor?.name || 'Unassigned'})`,
-            meta: l,
-            color: { primary: '#3b82f6', secondary: '#dbeafe' }
-        }));
+        return this.lessons()
+            .filter(l => l.startTime && l.startTime !== '0000-00-00 00:00:00')
+            .map(l => {
+                const isUnassigned = !l.assignedVehicleId;
+                const isGroup = l.type === 'group';
+
+                let primaryColor = '#3b82f6'; // Default blue
+                if (isUnassigned) primaryColor = '#f59e0b'; // Warning orange
+                else if (isGroup) primaryColor = '#8b5cf6'; // Purple for group
+
+                return {
+                    id: l.id,
+                    start: new Date(l.startTime!),
+                    end: new Date(new Date(l.startTime!).getTime() + (l.durationMinutes || 60) * 60000),
+                    title: `${l.title} (${l.instructor?.name || 'Unassigned'})`,
+                    meta: l,
+                    color: { primary: primaryColor, secondary: primaryColor + '20' },
+                    draggable: true,
+                    resizable: {
+                        beforeStart: true,
+                        afterEnd: true,
+                    }
+                };
+            });
+    });
+
+    unassignedLessons = computed(() => {
+        return this.lessons().filter(l => !l.startTime || l.startTime === '0000-00-00 00:00:00');
     });
 
     displayMode = signal<'table' | 'calendar'>('calendar');
@@ -154,6 +176,54 @@ export class SchedulingComponent implements AfterViewInit {
         if (event.action === 'edit') this.openEditLessonDialog(event.item);
     }
 
+    handleEventTimesChanged({ event, newStart, newEnd }: CalendarEventTimesChangedEvent): void {
+        const lesson = event.meta as Lesson;
+        const duration = newEnd ? Math.round((newEnd.getTime() - newStart.getTime()) / 60000) : lesson.durationMinutes;
+
+        this.lessonService.patchLesson(lesson.id!, {
+            startTime: newStart.toISOString(),
+            durationMinutes: duration
+        }).subscribe(() => {
+            this.trafService.showNotification('Lesson rescheduled', 'success');
+            this.loadData();
+        });
+    }
+
+    handleSidebarDrop(event: any) {
+        // This is for dropping BACK to the sidebar (unassigning)
+        let lesson: Lesson | undefined;
+
+        if (event.dropData?.event?.meta) {
+            lesson = event.dropData.event.meta;
+        } else if (event.dropData?.lesson) {
+            lesson = event.dropData.lesson;
+        }
+
+        if (lesson && lesson.startTime) {
+            this.lessonService.patchLesson(lesson.id!, {
+                startTime: null
+            }).subscribe(() => {
+                this.trafService.showNotification('Lesson removed from schedule', 'info');
+                this.loadData();
+            });
+        }
+    }
+
+    handleExternalDrop({ date, externalEvent }: { date: Date, externalEvent: any }) {
+        const lesson = externalEvent as Lesson;
+
+        // Default to 9:00 AM if dropping on month view without specific time
+        const start = new Date(date);
+        if (start.getHours() === 0) start.setHours(9, 0, 0, 0);
+
+        this.lessonService.patchLesson(lesson.id!, {
+            startTime: start.toISOString()
+        }).subscribe(() => {
+            this.trafService.showNotification('Lesson scheduled', 'success');
+            this.loadData();
+        });
+    }
+
     assignVehicle(lessonId: number, vehicleId: any) {
         if (!vehicleId) return;
         this.lessonService.patchLesson(lessonId, { assignedVehicleId: vehicleId }).subscribe(() => {
@@ -182,7 +252,7 @@ export class SchedulingComponent implements AfterViewInit {
     }
 
     openEditLessonDialog(lesson: Lesson) {
-        const start = new Date(lesson.startTime);
+        const start = lesson.startTime ? new Date(lesson.startTime) : new Date();
         const startH = start.getHours().toString().padStart(2, '0');
         const startM = start.getMinutes().toString().padStart(2, '0');
         const timeStr = `${startH}:${startM}`;

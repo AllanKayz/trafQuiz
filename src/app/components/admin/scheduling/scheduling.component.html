@@ -19,20 +19,56 @@
     </mat-button-toggle-group>
   </div>
 
-  @if (displayMode() === 'table') {
-    <section class="questions-table">
-      <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="['edit']" [isLoading]="loading"
-        [filterPlaceholder]="'Search schedule...'" (rowAction)="handleTableAction($event)"></app-table>
-    </section>
-  } @else {
-    <section class="calendar-section animate-fade-in">
-      <app-calendar-view
-        [events]="calendarEvents()"
-        (eventClicked)="openEditLessonDialog($event.meta)"
-        (dayClicked)="openCreateLessonDialog()">
-      </app-calendar-view>
-    </section>
-  }
+  <div class="scheduling-content">
+    @if (displayMode() === 'table') {
+      <section class="questions-table">
+        <app-table [columns]="tableColumns()" [data]="tableData()" [actions]="['edit']" [isLoading]="loading"
+          [filterPlaceholder]="'Search schedule...'" (rowAction)="handleTableAction($event)"></app-table>
+      </section>
+    } @else {
+      <div class="calendar-layout">
+        <aside class="unassigned-sidebar premium-shadow" mwlDroppable (drop)="handleSidebarDrop($event)">
+          <div class="sidebar-header">
+            <mat-icon>event_busy</mat-icon>
+            <h3>Pending Allocation</h3>
+          </div>
+          <div class="unassigned-list">
+            @for (lesson of unassignedLessons(); track lesson.id) {
+              <div class="unassigned-item"
+                   mwlDraggable
+                   [dropData]="{ lesson }"
+                   [dragActiveClass]="'drag-active'">
+                <div class="item-icon">
+                  <mat-icon>{{ lesson.type === 'group' ? 'groups' : 'person' }}</mat-icon>
+                </div>
+                <div class="item-info">
+                  <span class="item-title">{{ lesson.title }}</span>
+                  <span class="item-subtitle">{{ lesson.durationMinutes }} mins</span>
+                </div>
+                <mat-icon class="drag-handle">drag_indicator</mat-icon>
+              </div>
+            } @empty {
+              <div class="empty-sidebar">
+                <mat-icon>check_circle</mat-icon>
+                <p>All lessons allocated</p>
+              </div>
+            }
+          </div>
+        </aside>
+
+        <section class="calendar-section animate-fade-in">
+          <app-calendar-view
+            [events]="calendarEvents()"
+            [instructors]="instructors()"
+            (eventClicked)="openEditLessonDialog($event.meta)"
+            (dayClicked)="openCreateLessonDialog()"
+            (eventTimesChanged)="handleEventTimesChanged($event)"
+            (externalEventDropped)="handleExternalDrop($event)">
+          </app-calendar-view>
+        </section>
+      </div>
+    }
+  </div>
 
   @if (tableData().length === 0) {
   <div class="no-data">

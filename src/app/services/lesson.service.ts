@@ -179,6 +179,7 @@ export class LessonService {
         const updatedLessons = [...lessons];
 
         unallocated.forEach(lesson => {
+          if (!lesson.startTime) return;
           const lessonDate = new Date(lesson.startTime).toDateString();
           const lessonType = (lesson.vehicleType || 'car').toLowerCase();
 
@@ -189,7 +190,7 @@ export class LessonService {
             // Check instructor capacity for the day (Limit 5)
             const instructorDailyCount = updatedLessons.filter(l =>
               l.instructor?.id === instructor!.id &&
-              new Date(l.startTime).toDateString() === lessonDate &&
+              l.startTime && new Date(l.startTime).toDateString() === lessonDate &&
               (l.status === 'confirmed' || l.status === 'upcoming')
             ).length;
 
@@ -219,6 +220,7 @@ export class LessonService {
             const isBooked = updatedLessons.some(l =>
               l.assignedVehicleId === v.id &&
               l.status !== 'cancelled' &&
+              l.startTime && lesson.startTime &&
               Math.abs(new Date(l.startTime).getTime() - new Date(lesson.startTime).getTime()) < (l.durationMinutes || 60) * 60000
             );
 

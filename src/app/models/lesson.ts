@@ -2,8 +2,8 @@ export interface Lesson {
   id: number;
   title: string;
   subject?: string;
-  startTime: string; // ISO string
-  endTime?: string; // ISO string
+  startTime: string | null; // ISO string
+  endTime?: string | null; // ISO string
   durationMinutes?: number;
   instructor?: { id: number; name: string; avatarUrl?: string } | null;
   location?: string;

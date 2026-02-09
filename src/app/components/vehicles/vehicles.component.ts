@@ -48,8 +48,7 @@ Chart.register(...registerables);
     TableComponent,
     SectionheaderComponent,
     StatCardComponent,
-    BaseChartDirective,
-    SkeletonLoaderComponent
+    BaseChartDirective
   ],
   templateUrl: './vehicles.component.html',
   styleUrls: ['./vehicles.component.css']
@@ -83,9 +82,9 @@ export class VehiclesComponent {
     const active = data.filter(v => v.status === 'active').length;
     const maintenance = data.filter(v => v.status === 'maintenance').length;
     return [
-      { title: 'Total Fleet', data: data.length.toString(), footer: 'Total vehicles' },
-      { title: 'Active', data: active.toString(), footer: 'Ready for use' },
-      { title: 'Maintenance', data: maintenance.toString(), footer: 'Under repair' }
+      { title: 'Total Fleet', data: data.length.toString(), footer: 'Total vehicles', icon: 'directions_car' },
+      { title: 'Active', data: active.toString(), footer: 'Ready for use', icon: 'check_circle' },
+      { title: 'Maintenance', data: maintenance.toString(), footer: 'Under repair', icon: 'build' }
     ];
   });
 
@@ -132,9 +131,31 @@ export class VehiclesComponent {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { position: 'right' }
+      legend: {
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          usePointStyle: true,
+          font: {
+            size: 14,
+            family: "'Inter', sans-serif"
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        padding: 12,
+        titleFont: { size: 14 },
+        bodyFont: { size: 13 },
+        displayColors: true,
+        cornerRadius: 8
+      }
     },
-    cutout: '70%'
+    cutout: '75%',
+    animation: {
+      animateRotate: true,
+      animateScale: true
+    }
   };
 
   constructor() {

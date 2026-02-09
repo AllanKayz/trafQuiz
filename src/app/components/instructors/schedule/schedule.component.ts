@@ -36,6 +36,7 @@ export class ScheduleComponent {
     if (dateFilter === 'tomorrow') targetDate.setDate(targetDate.getDate() + 1);
 
     return this.myLessons().filter(l => {
+      if (!l.startTime) return false;
       const lessonDate = new Date(l.startTime);
       const isCorrectDate = lessonDate.toDateString() === targetDate.toDateString();
 
@@ -44,7 +45,11 @@ export class ScheduleComponent {
         (l.studentName || '').toLowerCase().includes(q);
 
       return isCorrectDate && matchesSearch;
-    }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    }).sort((a, b) => {
+        const timeA = a.startTime ? new Date(a.startTime).getTime() : 0;
+        const timeB = b.startTime ? new Date(b.startTime).getTime() : 0;
+        return timeA - timeB;
+    });
   });
 
   scheduledHours = computed(() => {
@@ -94,7 +99,7 @@ export class ScheduleComponent {
     });
   }
 
-  private formatForDateTimeLocal(isoString: string): string {
+  private formatForDateTimeLocal(isoString: string | null): string {
     if (!isoString) return '';
     const date = new Date(isoString);
     const pad = (n: number) => n.toString().padStart(2, '0');
@@ -168,7 +173,7 @@ export class ScheduleComponent {
       if (data.title !== lesson.title) patch.title = data.title;
 
       const newStart = new Date(data.startTime).toISOString();
-      const oldStart = new Date(lesson.startTime).toISOString();
+      const oldStart = lesson.startTime ? new Date(lesson.startTime).toISOString() : '';
       if (newStart !== oldStart) patch.startTime = newStart;
 
       const newDur = Number(data.durationMinutes);

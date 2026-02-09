@@ -184,7 +184,7 @@ export interface TableColumn {
         color: #dc2626;
     }
 
-    .status-pending, .status-scheduled, .status-warning {
+    .status-pending, .status-scheduled, .status-warning, .status-maintenance {
         background: hsla(38, 92%, 50%, 0.1);
         color: #ca8a04;
     }
