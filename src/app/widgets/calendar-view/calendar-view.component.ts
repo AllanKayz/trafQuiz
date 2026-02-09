@@ -180,10 +180,10 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
             <div class="cal-events">
               @for (event of $any(day.events) | slice:0:2; track $any(event).id) {
                 <div class="cal-event-chip"
-                     [style.backgroundColor]="event.color?.primary || 'var(--primary-color)'"
-                     [style.borderColor]="event.color?.primary || 'var(--primary-color)'"
+                     [style.backgroundColor]="$any(event).color?.primary || 'var(--primary-color)'"
+                     [style.borderColor]="$any(event).color?.primary || 'var(--primary-color)'"
                      (click)="eventClicked.emit($any(event))"
-                     [matTooltip]="event.title">
+                     [matTooltip]="$any(event).title">
                   {{ $any(event).title }}
                 </div>
               }
@@ -198,17 +198,17 @@ import { DragAndDropModule } from 'angular-draggable-droppable';
 
         <ng-template #eventTemplate let-weekEvent="weekEvent" let-tooltipPlacement="tooltipPlacement">
           <div class="custom-event-card"
-               [style.border-left-color]="weekEvent.event.color?.primary"
-               [matTooltip]="weekEvent.event.title"
-               (click)="eventClicked.emit(weekEvent.event)">
+               [style.border-left-color]="$any(weekEvent).event.color?.primary"
+               [matTooltip]="$any(weekEvent).event.title"
+               (click)="eventClicked.emit($any(weekEvent).event)">
             <div class="event-time">
-              {{ weekEvent.event.start | date:'HH:mm' }} - {{ weekEvent.event.end | date:'HH:mm' }}
+              {{ $any(weekEvent).event.start | date:'HH:mm' }} - {{ $any(weekEvent).event.end | date:'HH:mm' }}
             </div>
-            <div class="event-title">{{ weekEvent.event.title }}</div>
-            @if (weekEvent.event.meta?.instructor) {
+            <div class="event-title">{{ $any(weekEvent).event.title }}</div>
+            @if ($any(weekEvent).event.meta?.instructor) {
               <div class="event-instructor">
               <mat-icon>person</mat-icon>
-              <span>{{ weekEvent.event.meta.instructor.name }}</span>
+              <span>{{ $any(weekEvent).event.meta.instructor.name }}</span>
             </div>
             }
           </div>
