@@ -1,9 +1,11 @@
 const { ipcMain } = require('electron');
 const ProgressModel = require('../models/ProgressModel');
 const { get } = require('../db');
+const { isAuthenticated } = require('../utils/session');
 
 ipcMain.handle('get-student-progress', async (event, { userId, studentId }) => {
     try {
+        if (!isAuthenticated()) return { success: false, message: 'Unauthorized' };
         let targetStudentId = studentId;
         
         // If only userId is provided, find the associated student_id

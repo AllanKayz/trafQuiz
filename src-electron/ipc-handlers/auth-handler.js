@@ -3,6 +3,7 @@ const { UserModel } = require('../models/UserModel');
 const { StudentModel } = require('../models/StudentModel');
 const { InstructorModel } = require('../models/InstructorModel');
 const { broadcastChange } = require('../utils/broadcast');
+const { setSession, clearSession, isAdmin, isAuthenticated, getSession } = require('../utils/session');
 
 ipcMain.handle('login', async (event, credentials) => {
     try {
@@ -27,13 +28,15 @@ ipcMain.handle('login', async (event, credentials) => {
         }
 
         if (!user) {
-            return { success: false, message: 'Invalid credentials: User not found' };
+            return { success: false, message: 'Invalid credentials' };
         }
 
         const isValid = await UserModel.verifyPassword(user, password);
         if (!isValid) {
-            return { success: false, message: 'Invalid credentials: Password mismatch' };
+            return { success: false, message: 'Invalid credentials' };
         }
+
+        setSession(user);
 
         let roleData = {};
         try {
@@ -62,6 +65,7 @@ ipcMain.handle('login', async (event, credentials) => {
 
 ipcMain.handle('get-user-info', async (event, { id }) => {
     try {
+        if (!isAuthenticated()) return { success: false, message: 'Unauthorized' };
         const user = await UserModel.find(id);
         if (!user) return { success: false, message: 'User not found' };
         const { password: _, ...userWithoutPassword } = user;
@@ -73,7 +77,15 @@ ipcMain.handle('get-user-info', async (event, { id }) => {
 
 ipcMain.handle('update-user', async (event, data) => {
     try {
+        const session = getSession();
+        if (!session) return { success: false, message: 'Unauthorized' };
         const { id, ...payload } = data;
+
+        // Ownership check: users can only update themselves, unless they are an admin
+        if (id !== session.id && session.role !== 'admin') {
+            return { success: false, message: 'Unauthorized: Cannot update other users' };
+        }
+
         const result = await UserModel.update(id, payload);
         broadcastChange('users', 'update', result);
         return { success: true, data: result };
@@ -84,6 +96,14 @@ ipcMain.handle('update-user', async (event, data) => {
 
 ipcMain.handle('update-user-password', async (event, { id, password }) => {
     try {
+        const session = getSession();
+        if (!session) return { success: false, message: 'Unauthorized' };
+
+        // Ownership check
+        if (id !== session.id && session.role !== 'admin') {
+            return { success: false, message: 'Unauthorized' };
+        }
+
         await UserModel.updatePassword(id, password);
         return { success: true };
     } catch (error) {
@@ -93,6 +113,14 @@ ipcMain.handle('update-user-password', async (event, { id, password }) => {
 
 ipcMain.handle('delete-account', async (event, { id, password }) => {
     try {
+        const session = getSession();
+        if (!session) return { success: false, message: 'Unauthorized' };
+
+        // Ownership check
+        if (id !== session.id && session.role !== 'admin') {
+            return { success: false, message: 'Unauthorized' };
+        }
+
         const user = await UserModel.find(id);
         if (!user) return { success: false, message: 'User not found' };
         
@@ -107,8 +135,16 @@ ipcMain.handle('delete-account', async (event, { id, password }) => {
     }
 });
 
+ipcMain.handle('logout', async () => {
+    clearSession();
+    return { success: true };
+});
+
 ipcMain.handle('get-all-users', async () => {
     try {
+        if (!isAdmin()) {
+            return { success: false, message: 'Unauthorized: Admin access required' };
+        }
         const users = await UserModel.findAll();
         // Return without passwords
         // Return mapped users with name and status
@@ -128,6 +164,7 @@ ipcMain.handle('get-all-users', async () => {
 
 ipcMain.handle('add-user', async (event, userData) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         // Basic minimal add-user if not going through student/instructor specific flows
         // Hash password handled in UserModel.create
         const newUser = await UserModel.create(userData);
@@ -141,6 +178,7 @@ ipcMain.handle('add-user', async (event, userData) => {
 
 ipcMain.handle('delete-user', async (event, { id, role }) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         if (role === 'student') {
             await StudentModel.delete(id); // Should cascade or handle user deletion logic inside
         } else if (role === 'instructor') {

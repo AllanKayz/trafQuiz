@@ -19,14 +19,16 @@ function getUploadDir() {
 
 async function saveFile(name, type, buffer) {
     const uploadDir = getUploadDir();
-    const fileName = `${Date.now()}-${name}`;
+    // Sanitize filename to prevent path traversal
+    const sanitizedName = path.basename(name);
+    const fileName = `${Date.now()}-${sanitizedName}`;
     const filePath = path.join(uploadDir, fileName);
 
     fs.writeFileSync(filePath, Buffer.from(buffer));
 
     return {
         url: `uploads/${fileName}`,
-        name: name,
+        name: sanitizedName,
         type: type
     };
 }

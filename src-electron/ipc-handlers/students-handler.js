@@ -1,9 +1,11 @@
 const { ipcMain } = require('electron');
 const { StudentModel } = require('../models/StudentModel');
 const { broadcastChange } = require('../utils/broadcast');
+const { isAuthenticated, isAdmin } = require('../utils/session');
 
 ipcMain.handle('get-students', async (event, params) => {
     try {
+        if (!isAuthenticated()) return { success: false, message: 'Unauthorized' };
         const instructorId = params ? params.instructorId : null;
         const students = await StudentModel.all(instructorId);
         return { success: true, data: students };
@@ -15,6 +17,7 @@ ipcMain.handle('get-students', async (event, params) => {
 
 ipcMain.handle('add-student', async (event, student) => {
     try {
+         if (!isAdmin()) return { success: false, message: 'Unauthorized: Admin only' };
          const result = await StudentModel.create(student);
          broadcastChange('students', 'create', result);
          return { success: true, data: result };
@@ -26,6 +29,7 @@ ipcMain.handle('add-student', async (event, student) => {
 
 ipcMain.handle('update-student', async (event, student) => {
     try {
+         if (!isAuthenticated()) return { success: false, message: 'Unauthorized' };
          const result = await StudentModel.update(student.id, student);
          broadcastChange('students', 'update', result);
          return { success: true, data: result };
@@ -37,6 +41,7 @@ ipcMain.handle('update-student', async (event, student) => {
 
 ipcMain.handle('delete-student', async (event, { id }) => {
     try {
+         if (!isAdmin()) return { success: false, message: 'Unauthorized: Admin only' };
          const success = await StudentModel.delete(id);
          if (success) broadcastChange('students', 'delete', { id });
          return { success, message: success ? 'Student deleted' : 'Student not found' };

@@ -3,9 +3,11 @@ const { sequelize } = require("../database");
 const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
+const { isAdmin, isAuthenticated } = require("../utils/session");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const totalRevenue =
       (await Payment.sum("amount", { where: { type: "income" } })) || 0;
     const totalExpenses =
@@ -87,6 +89,7 @@ ipcMain.handle("get-financial-stats", async () => {
 
 ipcMain.handle("add-payment", async (event, data) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const transactionId = `TXN-${Date.now().toString(16).toUpperCase()}`;
     await sequelize.query(
       `
@@ -114,6 +117,7 @@ ipcMain.handle("add-payment", async (event, data) => {
 
 ipcMain.handle("get-transactions", async (event, filters) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     // Build query based on filters
     let query = `
             SELECT p.*, 
@@ -165,6 +169,7 @@ ipcMain.handle("get-transactions", async (event, filters) => {
 
 ipcMain.handle("update-payment-status", async (event, { id, status }) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     await sequelize.query("UPDATE payments SET status = ? WHERE id = ?", {
       replacements: [status, id],
     });
@@ -177,6 +182,7 @@ ipcMain.handle("update-payment-status", async (event, { id, status }) => {
 
 ipcMain.handle("process-salary", async (event, data) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const transactionId = `SAL-${Date.now().toString(16).toUpperCase()}`;
     // data should have instructorId, amount, method, etc.
     await sequelize.query(
@@ -206,6 +212,7 @@ ipcMain.handle("process-salary", async (event, data) => {
 
 ipcMain.handle("record-expense", async (event, data) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const transactionId = `EXP-${Date.now().toString(16).toUpperCase()}`;
     await sequelize.query(
       `

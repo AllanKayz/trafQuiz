@@ -1,6 +1,7 @@
 const { ipcMain } = require('electron');
 const { query, get } = require('../db');
 const { broadcastChange } = require('../utils/broadcast');
+const { isAdmin, isAuthenticated } = require('../utils/session');
 
 // Packages
 
@@ -14,6 +15,7 @@ const { broadcastChange } = require('../utils/broadcast');
 // Time
 ipcMain.handle('get-exam-duration', async () => {
      try {
+         if (!isAuthenticated()) return { success: false, message: 'Unauthorized' };
          // Default to generic period or specific exam query. 
          // Since this is seemingly global, we might pick the default setting or first one.
          const res = await get('SELECT period FROM exam_timeframe LIMIT 1');
@@ -29,6 +31,7 @@ ipcMain.handle('get-exam-duration', async () => {
 
 ipcMain.handle('delete-specialization', async (event, { id }) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         await run('DELETE FROM specialization WHERE id = ?', [id]);
         broadcastChange('specializations', 'delete', { id });
@@ -41,6 +44,7 @@ ipcMain.handle('delete-specialization', async (event, { id }) => {
 
 ipcMain.handle('update-specialization', async (event, specialization) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         await run('UPDATE specialization SET specialization = ?, description = ? WHERE id = ?', [specialization.specialization, specialization.description, specialization.id]);
         broadcastChange('specializations', 'update', specialization);
@@ -55,6 +59,7 @@ ipcMain.handle('update-specialization', async (event, specialization) => {
 
 ipcMain.handle('delete-certification', async (event, { id }) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         await run('DELETE FROM certification WHERE id = ?', [id]);
         broadcastChange('certifications', 'delete', { id });
@@ -67,6 +72,7 @@ ipcMain.handle('delete-certification', async (event, { id }) => {
 
 ipcMain.handle('update-certification', async (event, certification) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         await run('UPDATE certification SET certification = ?, description = ? WHERE id = ?', [certification.certification, certification.description, certification.id]);
         broadcastChange('certifications', 'update', certification);
@@ -78,6 +84,7 @@ ipcMain.handle('update-certification', async (event, certification) => {
 });
 ipcMain.handle('update-package', async (event, pkg) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         await run('UPDATE packages SET package = ?, description = ?, amount = ? WHERE id = ?', [pkg.package, pkg.description, pkg.amount, pkg.id]);
         return { success: true };
@@ -90,6 +97,7 @@ ipcMain.handle('update-package', async (event, pkg) => {
 
 ipcMain.handle('get-question-categories', async () => {
     try {
+        if (!isAuthenticated()) return { success: false, message: 'Unauthorized' };
         // Updated to use true categories table
         const data = await query('SELECT id, name as category, description FROM categories'); 
         return { success: true, data };
@@ -101,6 +109,7 @@ ipcMain.handle('get-question-categories', async () => {
 
 ipcMain.handle('add-category', async (event, category) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         // Expecting { name: '...', description: '...' }
         const name = category.name || category.category;
@@ -117,6 +126,7 @@ ipcMain.handle('add-category', async (event, category) => {
 
 ipcMain.handle('update-category', async (event, category) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         const name = category.name || category.category;
         const desc = category.description || '';
@@ -131,6 +141,7 @@ ipcMain.handle('update-category', async (event, category) => {
 
 ipcMain.handle('delete-category', async (event, { id }) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const { run } = require('../db');
         await run('DELETE FROM categories WHERE id = ?', [id]);
         broadcastChange('categories', 'delete', { id });

@@ -2,9 +2,11 @@ const { ipcMain } = require("electron");
 const VehicleModel = require("../models/VehicleModel");
 const { InstructorModel } = require("../models/InstructorModel");
 const { broadcastChange } = require("../utils/broadcast");
+const { isAuthenticated, isAdmin } = require("../utils/session");
 
 ipcMain.handle("get-vehicles", async (event, { role, userId } = {}) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     let sql = "SELECT * FROM vehicles";
     const params = [];
 
@@ -31,6 +33,7 @@ ipcMain.handle("get-vehicles", async (event, { role, userId } = {}) => {
 
 ipcMain.handle("add-vehicle", async (event, data) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const newVehicle = await VehicleModel.create(data);
     broadcastChange("vehicles", "create", newVehicle);
     return { success: true, data: newVehicle };
@@ -42,6 +45,7 @@ ipcMain.handle("add-vehicle", async (event, data) => {
 
 ipcMain.handle("update-vehicle", async (event, { id, ...data }) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const updatedVehicle = await VehicleModel.update(id, data);
     broadcastChange("vehicles", "update", updatedVehicle);
     return { success: true, data: updatedVehicle };
@@ -53,6 +57,7 @@ ipcMain.handle("update-vehicle", async (event, { id, ...data }) => {
 
 ipcMain.handle("delete-vehicle", async (event, id) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     await VehicleModel.delete(id);
     broadcastChange("vehicles", "delete", { id });
     return { success: true };
@@ -64,6 +69,7 @@ ipcMain.handle("delete-vehicle", async (event, id) => {
 
 ipcMain.handle("report-vehicle-issue", async (event, data) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     let { instructorId } = data;
     const instructor = await InstructorModel.findByUserId(instructorId);
     if (instructor) {
@@ -87,6 +93,7 @@ ipcMain.handle("report-vehicle-issue", async (event, data) => {
 
 ipcMain.handle("log-vehicle-activity", async (event, data) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     let { instructorId } = data;
     const instructor = await InstructorModel.findByUserId(instructorId);
     if (instructor) {

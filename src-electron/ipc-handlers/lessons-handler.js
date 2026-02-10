@@ -1,9 +1,11 @@
 const { ipcMain } = require("electron");
 const { LessonModel } = require("../models/LessonModel");
 const { broadcastChange } = require("../utils/broadcast");
+const { isAuthenticated, isAdmin } = require("../utils/session");
 
 ipcMain.handle("get-lessons", async (event, filters) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     const cleanFilters = {};
     for (const key in filters) {
       if (
@@ -39,6 +41,7 @@ ipcMain.handle("get-lessons", async (event, filters) => {
 
 ipcMain.handle("add-lesson", async (event, lesson) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     const result = await LessonModel.book(lesson);
     broadcastChange("lessons", "book", result);
     return { success: true, data: result };
@@ -49,6 +52,7 @@ ipcMain.handle("add-lesson", async (event, lesson) => {
 
 ipcMain.handle("update-lesson", async (event, payload) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     const { id, ...updateData } = payload;
     const result = await LessonModel.update(id, updateData);
     broadcastChange("lessons", "update", result);
@@ -61,6 +65,7 @@ ipcMain.handle("update-lesson", async (event, payload) => {
 
 ipcMain.handle("delete-lesson", async (event, { id }) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     await LessonModel.delete(id);
     broadcastChange("lessons", "delete", { id });
     return { success: true };
