@@ -2,6 +2,7 @@ const { ipcMain } = require('electron');
 const { QuestionModel } = require('../models/QuestionModel');
 const { CategoryModel } = require('../models/CategoryModel');
 const { broadcastChange } = require('../utils/broadcast');
+const { isAdmin } = require('../utils/session');
 
 ipcMain.handle('get-question-stats', async () => {
     try {
@@ -46,6 +47,7 @@ ipcMain.handle('get-questions', async (event) => {
 
 ipcMain.handle('add-question', async (event, question) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const result = await QuestionModel.create(question);
         broadcastChange('questions', 'create', result);
         return { success: true, data: {
@@ -66,6 +68,7 @@ ipcMain.handle('add-question', async (event, question) => {
 
 ipcMain.handle('update-question', async (event, question) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const result = await QuestionModel.update(question.id, question);
         broadcastChange('questions', 'update', result);
         return { success: true, data: {
@@ -86,6 +89,7 @@ ipcMain.handle('update-question', async (event, question) => {
 
 ipcMain.handle('bulk-add-questions', async (event, questions) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         await QuestionModel.bulkCreate(questions);
         broadcastChange('questions', 'bulk-create', null);
         return { success: true };
@@ -97,6 +101,7 @@ ipcMain.handle('bulk-add-questions', async (event, questions) => {
 
 ipcMain.handle('delete-question', async (event, { id }) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         await QuestionModel.delete(id);
         broadcastChange('questions', 'delete', { id });
         return { success: true };

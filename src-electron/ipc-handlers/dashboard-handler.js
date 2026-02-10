@@ -6,9 +6,11 @@ const { Exam } = require("../models/ExamModel");
 const { Lesson } = require("../models/OperationalModels");
 const { sequelize } = require("../database");
 const { Op } = require("sequelize");
+const { isAuthenticated } = require("../utils/session");
 
 ipcMain.handle("get-dashboard-stats", async (event, params) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     const { role, userId } = params;
     const stats = {};
 

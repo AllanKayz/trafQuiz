@@ -1,9 +1,11 @@
 const { ipcMain } = require('electron');
 const { InstructorModel } = require('../models/InstructorModel');
 const { broadcastChange } = require('../utils/broadcast');
+const { isAdmin, isAuthenticated } = require('../utils/session');
 
 ipcMain.handle('get-instructors', async (event) => {
     try {
+        if (!isAuthenticated()) return { success: false, message: 'Unauthorized' };
         const instructors = await InstructorModel.findAll();
         return { success: true, data: instructors };
     } catch (error) {
@@ -14,6 +16,7 @@ ipcMain.handle('get-instructors', async (event) => {
 
 ipcMain.handle('add-instructor', async (event, instructor) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const result = await InstructorModel.create(instructor);
         broadcastChange('instructors', 'create', result);
         return { success: true, data: result };
@@ -25,6 +28,7 @@ ipcMain.handle('add-instructor', async (event, instructor) => {
 
 ipcMain.handle('update-instructor', async (event, instructor) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const result = await InstructorModel.update(instructor.id, instructor);
         broadcastChange('instructors', 'update', result);
         return { success: true, data: result };
@@ -36,6 +40,7 @@ ipcMain.handle('update-instructor', async (event, instructor) => {
 
 ipcMain.handle('delete-instructor', async (event, { id }) => {
     try {
+        if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         const success = await InstructorModel.delete(id);
         if (success) broadcastChange('instructors', 'delete', { id });
         return { success, message: success ? 'Instructor deleted' : 'Instructor not found' };

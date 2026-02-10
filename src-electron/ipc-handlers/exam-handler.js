@@ -11,6 +11,7 @@ const { Question, QuestionModel } = require("../models/QuestionModel");
 const { Student } = require("../models/StudentModel");
 const { sequelize } = require("../database");
 const { Op } = require("sequelize");
+const { isAuthenticated, isAdmin } = require("../utils/session");
 
 async function getFairExam(studentId) {
   const allExams = await Exam.findAll({ attributes: ["id"] });
@@ -58,6 +59,7 @@ async function getFairExam(studentId) {
 
 ipcMain.handle("get-exam-questions", async (event, userId) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     let studentId = null;
     if (userId) {
       const student = await Student.findOne({ where: { user_id: userId } });
@@ -126,6 +128,7 @@ ipcMain.handle("get-exam-questions", async (event, userId) => {
 
 ipcMain.handle("get-exams", async (event) => {
   try {
+    if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
     const exams = await ExamModel.findAll();
     return { success: true, data: exams };
   } catch (error) {
@@ -135,6 +138,7 @@ ipcMain.handle("get-exams", async (event) => {
 
 ipcMain.handle("add-exam", async (event, exam) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const result = await ExamModel.create(exam);
     broadcastChange("exams", "create", result);
     return { success: true, id: result.id };
@@ -145,6 +149,7 @@ ipcMain.handle("add-exam", async (event, exam) => {
 
 ipcMain.handle("update-exam", async (event, exam) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const result = await ExamModel.update(exam.id, exam);
     return { success: true, data: result };
   } catch (error) {
@@ -154,6 +159,7 @@ ipcMain.handle("update-exam", async (event, exam) => {
 
 ipcMain.handle("delete-exam", async (event, id) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     await ExamModel.delete(id);
     broadcastChange("exams", "delete", { id });
     return { success: true };
@@ -164,6 +170,7 @@ ipcMain.handle("delete-exam", async (event, id) => {
 
 ipcMain.handle("get-exam-statistics", async () => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const passCount = await StudentExam.count({
       where: { score: { [Op.gte]: 50 } },
     });
@@ -196,6 +203,7 @@ ipcMain.handle("get-exam-statistics", async () => {
 
 ipcMain.handle("get-exam-timeframe", async () => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const timeframe = await ExamTimeframe.findOne({ where: { exam_id: 0 } });
     return {
       success: true,
@@ -208,6 +216,7 @@ ipcMain.handle("get-exam-timeframe", async () => {
 
 ipcMain.handle("set-exam-timeframe", async (event, data) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const [timeframe, created] = await ExamTimeframe.findOrCreate({
       where: { exam_id: 0 },
       defaults: { period: data.period },
@@ -225,6 +234,7 @@ ipcMain.handle("set-exam-timeframe", async (event, data) => {
 
 ipcMain.handle("auto-allocate-exams", async (event, { date, capacity }) => {
   try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
     if (!date || !capacity) {
       return { success: false, message: 'Date and capacity are required' };
     }
