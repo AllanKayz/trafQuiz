@@ -82,6 +82,9 @@ export class CalendarViewComponent {
   filterType = signal('all');
   filterInstructor = signal('all');
 
+  tooltipEvent = signal<CalendarEvent<TrafQuizEventMeta> | null>(null);
+  tooltipPosition = signal({ x: 0, y: 0 });
+
   filteredEvents = computed(() => {
     let evs = this.events();
     const search = this.searchText().toLowerCase();
@@ -109,6 +112,11 @@ export class CalendarViewComponent {
 
     return evs.map(e => ({
       ...e,
+      resizable: e.resizable || {
+        beforeStart: true,
+        afterEnd: true,
+      },
+      draggable: e.draggable ?? true,
       meta: {
         ...e.meta,
         isPast: e.start < today
@@ -146,6 +154,11 @@ export class CalendarViewComponent {
       .filter(e => e.meta && e.meta.instructorId === instructorId)
       .map(e => ({
         ...e,
+        resizable: e.resizable || {
+          beforeStart: true,
+          afterEnd: true,
+        },
+        draggable: e.draggable ?? true,
         meta: {
           ...e.meta,
           isPast: e.start < today
@@ -183,6 +196,15 @@ export class CalendarViewComponent {
       });
       event.event.stopPropagation();
     }
+  }
+
+  showTooltip(mouseEvent: MouseEvent, event: CalendarEvent) {
+    this.tooltipEvent.set(event as CalendarEvent<TrafQuizEventMeta>);
+    this.tooltipPosition.set({ x: mouseEvent.clientX, y: mouseEvent.clientY });
+  }
+
+  hideTooltip() {
+    this.tooltipEvent.set(null);
   }
 
   // Template helpers for type safety

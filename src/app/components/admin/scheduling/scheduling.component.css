@@ -117,10 +117,10 @@ mat-select {
 }
 
 .calendar-layout {
-  display: grid;
-  grid-template-columns: 300px 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .unassigned-sidebar {
@@ -130,9 +130,7 @@ mat-select {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 250px);
-  position: sticky;
-  top: 24px;
+  max-height: 400px;
 }
 
 .sidebar-header {
@@ -223,7 +221,7 @@ mat-select {
 }
 
 .empty-sidebar {
-  padding: 40px 20px;
+  padding: 24px 20px;
   text-align: center;
   color: var(--text-muted);
 }

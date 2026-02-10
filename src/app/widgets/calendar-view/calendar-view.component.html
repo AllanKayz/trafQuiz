@@ -40,12 +40,12 @@
         </mat-form-field>
       </div>
 
-      <mat-button-toggle-group [value]="viewMode()" (change)="setViewMode($event.value)" class="view-toggle">
-        <mat-button-toggle value="month">Month</mat-button-toggle>
-        <mat-button-toggle value="week">Week</mat-button-toggle>
-        <mat-button-toggle value="day">Day</mat-button-toggle>
-        <mat-button-toggle value="resources">Resources</mat-button-toggle>
-      </mat-button-toggle-group>
+      <div class="segmented-control">
+        <button class="segment-btn" [class.active]="viewMode() === 'month'" (click)="setViewMode('month')">Month</button>
+        <button class="segment-btn" [class.active]="viewMode() === 'week'" (click)="setViewMode('week')">Week</button>
+        <button class="segment-btn" [class.active]="viewMode() === 'day'" (click)="setViewMode('day')">Day</button>
+        <button class="segment-btn" [class.active]="viewMode() === 'resources'" (click)="setViewMode('resources')">Resources</button>
+      </div>
     </div>
   </div>
 
@@ -69,10 +69,11 @@
       [viewDate]="viewDate"
       [events]="filteredEvents()"
       [refresh]="refresh"
-      [hourSegments]="2"
+      [hourSegments]="4"
       [dayStartHour]="7"
       [dayEndHour]="21"
       [eventTemplate]="eventTemplate"
+      [currentTimeMarkerTemplate]="currentTimeMarkerTemplate"
       (eventClicked)="eventClicked.emit($event.event)"
       (eventTimesChanged)="eventTimesChanged.emit($event)">
     </mwl-calendar-week-view>
@@ -82,10 +83,11 @@
       [viewDate]="viewDate"
       [events]="filteredEvents()"
       [refresh]="refresh"
-      [hourSegments]="2"
+      [hourSegments]="4"
       [dayStartHour]="7"
       [dayEndHour]="21"
       [eventTemplate]="eventTemplate"
+      [currentTimeMarkerTemplate]="currentTimeMarkerTemplate"
       (eventClicked)="eventClicked.emit($event.event)"
       (eventTimesChanged)="eventTimesChanged.emit($event)">
     </mwl-calendar-day-view>
@@ -102,10 +104,11 @@
             [viewDate]="viewDate"
             [events]="getEventsForInstructor(instructor.id)"
             [refresh]="refresh"
-            [hourSegments]="1"
+            [hourSegments]="4"
             [dayStartHour]="7"
             [dayEndHour]="21"
             [eventTemplate]="eventTemplate"
+            [currentTimeMarkerTemplate]="currentTimeMarkerTemplate"
             (eventClicked)="eventClicked.emit($event.event)"
             (eventTimesChanged)="eventTimesChanged.emit($event)">
           </mwl-calendar-day-view>
@@ -124,26 +127,34 @@
       <div class="cal-cell-top" mwlDroppable (drop)="externalDropOnDate($event, day.date)">
         <span class="cal-day-number" [class.cal-is-today]="day.isToday">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
       </div>
-      @if (day.events.length > 0) {
+      @if (day.events.length === 1) {
         <div class="cal-events">
-          @for (event of asTrafQuizEvents(day.events) | slice:0:3; track event.id) {
+          @for (event of asTrafQuizEvents(day.events); track event.id) {
             <div class="cal-event-chip"
                  [attr.data-type]="event.meta?.type"
                  [class.is-past]="event.meta?.isPast"
                  (click)="eventClicked.emit(event)"
-                 [matTooltip]="event.title">
+                 (mouseenter)="showTooltip($event, event)"
+                 (mouseleave)="hideTooltip()">
               @if (event.start) {
                 <span class="event-time">{{ event.start | date:'HH:mm' }}</span>
               }
               <span class="event-title-text">{{ event.title }}</span>
             </div>
           }
-          @if (day.events.length > 3) {
-            <div class="cal-more-events">
-              +{{ day.events.length - 3 }} more
-            </div>
-          }
         </div>
+      } @else if (day.events.length > 1) {
+        <div class="badge-container" (click)="handleDayClick(day.date, day.events)">
+          <div class="cal-more-events-badge">
+            +{{ day.events.length }}
+          </div>
+        </div>
+      }
+    </ng-template>
+
+    <ng-template #currentTimeMarkerTemplate let-columnDate="columnDate" let-isVisible="isVisible" let-top="top">
+      @if (isVisible) {
+        <div class="cal-current-time-marker" [style.top.px]="top"></div>
       }
     </ng-template>
 
@@ -151,10 +162,12 @@
       <div class="custom-event-card"
            [attr.data-type]="asTrafQuizEvent(weekEvent.event).meta?.type"
            [class.is-past]="asTrafQuizEvent(weekEvent.event).meta?.isPast"
-           [matTooltip]="weekEvent.event.title"
-           (click)="eventClicked.emit(weekEvent.event)">
+           (click)="eventClicked.emit(weekEvent.event)"
+           (mouseenter)="showTooltip($event, weekEvent.event)"
+           (mouseleave)="hideTooltip()">
         <div class="event-card-content">
           <div class="event-time">
+            <mat-icon>schedule</mat-icon>
             {{ weekEvent.event.start | date:'HH:mm' }} - {{ weekEvent.event.end | date:'HH:mm' }}
           </div>
           <div class="event-title">{{ weekEvent.event.title }}</div>
@@ -168,6 +181,26 @@
       </div>
     </ng-template>
   </div>
+
+  @if (tooltipEvent(); as event) {
+    <div class="custom-tooltip" [style.left.px]="tooltipPosition().x + 10" [style.top.px]="tooltipPosition().y + 10">
+      <div class="tooltip-header">{{ event.title }}</div>
+      <div class="tooltip-row">
+        <mat-icon>schedule</mat-icon>
+        <span>{{ event.start | date:'HH:mm' }} - {{ event.end | date:'HH:mm' }}</span>
+      </div>
+      @if (event.meta?.instructor) {
+        <div class="tooltip-row">
+          <mat-icon>person</mat-icon>
+          <span>{{ event.meta?.instructor?.name }}</span>
+        </div>
+      }
+      <div class="tooltip-row">
+        <mat-icon>category</mat-icon>
+        <span>{{ event.meta?.type | titlecase }}</span>
+      </div>
+    </div>
+  }
 
   <div class="calendar-legend">
     <div class="legend-item">
