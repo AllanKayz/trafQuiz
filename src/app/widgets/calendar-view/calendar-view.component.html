@@ -102,7 +102,7 @@
           </div>
           <mwl-calendar-day-view
             [viewDate]="viewDate"
-            [events]="getEventsForInstructor(instructor.id)"
+            [events]="eventsByInstructor().get(instructor.id) || []"
             [refresh]="refresh"
             [hourSegments]="4"
             [dayStartHour]="7"
