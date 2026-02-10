@@ -109,6 +109,8 @@ module.exports = {
       registration: { type: DataTypes.STRING(50) },
       type: { type: DataTypes.STRING(50), defaultValue: 'car' },
       status: { type: DataTypes.STRING(50), defaultValue: 'active' },
+      mileage: { type: DataTypes.INTEGER, defaultValue: 0 },
+      fuel_level: { type: DataTypes.INTEGER, defaultValue: 100 },
       notes: { type: DataTypes.TEXT },
       created_at: { type: DataTypes.DATE, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
       updated_at: { type: DataTypes.DATE, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') }
@@ -208,6 +210,7 @@ module.exports = {
       },
       method: { type: DataTypes.STRING(50) },
       notes: { type: DataTypes.TEXT },
+      description: { type: DataTypes.TEXT },
       created_at: { type: DataTypes.DATE, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') }
     });
 
@@ -247,7 +250,8 @@ module.exports = {
       mileage: { type: DataTypes.INTEGER, allowNull: false },
       fuel_level: { type: DataTypes.INTEGER, allowNull: false },
       notes: { type: DataTypes.TEXT },
-      created_at: { type: DataTypes.DATE, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') }
+      created_at: { type: DataTypes.DATE, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') },
+      updated_at: { type: DataTypes.DATE, defaultValue: Sequelize.literal('CURRENT_TIMESTAMP') }
     });
 
     // 15. Reports

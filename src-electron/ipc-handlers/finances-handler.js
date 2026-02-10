@@ -209,8 +209,8 @@ ipcMain.handle("record-expense", async (event, data) => {
     const transactionId = `EXP-${Date.now().toString(16).toUpperCase()}`;
     await sequelize.query(
       `
-            INSERT INTO payments (amount, type, category, method, transaction_id, status, description)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO payments (amount, type, category, method, transaction_id, status, description, vehicle_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
       {
         replacements: [
@@ -221,6 +221,7 @@ ipcMain.handle("record-expense", async (event, data) => {
           transactionId,
           "completed",
           data.description || "Business Expense",
+          data.vehicleId || null
         ],
       },
     );

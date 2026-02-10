@@ -3,9 +3,12 @@ const path = require('path');
 const { app } = require('electron');
 
 const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');
+const isTest = process.env.NODE_ENV === 'test';
 let dbPath;
 
-if (isDev) {
+if (isTest) {
+    dbPath = path.join(__dirname, 'trafquiz_test.db');
+} else if (isDev) {
     dbPath = path.join(__dirname, 'trafquiz_app.db');
 } else {
     if (app) {

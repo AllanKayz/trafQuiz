@@ -58,6 +58,9 @@ const Payment = sequelize.define(
     notes: {
       type: DataTypes.TEXT,
     },
+    description: {
+      type: DataTypes.TEXT,
+    },
   },
   {
     tableName: "payments",

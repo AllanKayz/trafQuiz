@@ -28,17 +28,13 @@ User.hasOne(Student, { foreignKey: 'user_id' });
 
 class StudentModel {
     static async all(instructorId = null) {
-        const options = {
-            include: [{ model: User }],
-            order: [[Sequelize.literal('created_at'), 'DESC']]
-        };
-
         // If we want to filter by instructorId, we'd need to join with lessons or assigned instructors if that existed
         // But current schema doesn't have a direct student-instructor link outside of lessons.
         // However, StudentModel.all in original code was just query('SELECT students.*, users.first_name, ...')
 
         const students = await Student.findAll({
             include: [User],
+            order: [[Sequelize.literal('Student.created_at'), 'DESC']],
             raw: true,
             nest: true
         });
