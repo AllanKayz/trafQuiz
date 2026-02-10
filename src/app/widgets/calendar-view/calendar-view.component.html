@@ -1,0 +1,190 @@
+<div class="calendar-container animate-fade-in">
+  <div class="calendar-header-bar">
+    <div class="header-start">
+      <div class="title-group">
+        <h2 class="current-period">{{ viewDate | date: (view() === CalendarView.Month ? 'MMMM yyyy' : 'MMM d, yyyy') }}</h2>
+      </div>
+      <div class="nav-group">
+        <button mat-icon-button mwlCalendarPreviousView [view]="view()" [(viewDate)]="viewDate" (viewDateChange)="refresh.next()">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <button mat-icon-button mwlCalendarNextView [view]="view()" [(viewDate)]="viewDate" (viewDateChange)="refresh.next()">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+        <button mat-stroked-button class="today-btn" mwlCalendarToday [(viewDate)]="viewDate" (viewDateChange)="refresh.next()">
+          Today
+        </button>
+      </div>
+    </div>
+
+    <div class="header-end">
+      <div class="search-filter-compact">
+         <mat-form-field appearance="outline" class="compact-field" subscriptSizing="dynamic">
+          <mat-icon matPrefix>search</mat-icon>
+          <input matInput [ngModel]="searchText()" (ngModelChange)="searchText.set($event); onFilterChange()" placeholder="Search">
+        </mat-form-field>
+         <mat-form-field appearance="outline" class="compact-field" subscriptSizing="dynamic">
+          <mat-select [ngModel]="filterType()" (selectionChange)="filterType.set($event.value); onFilterChange()" placeholder="Type">
+            <mat-option value="all">All Types</mat-option>
+            <mat-option value="individual">Individual</mat-option>
+            <mat-option value="group">Group</mat-option>
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="compact-field" subscriptSizing="dynamic">
+          <mat-select [ngModel]="filterInstructor()" (selectionChange)="filterInstructor.set($event.value); onFilterChange()" placeholder="Instructor">
+            <mat-option value="all">All Instructors</mat-option>
+            @for (instructor of instructors(); track instructor.id) {
+              <mat-option [value]="instructor.id">{{ instructor.firstName }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-button-toggle-group [value]="viewMode()" (change)="setViewMode($event.value)" class="view-toggle">
+        <mat-button-toggle value="month">Month</mat-button-toggle>
+        <mat-button-toggle value="week">Week</mat-button-toggle>
+        <mat-button-toggle value="day">Day</mat-button-toggle>
+        <mat-button-toggle value="resources">Resources</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+  </div>
+
+  <div class="calendar-body google-style"
+       mwlDroppable (drop)="externalDrop($event)">
+    @switch (viewMode()) {
+      @case ('month') {
+        <mwl-calendar-month-view
+      [viewDate]="viewDate"
+      [events]="filteredEvents()"
+      [refresh]="refresh"
+      [activeDayIsOpen]="activeDayIsOpen"
+      [cellTemplate]="monthCellTemplate"
+      (dayClicked)="handleDayClick($event.day.date, $event.day.events)"
+      (eventClicked)="eventClicked.emit($event.event)"
+      (eventTimesChanged)="eventTimesChanged.emit($event)">
+    </mwl-calendar-month-view>
+      }
+      @case ('week') {
+        <mwl-calendar-week-view
+      [viewDate]="viewDate"
+      [events]="filteredEvents()"
+      [refresh]="refresh"
+      [hourSegments]="2"
+      [dayStartHour]="7"
+      [dayEndHour]="21"
+      [eventTemplate]="eventTemplate"
+      (eventClicked)="eventClicked.emit($event.event)"
+      (eventTimesChanged)="eventTimesChanged.emit($event)">
+    </mwl-calendar-week-view>
+      }
+      @case ('day') {
+        <mwl-calendar-day-view
+      [viewDate]="viewDate"
+      [events]="filteredEvents()"
+      [refresh]="refresh"
+      [hourSegments]="2"
+      [dayStartHour]="7"
+      [dayEndHour]="21"
+      [eventTemplate]="eventTemplate"
+      (eventClicked)="eventClicked.emit($event.event)"
+      (eventTimesChanged)="eventTimesChanged.emit($event)">
+    </mwl-calendar-day-view>
+      }
+      @case ('resources') {
+        <div class="resource-view-container">
+      @for (instructor of selectedInstructors(); track instructor.id) {
+        <div class="resource-column">
+          <div class="resource-header">
+            <mat-icon>person</mat-icon>
+            <span>{{ instructor.firstName }}</span>
+          </div>
+          <mwl-calendar-day-view
+            [viewDate]="viewDate"
+            [events]="getEventsForInstructor(instructor.id)"
+            [refresh]="refresh"
+            [hourSegments]="1"
+            [dayStartHour]="7"
+            [dayEndHour]="21"
+            [eventTemplate]="eventTemplate"
+            (eventClicked)="eventClicked.emit($event.event)"
+            (eventTimesChanged)="eventTimesChanged.emit($event)">
+          </mwl-calendar-day-view>
+        </div>
+      } @empty {
+        <div class="no-resources">
+          <mat-icon>group_add</mat-icon>
+          <p>Select instructors to compare schedules side-by-side</p>
+        </div>
+      }
+    </div>
+      }
+    }
+
+    <ng-template #monthCellTemplate let-day="day" let-openDay="openDay" let-locale="locale">
+      <div class="cal-cell-top" mwlDroppable (drop)="externalDropOnDate($event, day.date)">
+        <span class="cal-day-number" [class.cal-is-today]="day.isToday">{{ day.date | calendarDate:'monthViewDayNumber':locale }}</span>
+      </div>
+      @if (day.events.length > 0) {
+        <div class="cal-events">
+          @for (event of asTrafQuizEvents(day.events) | slice:0:3; track event.id) {
+            <div class="cal-event-chip"
+                 [attr.data-type]="event.meta?.type"
+                 [class.is-past]="event.meta?.isPast"
+                 (click)="eventClicked.emit(event)"
+                 [matTooltip]="event.title">
+              @if (event.start) {
+                <span class="event-time">{{ event.start | date:'HH:mm' }}</span>
+              }
+              <span class="event-title-text">{{ event.title }}</span>
+            </div>
+          }
+          @if (day.events.length > 3) {
+            <div class="cal-more-events">
+              +{{ day.events.length - 3 }} more
+            </div>
+          }
+        </div>
+      }
+    </ng-template>
+
+    <ng-template #eventTemplate let-weekEvent="weekEvent" let-tooltipPlacement="tooltipPlacement">
+      <div class="custom-event-card"
+           [attr.data-type]="asTrafQuizEvent(weekEvent.event).meta?.type"
+           [class.is-past]="asTrafQuizEvent(weekEvent.event).meta?.isPast"
+           [matTooltip]="weekEvent.event.title"
+           (click)="eventClicked.emit(weekEvent.event)">
+        <div class="event-card-content">
+          <div class="event-time">
+            {{ weekEvent.event.start | date:'HH:mm' }} - {{ weekEvent.event.end | date:'HH:mm' }}
+          </div>
+          <div class="event-title">{{ weekEvent.event.title }}</div>
+          @if (asTrafQuizEvent(weekEvent.event).meta?.instructor) {
+            <div class="event-instructor">
+              <mat-icon>person</mat-icon>
+              <span>{{ asTrafQuizEvent(weekEvent.event).meta?.instructor?.name }}</span>
+            </div>
+          }
+        </div>
+      </div>
+    </ng-template>
+  </div>
+
+  <div class="calendar-legend">
+    <div class="legend-item">
+      <span class="dot individual"></span>
+      <span>Individual Lesson</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot group"></span>
+      <span>Group Lesson</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot theory"></span>
+      <span>Theory Lesson</span>
+    </div>
+    <div class="legend-item">
+      <span class="dot unassigned"></span>
+      <span>Unassigned Vehicle</span>
+    </div>
+  </div>
+</div>
