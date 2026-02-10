@@ -85,8 +85,33 @@ export class CalendarViewComponent {
   tooltipEvent = signal<CalendarEvent<TrafQuizEventMeta> | null>(null);
   tooltipPosition = signal({ x: 0, y: 0 });
 
+  /**
+   * Transforms raw events into TrafQuiz events once.
+   * This avoids repeated mapping in every change detection cycle.
+   */
+  transformedEvents = computed(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return this.events().map(e => ({
+      ...e,
+      resizable: e.resizable || {
+        beforeStart: true,
+        afterEnd: true,
+      },
+      draggable: e.draggable ?? true,
+      meta: {
+        ...e.meta,
+        isPast: e.start < today
+      } as TrafQuizEventMeta
+    }));
+  });
+
+  /**
+   * Filters already transformed events based on search and selected filters.
+   */
   filteredEvents = computed(() => {
-    let evs = this.events();
+    let evs = this.transformedEvents();
     const search = this.searchText().toLowerCase();
     const type = this.filterType();
     const instructor = this.filterInstructor();
@@ -107,21 +132,28 @@ export class CalendarViewComponent {
       evs = evs.filter(e => e.meta && e.meta.instructorId === id);
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    return evs;
+  });
 
-    return evs.map(e => ({
-      ...e,
-      resizable: e.resizable || {
-        beforeStart: true,
-        afterEnd: true,
-      },
-      draggable: e.draggable ?? true,
-      meta: {
-        ...e.meta,
-        isPast: e.start < today
-      } as TrafQuizEventMeta
-    }));
+  /**
+   * Pre-groups transformed events by instructor.
+   * This is much more efficient than filtering events for each instructor in the template.
+   */
+  eventsByInstructor = computed(() => {
+    const events = this.transformedEvents();
+    const grouped = new Map<number, CalendarEvent<TrafQuizEventMeta>[]>();
+
+    events.forEach(e => {
+      const instructorId = e.meta?.instructorId;
+      if (instructorId) {
+        if (!grouped.has(instructorId)) {
+          grouped.set(instructorId, []);
+        }
+        grouped.get(instructorId)!.push(e);
+      }
+    });
+
+    return grouped;
   });
 
   onFilterChange() {
@@ -146,25 +178,6 @@ export class CalendarViewComponent {
     }
     return this.instructors();
   });
-
-  getEventsForInstructor(instructorId: number): CalendarEvent<TrafQuizEventMeta>[] {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return this.events()
-      .filter(e => e.meta && e.meta.instructorId === instructorId)
-      .map(e => ({
-        ...e,
-        resizable: e.resizable || {
-          beforeStart: true,
-          afterEnd: true,
-        },
-        draggable: e.draggable ?? true,
-        meta: {
-          ...e.meta,
-          isPast: e.start < today
-        } as TrafQuizEventMeta
-      }));
-  }
 
   handleDayClick(date: Date, events: CalendarEvent[]) {
     if (events.length > 0) {
