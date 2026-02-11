@@ -1,12 +1,12 @@
 
-import { Component, inject, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { TraffiquizService } from '../traffiquiz.service';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { finalize } from 'rxjs';
+import { finalize, take } from 'rxjs';
 
 import { ManageMetadataComponent } from '../components/admin/manage-metadata/manage-metadata.component';
 import { MatButtonModule } from '@angular/material/button';
@@ -36,9 +36,9 @@ import { EditStudentDialogComponent } from './edit-student-dialog.component';
 })
 export class AdminComponent implements OnInit, OnDestroy {
   adminData: any;
-  currentExamDuration!: number;
+  currentExamDuration = signal<number>(1800);
   loggedUser: any;
-  isLoading: boolean = true;
+  isLoading = signal<boolean>(true);
   chosenUser: any;
   dialog = inject(MatDialog);
 
@@ -58,27 +58,22 @@ export class AdminComponent implements OnInit, OnDestroy {
     email: new FormControl('', Validators.required)
   });
 
-  updateStudentForm = new FormGroup({
-    updateUsername: new FormControl('', Validators.required),
-    updateFirstName: new FormControl('', Validators.required),
-    updateLastName: new FormControl('', Validators.required),
-    updatePassword: new FormControl('', Validators.required),
-    updateEmail: new FormControl('', Validators.required),
-    updateUid: new FormControl('', Validators.required)
-  });
-
   ngOnInit(): void {
     this.getAdminData.fetchStudents();
-    this.getAdminData.fetchExamDuration().subscribe(duration => {
-      this.currentExamDuration = duration;
+    this.getAdminData.fetchExamDuration().pipe(
+      take(1),
+      finalize(() => this.isLoading.set(false))
+    ).subscribe(duration => {
+      this.currentExamDuration.set(duration);
     });
   }
 
-  get formattedTime(): string {
-    const minutes = Math.floor(this.currentExamDuration / 60);
-    const seconds = this.currentExamDuration % 60;
+  formattedTime = computed(() => {
+    const duration = this.currentExamDuration();
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
     return `${this.pad(minutes)}:${this.pad(seconds)}`;
-  }
+  });
 
   private pad(value: number): string {
     return value < 10 ? '0' + value : value.toString();
@@ -95,7 +90,7 @@ export class AdminComponent implements OnInit, OnDestroy {
           if (response.success) {
             this.getAdminData.showNotification(response.message, 'success');
             this.examTime.reset();
-            this.currentExamDuration = response.new_time;
+            this.currentExamDuration.set(response.new_time);
           }
         },
         error: (err) => {
@@ -140,17 +135,6 @@ export class AdminComponent implements OnInit, OnDestroy {
 
   }
 
-  btnEdit(event: Event): void {
-    const clickedBtn = event.target as HTMLButtonElement; //Ensure type safety
-    this.chosenUser = this.usersList().find((obj: any) => obj.id === parseInt(clickedBtn.id));
-    this.updateStudentForm.controls['updateFirstName'].setValue(this.chosenUser['firstName']);
-    this.updateStudentForm.controls.updateLastName.setValue(this.chosenUser.lastName ?? '');
-    this.updateStudentForm.controls.updateUsername.setValue(this.chosenUser.username ?? '');
-    this.updateStudentForm.controls.updateEmail.setValue(this.chosenUser.email ?? '');
-    this.updateStudentForm.controls.updatePassword.setValue(this.chosenUser.password ?? '');
-    this.updateStudentForm.controls.updateUid.setValue(this.chosenUser.id ?? '');
-  }
-
   editStudent(student: any): void {
     const dialogRef = this.dialog.open(EditStudentDialogComponent, {
       data: student,
@@ -184,73 +168,25 @@ export class AdminComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteStudent(e: Event): void {
-    const clickedBtn = e.target as HTMLButtonElement;
-    const str = clickedBtn.id;
-    const splitArray = str.split(".");
-    const id = parseInt(splitArray[1]);
-    const studentToDelete = this.usersList().find(student => student.id === id);
-    if (studentToDelete) {
-      this.getAdminData.deleteStudent(studentToDelete).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.getAdminData.showNotification(res.message, 'success');
-          }
-        },
-        error: (err) => {
-          this.getAdminData.showNotification(err, 'error');
-        },
-        complete: () => {
-          this.getAdminData.fetchStudents();
-        }
-      });
-    }
-  }
-
-  /*
   deleteStudent(student: any): void {
-    this.getAdminData.showConfirm(
-      `Are you sure you want to delete ${student.firstName} ${student.lastName}?`,
-      'Delete',
-      'Confirm Deletion'
-    ).subscribe(() => {
-      this.getAdminData.deleteStudent(student.id).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.getAdminData.showNotification('Student deleted successfully', 'success');
-            this.getAdminData.fetchStudents();
+    if (student && student.id) {
+      this.getAdminData.showConfirm(
+        `Are you sure you want to delete student ${student.firstName} ${student.lastName}?`,
+        'Delete',
+        'Confirm Deletion'
+      ).subscribe(() => {
+        this.getAdminData.deleteStudent(student.id).subscribe({
+          next: (res) => {
+            if (res.success) {
+              this.getAdminData.showNotification(res.message, 'success');
+              this.getAdminData.fetchStudents();
+            }
+          },
+          error: (err) => {
+            this.getAdminData.showNotification(err, 'error');
           }
-        },
-        error: (err) => {
-          this.getAdminData.showNotification('Error deleting student: ' + err, 'error');
-        }
+        });
       });
-    });
-  }*/
-
-  updateStudent(): void {
-    if (this.updateStudentForm.valid) {
-      const payload = {
-        id: this.updateStudentForm.value.updateUid,
-        username: this.updateStudentForm.value.updateUsername,
-        firstName: this.updateStudentForm.value.updateFirstName,
-        lastName: this.updateStudentForm.value.updateLastName,
-        email: this.updateStudentForm.value.updateEmail,
-        password: this.updateStudentForm.value.updatePassword
-      };
-
-      this.getAdminData.updateStudent(payload).subscribe({
-        next: (res) => {
-          if (res.success) {
-            this.getAdminData.showNotification(res.message, 'success');
-          }
-        },
-        error: (err) => {
-          this.getAdminData.showNotification(err, 'error');
-        }
-      });
-    } else {
-      this.getAdminData.showNotification('Fill all required details', 'error');
     }
   }
 

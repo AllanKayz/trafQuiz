@@ -25,6 +25,14 @@ const sequelize = new Sequelize({
     define: {
         timestamps: true,
         underscored: true,
+    },
+    // Performance optimization: Use WAL mode and NORMAL synchronous
+    // This allows concurrent reads and faster writes in SQLite
+    hooks: {
+        afterConnect: (connection) => {
+            connection.run('PRAGMA journal_mode=WAL;');
+            connection.run('PRAGMA synchronous=NORMAL;');
+        }
     }
 });
 
