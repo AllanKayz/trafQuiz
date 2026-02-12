@@ -386,7 +386,6 @@ export class TraffiquizService implements OnDestroy {
   });
 
   constructor() {
-    this.initializeUser();
     this.initializeTheme();
 
     effect(() => {
@@ -407,6 +406,8 @@ export class TraffiquizService implements OnDestroy {
         }
       }
     });
+
+    this.initializeUser();
 
     this.startPolling();
     this.setupRealtimeUpdates();
@@ -590,15 +591,6 @@ export class TraffiquizService implements OnDestroy {
       try {
         const user = JSON.parse(userJson);
         this.userSignal.set(this.formatUser(user));
-        if (user.role === 'admin' || user.role === 'instructor') {
-          this.fetchQuestions();
-          this.fetchStudents();
-          this.fetchInstructors();
-          this.getPackages();
-          this.getSpecializations();
-          this.getCertifications();
-          this.fetchDashboardStats();
-        }
       } catch (e) {
         this.showNotification(`Error parsing user data: ${e}`, 'error');
       }
