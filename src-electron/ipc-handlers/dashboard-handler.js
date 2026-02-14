@@ -20,20 +20,25 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       stats.total_instructors = await Instructor.count();
 
-      // For date comparisons, we can use Sequelize Op or raw sql
-      const today = new Date().toISOString().split("T")[0];
+      // Performance: Use index-friendly date ranges instead of strftime/fn('date')
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
       stats.exams_today = await Exam.count({
-        where: sequelize.where(
-          sequelize.fn("date", sequelize.col("start_time")),
-          today,
-        ),
+        where: {
+          start_time: {
+            [Op.between]: [startOfToday, endOfToday]
+          }
+        },
       });
 
       // Revenue - needs Payment model, but let's assume it's in OperationalModels or similar
-      // For now, if Payment model not yet refactored, use raw query via sequelize
+      // Performance: Use index-friendly date range (>= start of month AND < start of next month)
       const [revenueResult] = await sequelize.query(`
                 SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
+                WHERE type="income" AND payment_date >= date('now', 'start of month') AND payment_date < date('now', 'start of month', '+1 month')
             `);
       stats.monthly_revenue = revenueResult[0]?.total || 0;
 
@@ -49,15 +54,18 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       const instructorId = instructor?.id;
 
-      const today = new Date().toISOString().split("T")[0];
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
       stats.lessons_today = instructorId
         ? await Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [startOfToday, endOfToday]
+              }
             },
           })
         : 0;

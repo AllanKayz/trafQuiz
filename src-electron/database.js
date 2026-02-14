@@ -25,6 +25,24 @@ const sequelize = new Sequelize({
     define: {
         timestamps: true,
         underscored: true,
+    },
+    // SQLite performance optimizations: Enable WAL mode and NORMAL synchronous
+    // This reduces disk I/O and improves concurrent read/write performance.
+    dialectOptions: {
+        // dialectOptions for sqlite are limited, hooks are more reliable for PRAGMAs
+    },
+    hooks: {
+        afterConnect: (connection) => {
+            return new Promise((resolve, reject) => {
+                connection.run('PRAGMA journal_mode=WAL;', (err) => {
+                    if (err) return reject(err);
+                    connection.run('PRAGMA synchronous=NORMAL;', (err) => {
+                        if (err) return reject(err);
+                        resolve();
+                    });
+                });
+            });
+        }
     }
 });
 
