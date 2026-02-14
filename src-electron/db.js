@@ -70,8 +70,10 @@ const exec = (sql) => {
 async function init() {
   console.log("Initializing Database...");
 
-  // Enable foreign keys
+  // Enable foreign keys and performance optimizations (WAL mode, NORMAL synchronous)
   await exec("PRAGMA foreign_keys = ON");
+  await exec("PRAGMA journal_mode = WAL");
+  await exec("PRAGMA synchronous = NORMAL");
 
   // Check if tables exist (using 'users' as a marker)
   try {
