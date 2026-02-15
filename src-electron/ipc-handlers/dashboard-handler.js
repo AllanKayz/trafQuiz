@@ -2,8 +2,9 @@ const { ipcMain } = require("electron");
 const { User } = require("../models/UserModel");
 const { Student } = require("../models/StudentModel");
 const { Instructor } = require("../models/InstructorModel");
-const { Exam } = require("../models/ExamModel");
+const { Exam, StudentExam } = require("../models/ExamModel");
 const { Lesson } = require("../models/OperationalModels");
+const Payment = require("../models/payment");
 const { sequelize } = require("../database");
 const { Op } = require("sequelize");
 const { isAuthenticated } = require("../utils/session");
@@ -20,28 +21,56 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       stats.total_instructors = await Instructor.count();
 
-      // For date comparisons, we can use Sequelize Op or raw sql
-      const today = new Date().toISOString().split("T")[0];
+      // Use index-friendly range queries for dates
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const endOfToday = new Date();
+      endOfToday.setHours(23, 59, 59, 999);
+
       stats.exams_today = await Exam.count({
-        where: sequelize.where(
-          sequelize.fn("date", sequelize.col("start_time")),
-          today,
-        ),
+        where: {
+          start_time: {
+            [Op.between]: [startOfToday, endOfToday],
+          },
+        },
       });
 
-      // Revenue - needs Payment model, but let's assume it's in OperationalModels or similar
-      // For now, if Payment model not yet refactored, use raw query via sequelize
-      const [revenueResult] = await sequelize.query(`
-                SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `);
-      stats.monthly_revenue = revenueResult[0]?.total || 0;
+      // Monthly Revenue optimization: use range query and Payment model
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const endOfMonth = new Date(
+        startOfMonth.getFullYear(),
+        startOfMonth.getMonth() + 1,
+        0,
+        23,
+        59,
+        59,
+        999,
+      );
 
-      const [passRateResult] = await sequelize.query(`
-                SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
-                FROM student_exams
-            `);
-      stats.pass_rate = Math.round(passRateResult[0]?.rate || 0);
+      stats.monthly_revenue =
+        (await Payment.sum("amount", {
+          where: {
+            type: "income",
+            payment_date: {
+              [Op.between]: [startOfMonth, endOfMonth],
+            },
+          },
+        })) || 0;
+
+      // Pass Rate optimization: use StudentExam model
+      const totalExams = await StudentExam.count();
+      if (totalExams > 0) {
+        const passedExams = await StudentExam.count({
+          where: {
+            score: { [Op.gte]: 50 },
+          },
+        });
+        stats.pass_rate = Math.round((passedExams / totalExams) * 100);
+      } else {
+        stats.pass_rate = 0;
+      }
       stats.system_alerts = 0;
     } else if (role === "instructor") {
       const instructor = await Instructor.findOne({
@@ -49,15 +78,18 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       const instructorId = instructor?.id;
 
-      const today = new Date().toISOString().split("T")[0];
+      const startOfTodayForInst = new Date();
+      startOfTodayForInst.setHours(0, 0, 0, 0);
+      const endOfTodayForInst = new Date();
+      endOfTodayForInst.setHours(23, 59, 59, 999);
+
       stats.lessons_today = instructorId
         ? await Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [startOfTodayForInst, endOfTodayForInst],
+              },
             },
           })
         : 0;
