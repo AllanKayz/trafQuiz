@@ -2,8 +2,9 @@ const { ipcMain } = require("electron");
 const { User } = require("../models/UserModel");
 const { Student } = require("../models/StudentModel");
 const { Instructor } = require("../models/InstructorModel");
-const { Exam } = require("../models/ExamModel");
+const { Exam, StudentExam } = require("../models/ExamModel");
 const { Lesson } = require("../models/OperationalModels");
+const Payment = require("../models/payment");
 const { sequelize } = require("../database");
 const { Op } = require("sequelize");
 const { isAuthenticated } = require("../utils/session");
@@ -20,28 +21,60 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       stats.total_instructors = await Instructor.count();
 
-      // For date comparisons, we can use Sequelize Op or raw sql
-      const today = new Date().toISOString().split("T")[0];
+      // Performance Optimization: Use range-based query for today's exams to utilize indexes
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
       stats.exams_today = await Exam.count({
-        where: sequelize.where(
-          sequelize.fn("date", sequelize.col("start_time")),
-          today,
-        ),
+        where: {
+          start_time: {
+            [Op.between]: [startOfDay, endOfDay],
+          },
+        },
       });
 
-      // Revenue - needs Payment model, but let's assume it's in OperationalModels or similar
-      // For now, if Payment model not yet refactored, use raw query via sequelize
-      const [revenueResult] = await sequelize.query(`
-                SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `);
-      stats.monthly_revenue = revenueResult[0]?.total || 0;
+      // Performance Optimization: Use range-based query for monthly revenue
+      const firstDayOfMonth = new Date();
+      firstDayOfMonth.setDate(1);
+      firstDayOfMonth.setHours(0, 0, 0, 0);
 
-      const [passRateResult] = await sequelize.query(`
-                SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
-                FROM student_exams
-            `);
-      stats.pass_rate = Math.round(passRateResult[0]?.rate || 0);
+      const lastDayOfMonth = new Date(
+        firstDayOfMonth.getFullYear(),
+        firstDayOfMonth.getMonth() + 1,
+        0,
+      );
+      lastDayOfMonth.setHours(23, 59, 59, 999);
+
+      stats.monthly_revenue =
+        (await Payment.sum("amount", {
+          where: {
+            type: "income",
+            payment_date: {
+              [Op.between]: [firstDayOfMonth, lastDayOfMonth],
+            },
+          },
+        })) || 0;
+
+      // Performance Optimization: Use single query for pass rate to minimize round-trips
+      const examStats = await StudentExam.findOne({
+        attributes: [
+          [sequelize.fn("COUNT", sequelize.col("id")), "total"],
+          [
+            sequelize.fn(
+              "SUM",
+              sequelize.literal("CASE WHEN score >= 50 THEN 1 ELSE 0 END"),
+            ),
+            "passCount",
+          ],
+        ],
+        raw: true,
+      });
+      const totalExams = Number(examStats?.total) || 0;
+      const passCount = Number(examStats?.passCount) || 0;
+      stats.pass_rate =
+        totalExams > 0 ? Math.round((passCount / totalExams) * 100) : 0;
       stats.system_alerts = 0;
     } else if (role === "instructor") {
       const instructor = await Instructor.findOne({
@@ -49,15 +82,19 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       const instructorId = instructor?.id;
 
-      const today = new Date().toISOString().split("T")[0];
+      // Performance Optimization: Use range-based query for today's lessons
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
       stats.lessons_today = instructorId
         ? await Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [startOfDay, endOfDay],
+              },
             },
           })
         : 0;
@@ -104,17 +141,21 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
           })
         : 0;
 
-      // Student Exams
-      const [examStats] = await sequelize.query(
-        `
-                SELECT count(*) as count, AVG(score) as avg
-                FROM student_exams WHERE student_id = ?
-            `,
-        { replacements: [studentId] },
-      );
-
-      stats.exams_taken = examStats[0]?.count || 0;
-      stats.success_rate = Math.round(examStats[0]?.avg || 0);
+      // Performance Optimization: Use StudentExam model for student stats
+      if (studentId) {
+        stats.exams_taken = await StudentExam.count({
+          where: { student_id: studentId },
+        });
+        const avgScore = await StudentExam.findOne({
+          attributes: [[sequelize.fn("AVG", sequelize.col("score")), "avg"]],
+          where: { student_id: studentId },
+          raw: true,
+        });
+        stats.success_rate = Math.round(avgScore?.avg || 0);
+      } else {
+        stats.exams_taken = 0;
+        stats.success_rate = 0;
+      }
 
       stats.upcoming_lessons = studentId
         ? await Lesson.count({

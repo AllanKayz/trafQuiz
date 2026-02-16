@@ -93,6 +93,11 @@ export class TraffiquizService implements OnDestroy {
   public categoriesSignal = signal<any[]>(this.loadCache('categories_raw', []));
   public examsSignal = signal<any[]>(this.loadCache('exams_raw', []));
 
+  /** Computed maps for O(1) lookups in table transformations */
+  public specializationsMap = computed(() => new Map(this.specializationsSignal().map(s => [s.id, s])));
+  public certificationsMap = computed(() => new Map(this.certificationsSignal().map(c => [c.id, c])));
+  public categoriesMap = computed(() => new Map(this.categoriesSignal().map(c => [c.id, c])));
+
   /** A signal for the exam duration in seconds. */
   examDuration = signal<number>(1800); // default 30 minutes
 
@@ -337,6 +342,9 @@ export class TraffiquizService implements OnDestroy {
 
   public tableInstructors = computed(() => {
     const role = this.currentUser()?.role;
+    const specializations = this.specializationsMap();
+    const certifications = this.certificationsMap();
+
     return this.instructorsSignal().map(instructor => ({
       id: instructor.id,
       name: instructor.firstName + ' ' + instructor.lastName,
@@ -345,8 +353,8 @@ export class TraffiquizService implements OnDestroy {
       phone: instructor.phone,
       license: instructor.license_number,
       availabilityValue: instructor.availability,
-      specialization: this.specializationsSignal().find(s => s.id === instructor.specialization_id)?.specialization || 'N/A',
-      certification: this.certificationsSignal().find(c => c.id === instructor.certification_id)?.certification || 'N/A',
+      specialization: specializations.get(instructor.specialization_id)?.specialization || 'N/A',
+      certification: certifications.get(instructor.certification_id)?.certification || 'N/A',
       experience: instructor.experience,
       certified: instructor.certification_id ? 'Yes' : 'No',
       availability: Number(instructor.availability) === 1 ? 'Available' : 'Unavailable',
@@ -589,16 +597,10 @@ export class TraffiquizService implements OnDestroy {
     if (userJson) {
       try {
         const user = JSON.parse(userJson);
+        // Performance Optimization: Only set the user signal.
+        // The reactive effect() on userSignal will handle the initial data fetching,
+        // preventing redundant IPC calls during startup.
         this.userSignal.set(this.formatUser(user));
-        if (user.role === 'admin' || user.role === 'instructor') {
-          this.fetchQuestions();
-          this.fetchStudents();
-          this.fetchInstructors();
-          this.getPackages();
-          this.getSpecializations();
-          this.getCertifications();
-          this.fetchDashboardStats();
-        }
       } catch (e) {
         this.showNotification(`Error parsing user data: ${e}`, 'error');
       }
