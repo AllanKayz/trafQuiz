@@ -47,24 +47,26 @@ ipcMain.handle("get-financial-stats", async () => {
       (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
     );
 
+    // ⚡ Bolt Optimization: Replace 12 sequential queries with a single aggregate query
+    const startDate = `${months[0].year}-${months[0].month.toString().padStart(2, "0")}-01`;
+    const [aggregates] = await sequelize.query(
+      `SELECT
+          strftime('%Y-%m', payment_date) as month_year,
+          SUM(CASE WHEN type='income' THEN amount ELSE 0 END) as revenue,
+          SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as expenses
+       FROM payments
+       WHERE payment_date >= ?
+       GROUP BY month_year`,
+      { replacements: [startDate] }
+    );
+
+    const aggregateMap = new Map(aggregates.map(a => [a.month_year, a]));
+
     for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
-
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
+      const key = `${m.year}-${m.month.toString().padStart(2, "0")}`;
+      const data = aggregateMap.get(key);
+      chartRevenue.push(Number(data?.revenue) || 0);
+      chartExpenses.push(Number(data?.expenses) || 0);
     }
 
     return {
