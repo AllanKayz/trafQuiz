@@ -1,77 +1,46 @@
+
+> trafquiz@1.0.0 start
+> ng serve --port 4200 --host 0.0.0.0
+
+
+Warning: This is a simple server for use in testing or debugging Angular applications
+locally. It hasn't been reviewed for security issues.
+
+Binding this server to an open connection can result in compromising your application or
+computer. Using a different host than the one passed to the "--host" flag might result in
+websocket connection issues.
+
 ❯ Building...
 ✔ Building...
 Initial chunk files | Names                 |  Raw size
 main.js             | main                  |  82.53 kB |
-chunk-RB4DG3IR.js   | -                     |  63.37 kB |
+chunk-6WENZNR7.js   | -                     |  64.18 kB |
 styles.css          | styles                |  34.77 kB |
 polyfills.js        | polyfills             |  95 bytes |
 
-                    | Initial total         | 180.76 kB
+                    | Initial total         | 181.58 kB
 
 Lazy chunk files    | Names                 |  Raw size
-chunk-PPJ4CNPU.js   | scheduling-component  | 119.34 kB |
-chunk-U33VP4RF.js   | messages-component    |  97.47 kB |
-chunk-2FH2QZ7E.js   | admin-component       |  83.25 kB |
-chunk-VVOIZE6I.js   | finances-component    |  74.59 kB |
-chunk-QNKWQQ4I.js   | lessons-component     |  71.68 kB |
-chunk-WEPP4LC2.js   | -                     |  69.71 kB |
-chunk-YFONZE57.js   | exam-component        |  57.61 kB |
-chunk-IWZRF6ZE.js   | settings-component    |  44.55 kB |
-chunk-STEMXKTA.js   | schedule-component    |  41.14 kB |
-chunk-NPMUKHBG.js   | admin-tools-component |  37.51 kB |
+chunk-DLDSTE56.js   | scheduling-component  | 120.34 kB |
+chunk-XSTBVLPP.js   | messages-component    |  97.47 kB |
+chunk-DELFHMZC.js   | admin-component       |  83.25 kB |
+chunk-DPQJIPAK.js   | finances-component    |  74.59 kB |
+chunk-NINOO3NQ.js   | lessons-component     |  71.68 kB |
+chunk-XOQ6UCQU.js   | -                     |  69.71 kB |
+chunk-3X4TGJAW.js   | exam-component        |  57.61 kB |
+chunk-SSYSEUIA.js   | settings-component    |  44.55 kB |
+chunk-GGL4X2SL.js   | schedule-component    |  41.14 kB |
+chunk-FOJIGAAM.js   | admin-tools-component |  37.51 kB |
 chunk-WLBRWTT7.js   | -                     |  33.23 kB |
-chunk-OAZJERJ7.js   | exams-component       |  32.68 kB |
-chunk-63UNJN37.js   | vehicles-component    |  31.27 kB |
-chunk-PI5344U5.js   | user-access-component |  30.12 kB |
-chunk-4QQBL345.js   | reports-component     |  29.97 kB |
+chunk-JTD5CA3U.js   | exams-component       |  32.68 kB |
+chunk-2HYAZH5I.js   | vehicles-component    |  31.27 kB |
+chunk-BJ4Y2ZH6.js   | user-access-component |  30.12 kB |
+chunk-EV6SC532.js   | reports-component     |  29.97 kB |
 ...and 15 more lazy chunks files. Use "--verbose" to show all the files.
 
-Application bundle generation complete. [8.919 seconds] - 2026-02-10T10:59:01.451Z
+Application bundle generation complete. [10.222 seconds] - 2026-02-18T13:41:19.237Z
 
 Watch mode enabled. Watching for file changes...
 NOTE: Raw file sizes do not reflect development server per-request transformations.
   ➜  Local:   http://localhost:4200/
-❯ Changes detected. Rebuilding...
-✔ Changes detected. Rebuilding...
-Initial chunk files | Names                |  Raw size
-main.js             | main                 |  82.53 kB |
-
-Lazy chunk files    | Names                |  Raw size
-chunk-2LO2BJQY.js   | scheduling-component | 119.60 kB |
-
-Application bundle generation complete. [4.931 seconds] - 2026-02-10T11:01:25.311Z
-
-Page reload sent to client(s).
-❯ Changes detected. Rebuilding...
-✔ Changes detected. Rebuilding...
-Initial chunk files | Names                |  Raw size
-main.js             | main                 |  82.53 kB |
-
-Lazy chunk files    | Names                |  Raw size
-chunk-ALWXGJTF.js   | scheduling-component | 119.49 kB |
-
-Application bundle generation complete. [0.686 seconds] - 2026-02-10T11:08:04.089Z
-
-Component update sent to client(s).
-❯ Changes detected. Rebuilding...
-✔ Changes detected. Rebuilding...
-Initial chunk files | Names                |  Raw size
-main.js             | main                 |  82.53 kB |
-
-Lazy chunk files    | Names                |  Raw size
-chunk-Z7JHORKS.js   | scheduling-component | 119.78 kB |
-
-Application bundle generation complete. [1.203 seconds] - 2026-02-10T11:09:56.711Z
-
-Component update sent to client(s).
-❯ Changes detected. Rebuilding...
-✔ Changes detected. Rebuilding...
-Initial chunk files | Names                |  Raw size
-main.js             | main                 |  82.53 kB |
-
-Lazy chunk files    | Names                |  Raw size
-chunk-YNNWIKF6.js   | scheduling-component | 119.78 kB |
-
-Application bundle generation complete. [0.641 seconds] - 2026-02-10T11:10:02.437Z
-
-Component update sent to client(s).
+  ➜  Network: http://192.168.0.2:4200/
