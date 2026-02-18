@@ -47,24 +47,33 @@ ipcMain.handle("get-financial-stats", async () => {
       (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
     );
 
+    // Optimized: Use a single aggregate query instead of a loop to fetch chart data.
+    // This reduces the number of database queries from 12 to 1.
+    // We also use an index-friendly date range (Op.between equivalent in raw SQL).
+    const startRange = new Date(months[0].year, months[0].month - 1, 1).toISOString();
+    const endRange = new Date(months[5].year, months[5].month, 0, 23, 59, 59, 999).toISOString();
+
+    const [aggregateResults] = await sequelize.query(
+      `SELECT
+                strftime('%Y-%m', payment_date) as month_key,
+                SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+                SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
+            FROM payments
+            WHERE payment_date BETWEEN ? AND ?
+            GROUP BY month_key`,
+      { replacements: [startRange, endRange] },
+    );
+
+    const statsMap = aggregateResults.reduce((acc, row) => {
+      acc[row.month_key] = row;
+      return acc;
+    }, {});
+
     for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
-
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
+      const key = `${m.year}-${m.month.toString().padStart(2, "0")}`;
+      const data = statsMap[key];
+      chartRevenue.push(Number(data?.revenue) || 0);
+      chartExpenses.push(Number(data?.expenses) || 0);
     }
 
     return {
