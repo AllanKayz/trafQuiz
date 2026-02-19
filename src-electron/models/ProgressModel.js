@@ -2,33 +2,31 @@ const { query, get } = require('../db');
 
 class ProgressModel {
     static async getProgress(studentId) {
-        // Calculate stats from student_exams
-        const stats = await get(`
-            SELECT 
-                COUNT(*) as totalTests,
-                AVG(score) as averageScore
-            FROM student_exams
-            WHERE student_id = ?
-        `, [studentId]);
-
-        // Recent activity
-        const recent = await query(`
-            SELECT se.*, e.name as examName
-            FROM student_exams se
-            JOIN exams e ON se.exam_id = e.id
-            WHERE se.student_id = ?
-            ORDER BY se.completed_at DESC
-            LIMIT 5
-        `, [studentId]);
-
-        // Monthly performance
-        const monthly = await query(`
-            SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
-            FROM student_exams
-            WHERE student_id = ?
-            GROUP BY month
-            ORDER BY month ASC
-        `, [studentId]);
+        // PERFORMANCE OPTIMIZATION: Parallelized 3 database queries to reduce latency.
+        const [stats, recent, monthly] = await Promise.all([
+            get(`
+                SELECT
+                    COUNT(*) as totalTests,
+                    AVG(score) as averageScore
+                FROM student_exams
+                WHERE student_id = ?
+            `, [studentId]),
+            query(`
+                SELECT se.*, e.name as examName
+                FROM student_exams se
+                JOIN exams e ON se.exam_id = e.id
+                WHERE se.student_id = ?
+                ORDER BY se.completed_at DESC
+                LIMIT 5
+            `, [studentId]),
+            query(`
+                SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
+                FROM student_exams
+                WHERE student_id = ?
+                GROUP BY month
+                ORDER BY month ASC
+            `, [studentId])
+        ]);
 
         return {
             studentId,
