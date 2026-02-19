@@ -47,24 +47,27 @@ ipcMain.handle("get-financial-stats", async () => {
       (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
     );
 
-    for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
+    // PERFORMANCE OPTIMIZATION: Replaced 12 sequential queries (2 per month) with 1 aggregate query.
+    // This significantly reduces IPC latency and database overhead.
+    const startDate = `${months[0].year}-${months[0].month.toString().padStart(2, "0")}-01`;
+    const [monthlyResults] = await sequelize.query(
+      `SELECT
+          strftime('%Y-%m', payment_date) as month_key,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+          SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
+       FROM payments
+       WHERE payment_date >= ?
+       GROUP BY month_key
+       ORDER BY month_key ASC`,
+      { replacements: [startDate] }
+    );
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
+    const statsMap = new Map(monthlyResults.map((r) => [r.month_key, r]));
 
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
+    for (const label of labels) {
+      const entry = statsMap.get(label);
+      chartRevenue.push(Number(entry?.revenue) || 0);
+      chartExpenses.push(Number(entry?.expenses) || 0);
     }
 
     return {
