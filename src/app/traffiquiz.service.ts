@@ -589,16 +589,10 @@ export class TraffiquizService implements OnDestroy {
     if (userJson) {
       try {
         const user = JSON.parse(userJson);
+        // BOLT OPTIMIZATION: Only set the userSignal. The reactive effect() defined in the constructor
+        // will automatically trigger the necessary fetch calls when userSignal changes.
+        // This avoids redundant duplicate fetch calls during initialization.
         this.userSignal.set(this.formatUser(user));
-        if (user.role === 'admin' || user.role === 'instructor') {
-          this.fetchQuestions();
-          this.fetchStudents();
-          this.fetchInstructors();
-          this.getPackages();
-          this.getSpecializations();
-          this.getCertifications();
-          this.fetchDashboardStats();
-        }
       } catch (e) {
         this.showNotification(`Error parsing user data: ${e}`, 'error');
       }
