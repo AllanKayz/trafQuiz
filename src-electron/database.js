@@ -25,6 +25,17 @@ const sequelize = new Sequelize({
     define: {
         timestamps: true,
         underscored: true,
+    },
+    // BOLT OPTIMIZATION: Enable WAL mode for better performance and concurrency
+    hooks: {
+        afterConnect: (connection) => {
+            return new Promise((resolve, reject) => {
+                connection.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;', (err) => {
+                    if (err) return reject(err);
+                    resolve();
+                });
+            });
+        }
     }
 });
 
