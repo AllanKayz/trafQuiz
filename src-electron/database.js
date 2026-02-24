@@ -28,6 +28,21 @@ const sequelize = new Sequelize({
     }
 });
 
+// Enable WAL mode for better performance
+sequelize.addHook('afterConnect', (connection) => {
+    return new Promise((resolve, reject) => {
+        connection.serialize(() => {
+            connection.run('PRAGMA journal_mode=WAL;', (err) => {
+                if (err) return reject(err);
+                connection.run('PRAGMA synchronous=NORMAL;', (err) => {
+                    if (err) return reject(err);
+                    resolve();
+                });
+            });
+        });
+    });
+});
+
 module.exports = {
     sequelize,
     Sequelize
