@@ -2,33 +2,45 @@ const { query, get } = require('../db');
 
 class ProgressModel {
     static async getProgress(studentId) {
-        // Calculate stats from student_exams
-        const stats = await get(`
+        // Optimized: Parallelize the three database queries using Promise.all
+        const [stats, recent, monthly] = await Promise.all([
+            // Calculate stats from student_exams
+            get(
+                `
             SELECT 
                 COUNT(*) as totalTests,
                 AVG(score) as averageScore
             FROM student_exams
             WHERE student_id = ?
-        `, [studentId]);
+        `,
+                [studentId],
+            ),
 
-        // Recent activity
-        const recent = await query(`
+            // Recent activity
+            query(
+                `
             SELECT se.*, e.name as examName
             FROM student_exams se
             JOIN exams e ON se.exam_id = e.id
             WHERE se.student_id = ?
             ORDER BY se.completed_at DESC
             LIMIT 5
-        `, [studentId]);
+        `,
+                [studentId],
+            ),
 
-        // Monthly performance
-        const monthly = await query(`
+            // Monthly performance
+            query(
+                `
             SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
             FROM student_exams
             WHERE student_id = ?
             GROUP BY month
             ORDER BY month ASC
-        `, [studentId]);
+        `,
+                [studentId],
+            ),
+        ]);
 
         return {
             studentId,
