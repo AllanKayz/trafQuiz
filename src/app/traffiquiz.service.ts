@@ -119,6 +119,25 @@ export class TraffiquizService implements OnDestroy {
   public totalStudents = computed(() => this.studentsSignal().length);
   public totalInstructors = computed(() => this.instructorsSignal().length);
 
+  // Performance-optimized O(1) lookups for relational data
+  public specializationsMap = computed(() => {
+    const map = new Map<number, string>();
+    this.specializationsSignal().forEach(s => map.set(s.id, s.specialization));
+    return map;
+  });
+
+  public certificationsMap = computed(() => {
+    const map = new Map<number, string>();
+    this.certificationsSignal().forEach(c => map.set(c.id, c.certification));
+    return map;
+  });
+
+  public categoriesMap = computed(() => {
+    const map = new Map<number, string>();
+    this.categoriesSignal().forEach(c => map.set(c.id, c.category || c.name));
+    return map;
+  });
+
   /** Defines the menu items for different user roles. */
   private menus = {
     admin: ['Dashboard', 'Instructors', 'Students', 'Exams', 'Questions', 'Lessons', 'Scheduling', 'Vehicles', 'Finances', 'Reports', 'Messages', 'UserAccess', 'Settings'],
@@ -337,6 +356,9 @@ export class TraffiquizService implements OnDestroy {
 
   public tableInstructors = computed(() => {
     const role = this.currentUser()?.role;
+    const specMap = this.specializationsMap();
+    const certMap = this.certificationsMap();
+
     return this.instructorsSignal().map(instructor => ({
       id: instructor.id,
       name: instructor.firstName + ' ' + instructor.lastName,
@@ -345,8 +367,8 @@ export class TraffiquizService implements OnDestroy {
       phone: instructor.phone,
       license: instructor.license_number,
       availabilityValue: instructor.availability,
-      specialization: this.specializationsSignal().find(s => s.id === instructor.specialization_id)?.specialization || 'N/A',
-      certification: this.certificationsSignal().find(c => c.id === instructor.certification_id)?.certification || 'N/A',
+      specialization: specMap.get(instructor.specialization_id) || 'N/A',
+      certification: certMap.get(instructor.certification_id) || 'N/A',
       experience: instructor.experience,
       certified: instructor.certification_id ? 'Yes' : 'No',
       availability: Number(instructor.availability) === 1 ? 'Available' : 'Unavailable',
