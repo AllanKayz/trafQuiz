@@ -8,10 +8,12 @@ const { isAdmin, isAuthenticated } = require("../utils/session");
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
+
+    // Performance Optimization: Fetch totals in parallel
+    const [totalRevenue, totalExpenses] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }).then(v => Number(v) || 0),
+      Payment.sum("amount", { where: { type: "expense" } }).then(v => Number(v) || 0)
+    ]);
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
@@ -41,6 +43,29 @@ ipcMain.handle("get-financial-stats", async () => {
       });
     }
 
+    // Performance Optimization: Replace N+1 queries in a loop with a single aggregate query
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 5);
+    startDate.setDate(1);
+    startDate.setHours(0, 0, 0, 0);
+    const startDateStr = `${startDate.getFullYear()}-${(startDate.getMonth() + 1).toString().padStart(2, '0')}-01 00:00:00`;
+
+    const [results] = await sequelize.query(
+      `SELECT
+         strftime('%Y-%m', payment_date) as monthYear,
+         type,
+         SUM(amount) as total
+       FROM payments
+       WHERE payment_date >= ?
+       GROUP BY monthYear, type`,
+      { replacements: [startDateStr] }
+    );
+
+    const resultsMap = {};
+    results.forEach(r => {
+      resultsMap[`${r.monthYear}_${r.type}`] = Number(r.total) || 0;
+    });
+
     const chartRevenue = [];
     const chartExpenses = [];
     const labels = months.map(
@@ -48,23 +73,9 @@ ipcMain.handle("get-financial-stats", async () => {
     );
 
     for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
-
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
+      const monthKey = `${m.year}-${m.month.toString().padStart(2, "0")}`;
+      chartRevenue.push(resultsMap[`${monthKey}_income`] || 0);
+      chartExpenses.push(resultsMap[`${monthKey}_expense`] || 0);
     }
 
     return {
