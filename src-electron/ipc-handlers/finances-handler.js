@@ -8,10 +8,12 @@ const { isAdmin, isAuthenticated } = require("../utils/session");
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
+
+    // Parallelize total revenue and expenses fetching
+    const [totalRevenue, totalExpenses] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }),
+      Payment.sum("amount", { where: { type: "expense" } })
+    ]);
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
@@ -41,31 +43,33 @@ ipcMain.handle("get-financial-stats", async () => {
       });
     }
 
-    const chartRevenue = [];
-    const chartExpenses = [];
     const labels = months.map(
       (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
     );
 
-    for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
+    // OPTIMIZATION: Fetch all monthly aggregate data in a single query
+    // This replaces a loop that would make 12 database round-trips.
+    const startMonth = labels[0];
+    const endMonth = labels[labels.length - 1];
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
+    const [monthlyResults] = await sequelize.query(`
+      SELECT
+        strftime('%Y-%m', payment_date) as month_key,
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
+      FROM payments
+      WHERE strftime('%Y-%m', payment_date) BETWEEN ? AND ?
+      GROUP BY month_key
+    `, { replacements: [startMonth, endMonth] });
 
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
+    // Map the results back to the labels order for the chart
+    const dataMap = monthlyResults.reduce((acc, row) => {
+      acc[row.month_key] = row;
+      return acc;
+    }, {});
 
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
-    }
+    const chartRevenue = labels.map(label => Number(dataMap[label]?.revenue) || 0);
+    const chartExpenses = labels.map(label => Number(dataMap[label]?.expenses) || 0);
 
     return {
       success: true,
