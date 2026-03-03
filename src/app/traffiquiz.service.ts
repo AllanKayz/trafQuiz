@@ -113,6 +113,25 @@ export class TraffiquizService implements OnDestroy {
   /** Signal for the effectively active theme (true for dark, false for light). */
   public darkMode = signal<boolean>(false);
 
+  // Maps for O(1) lookups in computed signals
+  public specializationsMap = computed(() => {
+    const map = new Map<number, any>();
+    this.specializationsSignal().forEach(s => map.set(s.id, s));
+    return map;
+  });
+
+  public certificationsMap = computed(() => {
+    const map = new Map<number, any>();
+    this.certificationsSignal().forEach(c => map.set(c.id, c));
+    return map;
+  });
+
+  public categoriesMap = computed(() => {
+    const map = new Map<number, any>();
+    this.categoriesSignal().forEach(c => map.set(c.id, c));
+    return map;
+  });
+
   // Computed signals
   public totalQuestions = computed(() => this.questionsSignal().length);
   public flaggedQuestions = computed(() => this.questionsSignal().filter(q => q.flagged).length);
@@ -337,6 +356,9 @@ export class TraffiquizService implements OnDestroy {
 
   public tableInstructors = computed(() => {
     const role = this.currentUser()?.role;
+    const specializations = this.specializationsMap();
+    const certifications = this.certificationsMap();
+
     return this.instructorsSignal().map(instructor => ({
       id: instructor.id,
       name: instructor.firstName + ' ' + instructor.lastName,
@@ -345,8 +367,8 @@ export class TraffiquizService implements OnDestroy {
       phone: instructor.phone,
       license: instructor.license_number,
       availabilityValue: instructor.availability,
-      specialization: this.specializationsSignal().find(s => s.id === instructor.specialization_id)?.specialization || 'N/A',
-      certification: this.certificationsSignal().find(c => c.id === instructor.certification_id)?.certification || 'N/A',
+      specialization: specializations.get(instructor.specialization_id)?.specialization || 'N/A',
+      certification: certifications.get(instructor.certification_id)?.certification || 'N/A',
       experience: instructor.experience,
       certified: instructor.certification_id ? 'Yes' : 'No',
       availability: Number(instructor.availability) === 1 ? 'Available' : 'Unavailable',
@@ -365,21 +387,21 @@ export class TraffiquizService implements OnDestroy {
   });
 
   public specializations = computed(() => {
-    return this.specializationsSignal().map(s => ({
+    return Array.from(this.specializationsMap().values()).map(s => ({
       value: s.id,
       label: s.specialization
     }))
   });
 
   public certifications = computed(() => {
-    return this.certificationsSignal().map(c => ({
+    return Array.from(this.certificationsMap().values()).map(c => ({
       value: c.id,
       label: c.certification
     }))
   });
 
   public categories = computed(() => {
-    return this.categoriesSignal().map(c => ({
+    return Array.from(this.categoriesMap().values()).map(c => ({
       value: c.id,
       label: c.category
     }))
