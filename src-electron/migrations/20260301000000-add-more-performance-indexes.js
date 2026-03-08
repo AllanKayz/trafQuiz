@@ -1,0 +1,31 @@
+
+module.exports = {
+  up: async (queryInterface, Sequelize) => {
+    // 1. Exams - dashboard "exams today" uses start_time
+    await queryInterface.addIndex('exams', ['start_time']);
+
+    // 2. Payments - finance views and dashboard revenue use payment_date and type
+    await queryInterface.addIndex('payments', ['payment_date']);
+    await queryInterface.addIndex('payments', ['type']);
+
+    // 3. Student Exams - dashboard pass rate and student progress reports
+    await queryInterface.addIndex('student_exams', ['student_id']);
+    await queryInterface.addIndex('student_exams', ['exam_id']);
+    await queryInterface.addIndex('student_exams', ['completed_at']);
+    await queryInterface.addIndex('student_exams', ['score']);
+
+    // 4. Lessons - status filtering for dashboard stats (attended, upcoming)
+    await queryInterface.addIndex('lessons', ['status']);
+  },
+
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.removeIndex('exams', ['start_time']);
+    await queryInterface.removeIndex('payments', ['payment_date']);
+    await queryInterface.removeIndex('payments', ['type']);
+    await queryInterface.removeIndex('student_exams', ['student_id']);
+    await queryInterface.removeIndex('student_exams', ['exam_id']);
+    await queryInterface.removeIndex('student_exams', ['completed_at']);
+    await queryInterface.removeIndex('student_exams', ['score']);
+    await queryInterface.removeIndex('lessons', ['status']);
+  }
+};
