@@ -335,8 +335,16 @@ export class TraffiquizService implements OnDestroy {
     }))
   });
 
+  // Optimize: Use computed Maps for O(1) lookups instead of O(N) array searches in derived signals
+  private specializationsMap = computed(() => new Map(this.specializationsSignal().map(s => [s.id, s.specialization])));
+  private certificationsMap = computed(() => new Map(this.certificationsSignal().map(c => [c.id, c.certification])));
+  private categoriesMap = computed(() => new Map(this.categoriesSignal().map(c => [c.id, c.category])));
+
   public tableInstructors = computed(() => {
     const role = this.currentUser()?.role;
+    const specializations = this.specializationsMap();
+    const certifications = this.certificationsMap();
+
     return this.instructorsSignal().map(instructor => ({
       id: instructor.id,
       name: instructor.firstName + ' ' + instructor.lastName,
@@ -345,8 +353,8 @@ export class TraffiquizService implements OnDestroy {
       phone: instructor.phone,
       license: instructor.license_number,
       availabilityValue: instructor.availability,
-      specialization: this.specializationsSignal().find(s => s.id === instructor.specialization_id)?.specialization || 'N/A',
-      certification: this.certificationsSignal().find(c => c.id === instructor.certification_id)?.certification || 'N/A',
+      specialization: specializations.get(instructor.specialization_id) || 'N/A',
+      certification: certifications.get(instructor.certification_id) || 'N/A',
       experience: instructor.experience,
       certified: instructor.certification_id ? 'Yes' : 'No',
       availability: Number(instructor.availability) === 1 ? 'Available' : 'Unavailable',
