@@ -8,72 +8,63 @@ const { isAdmin, isAuthenticated } = require("../utils/session");
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
 
-    // Calculate dynamic chart data for the last 6 months
-    const months = [];
     const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     ];
 
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(1); // Crucial: avoid month-end rollover issues
-      d.setMonth(d.getMonth() - i);
-      months.push({
-        name: monthNames[d.getMonth()],
-        month: d.getMonth() + 1,
-        year: d.getFullYear(),
-      });
-    }
+    // Calculate the start of the 6-month period
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
 
+    // Parallelize total sums and chart data aggregation
+    const [totalRevenue, totalExpenses, chartDataResult] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }),
+      Payment.sum("amount", { where: { type: "expense" } }),
+      sequelize.query(
+        `SELECT
+          strftime('%Y-%m', payment_date) as monthYear,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+          SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
+         FROM payments
+         WHERE payment_date >= ?
+         GROUP BY monthYear
+         ORDER BY monthYear ASC`,
+        { replacements: [startDate.toISOString()] }
+      )
+    ]);
+
+    const revenue = totalRevenue || 0;
+    const expenses = totalExpenses || 0;
+
+    // Build the 6-month arrays from the aggregated data
     const chartRevenue = [];
     const chartExpenses = [];
-    const labels = months.map(
-      (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
-    );
+    const labels = [];
 
-    for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
+    // Create a map for quick lookup
+    const statsMap = {};
+    chartDataResult[0].forEach(row => {
+      statsMap[row.monthYear] = row;
+    });
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`;
 
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
+      labels.push(monthKey);
+      chartRevenue.push(Number(statsMap[monthKey]?.revenue) || 0);
+      chartExpenses.push(Number(statsMap[monthKey]?.expenses) || 0);
     }
 
     return {
       success: true,
       data: {
-        totalRevenue,
-        totalExpenses,
-        netProfit: totalRevenue - totalExpenses,
-        projectedRevenue: totalRevenue * 1.1,
+        totalRevenue: revenue,
+        totalExpenses: expenses,
+        netProfit: revenue - expenses,
+        projectedRevenue: revenue * 1.1,
         chartData: {
           labels: labels,
           revenue: chartRevenue,
