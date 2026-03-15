@@ -8,10 +8,14 @@ const { isAdmin, isAuthenticated } = require("../utils/session");
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
+
+    // Parallelize total revenue and expenses fetching
+    const [totalRevenueRaw, totalExpensesRaw] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }),
+      Payment.sum("amount", { where: { type: "expense" } }),
+    ]);
+    const totalRevenue = totalRevenueRaw || 0;
+    const totalExpenses = totalExpensesRaw || 0;
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
@@ -41,30 +45,42 @@ ipcMain.handle("get-financial-stats", async () => {
       });
     }
 
-    const chartRevenue = [];
-    const chartExpenses = [];
     const labels = months.map(
       (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
     );
 
+    // Optimization: Replace 12 individual queries with a single aggregate query
+    // Use CASE statements to bucket payments into their respective months and types
+    const caseClauses = months
+      .map((m) => {
+        const monthStr = m.month.toString().padStart(2, "0");
+        const yearStr = m.year.toString();
+        const datePrefix = `${yearStr}-${monthStr}`;
+        return `
+        SUM(CASE WHEN type='income' AND strftime('%Y-%m', payment_date) = '${datePrefix}' THEN amount ELSE 0 END) as rev_${monthStr}_${yearStr},
+        SUM(CASE WHEN type='expense' AND strftime('%Y-%m', payment_date) = '${datePrefix}' THEN amount ELSE 0 END) as exp_${monthStr}_${yearStr}
+      `;
+      })
+      .join(",");
+
+    // Calculate range for the last 6 months to utilize index
+    const startDate = new Date(months[0].year, months[0].month - 1, 1);
+    const endDate = new Date(months[5].year, months[5].month, 0, 23, 59, 59, 999);
+
+    const [aggregateResult] = await sequelize.query(
+      `SELECT ${caseClauses} FROM payments WHERE payment_date BETWEEN ? AND ?`,
+      { replacements: [startDate.toISOString(), endDate.toISOString()] }
+    );
+    const row = aggregateResult[0];
+
+    const chartRevenue = [];
+    const chartExpenses = [];
+
     for (const m of months) {
       const monthStr = m.month.toString().padStart(2, "0");
       const yearStr = m.year.toString();
-
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
+      chartRevenue.push(row[`rev_${monthStr}_${yearStr}`] || 0);
+      chartExpenses.push(row[`exp_${monthStr}_${yearStr}`] || 0);
     }
 
     return {
