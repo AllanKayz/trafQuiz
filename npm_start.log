@@ -6,31 +6,31 @@
 ✔ Building...
 Initial chunk files | Names                 |  Raw size
 main.js             | main                  |  82.53 kB |
-chunk-RB4DG3IR.js   | -                     |  63.37 kB |
+chunk-NRUKVS45.js   | -                     |  63.92 kB |
 styles.css          | styles                |  34.77 kB |
 polyfills.js        | polyfills             |  95 bytes |
 
-                    | Initial total         | 180.76 kB
+                    | Initial total         | 181.31 kB
 
 Lazy chunk files    | Names                 |  Raw size
-chunk-CH6RYYIJ.js   | scheduling-component  | 120.34 kB |
-chunk-U33VP4RF.js   | messages-component    |  97.47 kB |
-chunk-2FH2QZ7E.js   | admin-component       |  83.25 kB |
-chunk-VVOIZE6I.js   | finances-component    |  74.59 kB |
-chunk-QNKWQQ4I.js   | lessons-component     |  71.68 kB |
-chunk-WEPP4LC2.js   | -                     |  69.71 kB |
-chunk-YFONZE57.js   | exam-component        |  57.61 kB |
-chunk-IWZRF6ZE.js   | settings-component    |  44.55 kB |
-chunk-STEMXKTA.js   | schedule-component    |  41.14 kB |
-chunk-NPMUKHBG.js   | admin-tools-component |  37.51 kB |
+chunk-6OQLRFJH.js   | scheduling-component  | 120.34 kB |
+chunk-6DG675BF.js   | messages-component    |  97.47 kB |
+chunk-OB6TPAUS.js   | admin-component       |  83.25 kB |
+chunk-DJHDTTKU.js   | finances-component    |  74.59 kB |
+chunk-HNWMG222.js   | lessons-component     |  71.68 kB |
+chunk-7LFPOHCK.js   | -                     |  69.71 kB |
+chunk-KR2VWZYY.js   | exam-component        |  57.61 kB |
+chunk-7OC3WW7Q.js   | settings-component    |  44.55 kB |
+chunk-QH6XH6WY.js   | schedule-component    |  41.14 kB |
+chunk-FUSGE66T.js   | admin-tools-component |  37.51 kB |
 chunk-WLBRWTT7.js   | -                     |  33.23 kB |
-chunk-OAZJERJ7.js   | exams-component       |  32.68 kB |
-chunk-63UNJN37.js   | vehicles-component    |  31.27 kB |
-chunk-PI5344U5.js   | user-access-component |  30.12 kB |
-chunk-4QQBL345.js   | reports-component     |  29.97 kB |
+chunk-5QOX7EIF.js   | exams-component       |  32.68 kB |
+chunk-YMDX2X2Z.js   | vehicles-component    |  31.27 kB |
+chunk-DXQJYGVC.js   | user-access-component |  30.12 kB |
+chunk-INBMA3ZZ.js   | reports-component     |  29.97 kB |
 ...and 15 more lazy chunks files. Use "--verbose" to show all the files.
 
-Application bundle generation complete. [8.104 seconds] - 2026-02-10T13:38:29.741Z
+Application bundle generation complete. [9.785 seconds] - 2026-03-16T14:02:21.423Z
 
 Watch mode enabled. Watching for file changes...
 NOTE: Raw file sizes do not reflect development server per-request transformations.
