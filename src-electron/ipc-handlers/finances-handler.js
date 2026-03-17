@@ -3,69 +3,69 @@ const { sequelize } = require("../database");
 const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
+const { Sequelize } = require("../database");
 const { isAdmin, isAuthenticated } = require("../utils/session");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
+
+    // Parallelize total sum queries
+    const [totalRevenue, totalExpenses] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }).then(val => val || 0),
+      Payment.sum("amount", { where: { type: "expense" } }).then(val => val || 0)
+    ]);
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(1); // Crucial: avoid month-end rollover issues
-      d.setMonth(d.getMonth() - i);
+    const startDate = new Date();
+    startDate.setMonth(startDate.getMonth() - 5);
+    startDate.setDate(1);
+    startDate.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(startDate);
+      d.setMonth(startDate.getMonth() + i);
       months.push({
         name: monthNames[d.getMonth()],
         month: d.getMonth() + 1,
         year: d.getFullYear(),
+        label: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`
       });
     }
 
-    const chartRevenue = [];
-    const chartExpenses = [];
-    const labels = months.map(
-      (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
+    const labels = months.map(m => m.label);
+
+    // Single aggregate query for all 6 months to avoid N+1 problem
+    const monthlyStats = await sequelize.query(
+      `
+      SELECT
+        strftime('%Y-%m', payment_date) as month_key,
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
+      FROM payments
+      WHERE payment_date >= ?
+      GROUP BY month_key
+      ORDER BY month_key ASC
+      `,
+      {
+        replacements: [startDate.toISOString().replace('T', ' ').replace('Z', '')],
+        type: Sequelize.QueryTypes.SELECT
+      }
     );
 
-    for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
+    // Map stats back to the months array
+    const chartRevenue = months.map(m => {
+      const found = monthlyStats.find(s => s.month_key === m.label);
+      return Number(found?.revenue || 0);
+    });
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
-    }
+    const chartExpenses = months.map(m => {
+      const found = monthlyStats.find(s => s.month_key === m.label);
+      return Number(found?.expenses || 0);
+    });
 
     return {
       success: true,

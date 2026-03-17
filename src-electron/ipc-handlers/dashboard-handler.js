@@ -15,32 +15,45 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
     const stats = {};
 
     if (role === "admin") {
-      stats.total_students = await Student.count({
-        where: { status: "active" },
-      });
-      stats.total_instructors = await Instructor.count();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
 
-      // For date comparisons, we can use Sequelize Op or raw sql
-      const today = new Date().toISOString().split("T")[0];
-      stats.exams_today = await Exam.count({
-        where: sequelize.where(
-          sequelize.fn("date", sequelize.col("start_time")),
-          today,
+      const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+      const firstDayOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+
+      // Execute counts and stats in parallel
+      const [totalStudents, totalInstructors, examsToday, revenueResult, passRateResult] = await Promise.all([
+        Student.count({ where: { status: "active" } }),
+        Instructor.count(),
+        Exam.count({
+          where: {
+            start_time: {
+              [Op.between]: [today, tomorrow]
+            }
+          }
+        }),
+        sequelize.query(
+          `SELECT sum(amount) as total FROM payments WHERE type="income" AND payment_date BETWEEN ? AND ?`,
+          {
+            replacements: [
+              firstDayOfMonth.toISOString().replace('T', ' ').replace('Z', ''),
+              firstDayOfNextMonth.toISOString().replace('T', ' ').replace('Z', '')
+            ],
+            type: sequelize.QueryTypes.SELECT
+          }
         ),
-      });
-
-      // Revenue - needs Payment model, but let's assume it's in OperationalModels or similar
-      // For now, if Payment model not yet refactored, use raw query via sequelize
-      const [revenueResult] = await sequelize.query(`
-                SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `);
-      stats.monthly_revenue = revenueResult[0]?.total || 0;
-
-      const [passRateResult] = await sequelize.query(`
+        sequelize.query(`
                 SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
                 FROM student_exams
-            `);
+            `, { type: sequelize.QueryTypes.SELECT })
+      ]);
+
+      stats.total_students = totalStudents;
+      stats.total_instructors = totalInstructors;
+      stats.exams_today = examsToday;
+      stats.monthly_revenue = revenueResult[0]?.total || 0;
       stats.pass_rate = Math.round(passRateResult[0]?.rate || 0);
       stats.system_alerts = 0;
     } else if (role === "instructor") {
@@ -49,26 +62,33 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       const instructorId = instructor?.id;
 
-      const today = new Date().toISOString().split("T")[0];
-      stats.lessons_today = instructorId
-        ? await Lesson.count({
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+
+      if (instructorId) {
+        const [lessonsToday, assignedStudents] = await Promise.all([
+          Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [today, tomorrow]
+              },
             },
-          })
-        : 0;
-
-      stats.assigned_students = instructorId
-        ? await Lesson.count({
+          }),
+          Lesson.count({
             where: { instructor_id: instructorId },
             distinct: true,
             col: "student_id",
           })
-        : 0;
+        ]);
+        stats.lessons_today = lessonsToday;
+        stats.assigned_students = assignedStudents;
+      } else {
+        stats.lessons_today = 0;
+        stats.assigned_students = 0;
+      }
 
       // Fetch allocated vehicle
       const { Vehicle } = require("../models/OperationalModels");
