@@ -14,27 +14,43 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
     const { role, userId } = params;
     const stats = {};
 
+    // Define common date ranges once to reuse and ensure index-friendly queries
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
     if (role === "admin") {
       stats.total_students = await Student.count({
         where: { status: "active" },
       });
       stats.total_instructors = await Instructor.count();
 
-      // For date comparisons, we can use Sequelize Op or raw sql
-      const today = new Date().toISOString().split("T")[0];
       stats.exams_today = await Exam.count({
-        where: sequelize.where(
-          sequelize.fn("date", sequelize.col("start_time")),
-          today,
-        ),
+        where: {
+          start_time: {
+            [Op.between]: [todayStart, todayEnd]
+          }
+        }
       });
 
       // Revenue - needs Payment model, but let's assume it's in OperationalModels or similar
-      // For now, if Payment model not yet refactored, use raw query via sequelize
+      // Optimized: Use index-friendly date range for the current month (start and end)
+      const monthStart = new Date(todayStart);
+      monthStart.setDate(1);
+      const monthEnd = new Date(monthStart);
+      monthEnd.setMonth(monthEnd.getMonth() + 1);
+      monthEnd.setMilliseconds(-1);
+
       const [revenueResult] = await sequelize.query(`
                 SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `);
+                WHERE type="income" AND payment_date BETWEEN ? AND ?
+            `, {
+              replacements: [
+                monthStart.toISOString().replace('T', ' ').replace('Z', ''),
+                monthEnd.toISOString().replace('T', ' ').replace('Z', '')
+              ]
+            });
       stats.monthly_revenue = revenueResult[0]?.total || 0;
 
       const [passRateResult] = await sequelize.query(`
@@ -49,15 +65,13 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       });
       const instructorId = instructor?.id;
 
-      const today = new Date().toISOString().split("T")[0];
       stats.lessons_today = instructorId
         ? await Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [todayStart, todayEnd]
+              }
             },
           })
         : 0;
