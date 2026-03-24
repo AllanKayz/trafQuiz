@@ -8,64 +8,53 @@ const { isAdmin, isAuthenticated } = require("../utils/session");
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
+
+    // Parallelize total stats calculation to reduce latency
+    const [totalRevenue, totalExpenses] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }).then((v) => v || 0),
+      Payment.sum("amount", { where: { type: "expense" } }).then((v) => v || 0),
+    ]);
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
 
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
       d.setDate(1); // Crucial: avoid month-end rollover issues
       d.setMonth(d.getMonth() - i);
       months.push({
-        name: monthNames[d.getMonth()],
         month: d.getMonth() + 1,
         year: d.getFullYear(),
       });
     }
 
-    const chartRevenue = [];
-    const chartExpenses = [];
-    const labels = months.map(
-      (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
+    const labels = months.map((m) => `${m.year}-${m.month.toString().padStart(2, "0")}`);
+    const startDate = `${months[0].year}-${months[0].month.toString().padStart(2, "0")}-01`;
+
+    // ⚡ Bolt: Replace loop of N*2 queries with a single aggregate query using GROUP BY.
+    // This reduces database roundtrips and leverages index on payment_date.
+    const [statsByMonth] = await sequelize.query(
+      `
+      SELECT
+        strftime('%Y-%m', payment_date) as monthStr,
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expense
+      FROM payments
+      WHERE payment_date >= ?
+      GROUP BY monthStr
+      ORDER BY monthStr ASC
+    `,
+      { replacements: [startDate] }
     );
 
-    for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
+    // Map the aggregate results back to the expected array format for the frontend
+    const statsMap = statsByMonth.reduce((acc, row) => {
+      acc[row.monthStr] = row;
+      return acc;
+    }, {});
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
-    }
+    const chartRevenue = labels.map((l) => Number(statsMap[l]?.revenue) || 0);
+    const chartExpenses = labels.map((l) => Number(statsMap[l]?.expense) || 0);
 
     return {
       success: true,
