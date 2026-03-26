@@ -6,12 +6,14 @@ const { isAdmin } = require('../utils/session');
 
 ipcMain.handle('get-question-stats', async () => {
     try {
-        const total = await QuestionModel.count();
-        const categories = await CategoryModel.count();
-        const reviewed = await QuestionModel.countReviewed();
-        
-        return { 
-            success: true, 
+        const [total, categories, reviewed] = await Promise.all([
+            QuestionModel.count(),
+            CategoryModel.count(),
+            QuestionModel.countReviewed()
+        ]);
+
+        return {
+            success: true,
             data: {
                 total,
                 categories,
