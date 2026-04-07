@@ -8,10 +8,12 @@ const { isAdmin, isAuthenticated } = require("../utils/session");
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
+
+    // Parallelize aggregate total fetches
+    const [totalRevenue, totalExpenses] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }).then((s) => s || 0),
+      Payment.sum("amount", { where: { type: "expense" } }).then((s) => s || 0),
+    ]);
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
@@ -38,34 +40,47 @@ ipcMain.handle("get-financial-stats", async () => {
         name: monthNames[d.getMonth()],
         month: d.getMonth() + 1,
         year: d.getFullYear(),
+        label: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`,
       });
     }
 
-    const chartRevenue = [];
-    const chartExpenses = [];
-    const labels = months.map(
-      (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
-    );
+    const labels = months.map((m) => m.label);
 
-    for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
+    // BOLT OPTIMIZATION: Replace sequential loop with a single aggregate SQL query
+    // This reduces database round-trips from 12 to 1 and improves scalability.
+    const monthYearPairs = months
+      .map((m) => `('${m.year}', '${m.month.toString().padStart(2, "0")}')`)
+      .join(", ");
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
+    const [aggregateChartData] = await sequelize.query(`
+      SELECT
+        strftime('%Y', payment_date) as year,
+        strftime('%m', payment_date) as month,
+        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
+      FROM payments
+      WHERE (strftime('%Y', payment_date), strftime('%m', payment_date)) IN (${monthYearPairs})
+      GROUP BY year, month
+    `);
+
+    // Map aggregate results back to the expected 6-month chart array
+    const chartRevenue = months.map((m) => {
+      const entry = aggregateChartData.find(
+        (row) =>
+          Number(row.year) === m.year &&
+          Number(row.month) === m.month,
       );
+      return entry ? Number(entry.revenue) : 0;
+    });
 
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
+    const chartExpenses = months.map((m) => {
+      const entry = aggregateChartData.find(
+        (row) =>
+          Number(row.year) === m.year &&
+          Number(row.month) === m.month,
       );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
-    }
+      return entry ? Number(entry.expenses) : 0;
+    });
 
     return {
       success: true,
