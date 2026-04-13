@@ -335,8 +335,21 @@ export class TraffiquizService implements OnDestroy {
     }))
   });
 
+  /** Map for O(1) specialization lookup. */
+  private specializationsMap = computed(() => {
+    return new Map(this.specializationsSignal().map(s => [s.id, s.specialization]));
+  });
+
+  /** Map for O(1) certification lookup. */
+  private certificationsMap = computed(() => {
+    return new Map(this.certificationsSignal().map(c => [c.id, c.certification]));
+  });
+
   public tableInstructors = computed(() => {
     const role = this.currentUser()?.role;
+    const specMap = this.specializationsMap();
+    const certMap = this.certificationsMap();
+
     return this.instructorsSignal().map(instructor => ({
       id: instructor.id,
       name: instructor.firstName + ' ' + instructor.lastName,
@@ -345,8 +358,8 @@ export class TraffiquizService implements OnDestroy {
       phone: instructor.phone,
       license: instructor.license_number,
       availabilityValue: instructor.availability,
-      specialization: this.specializationsSignal().find(s => s.id === instructor.specialization_id)?.specialization || 'N/A',
-      certification: this.certificationsSignal().find(c => c.id === instructor.certification_id)?.certification || 'N/A',
+      specialization: specMap.get(instructor.specialization_id) || 'N/A',
+      certification: certMap.get(instructor.certification_id) || 'N/A',
       experience: instructor.experience,
       certified: instructor.certification_id ? 'Yes' : 'No',
       availability: Number(instructor.availability) === 1 ? 'Available' : 'Unavailable',

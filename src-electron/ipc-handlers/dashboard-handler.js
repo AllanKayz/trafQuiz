@@ -15,32 +15,37 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
     const stats = {};
 
     if (role === "admin") {
-      stats.total_students = await Student.count({
-        where: { status: "active" },
-      });
-      stats.total_instructors = await Instructor.count();
-
-      // For date comparisons, we can use Sequelize Op or raw sql
       const today = new Date().toISOString().split("T")[0];
-      stats.exams_today = await Exam.count({
-        where: sequelize.where(
-          sequelize.fn("date", sequelize.col("start_time")),
-          today,
-        ),
-      });
 
-      // Revenue - needs Payment model, but let's assume it's in OperationalModels or similar
-      // For now, if Payment model not yet refactored, use raw query via sequelize
-      const [revenueResult] = await sequelize.query(`
-                SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `);
+      const [
+        totalStudents,
+        totalInstructors,
+        examsToday,
+        [revenueResult],
+        [passRateResult],
+      ] = await Promise.all([
+        Student.count({ where: { status: "active" } }),
+        Instructor.count(),
+        Exam.count({
+          where: sequelize.where(
+            sequelize.fn("date", sequelize.col("start_time")),
+            today,
+          ),
+        }),
+        sequelize.query(`
+          SELECT sum(amount) as total FROM payments
+          WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
+        `),
+        sequelize.query(`
+          SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
+          FROM student_exams
+        `),
+      ]);
+
+      stats.total_students = totalStudents;
+      stats.total_instructors = totalInstructors;
+      stats.exams_today = examsToday;
       stats.monthly_revenue = revenueResult[0]?.total || 0;
-
-      const [passRateResult] = await sequelize.query(`
-                SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
-                FROM student_exams
-            `);
       stats.pass_rate = Math.round(passRateResult[0]?.rate || 0);
       stats.system_alerts = 0;
     } else if (role === "instructor") {
