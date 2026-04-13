@@ -41,31 +41,36 @@ ipcMain.handle("get-financial-stats", async () => {
       });
     }
 
-    const chartRevenue = [];
-    const chartExpenses = [];
     const labels = months.map(
       (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
     );
 
-    for (const m of months) {
+    // Parallelize monthly data fetching
+    const chartDataPromises = months.map(async (m) => {
       const monthStr = m.month.toString().padStart(2, "0");
       const yearStr = m.year.toString();
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
+      const [revPromise, expPromise] = [
+        sequelize.query(
+          `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
+          { replacements: [monthStr, yearStr] },
+        ),
+        sequelize.query(
+          `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
+          { replacements: [monthStr, yearStr] },
+        ),
+      ];
 
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
+      const [[rev], [exp]] = await Promise.all([revPromise, expPromise]);
+      return {
+        revenue: Number(rev[0]?.total) || 0,
+        expenses: Number(exp[0]?.total) || 0,
+      };
+    });
 
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
-    }
+    const monthlyResults = await Promise.all(chartDataPromises);
+    const chartRevenue = monthlyResults.map((r) => r.revenue);
+    const chartExpenses = monthlyResults.map((r) => r.expenses);
 
     return {
       success: true,
