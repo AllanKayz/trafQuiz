@@ -8,64 +8,52 @@ const { isAdmin, isAuthenticated } = require("../utils/session");
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-    const totalRevenue =
-      (await Payment.sum("amount", { where: { type: "income" } })) || 0;
-    const totalExpenses =
-      (await Payment.sum("amount", { where: { type: "expense" } })) || 0;
 
-    // Calculate dynamic chart data for the last 6 months
+    // ⚡ Bolt Optimization: Parallelize aggregate queries and fetch chart data in a single query
+    // This replaces 14 sequential queries (2 totals + 12 monthly) with 3 parallelized ones.
+
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const months = [];
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "May",
-      "Jun",
-      "Jul",
-      "Aug",
-      "Sep",
-      "Oct",
-      "Nov",
-      "Dec",
-    ];
-
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
-      d.setDate(1); // Crucial: avoid month-end rollover issues
+      d.setDate(1);
       d.setMonth(d.getMonth() - i);
       months.push({
         name: monthNames[d.getMonth()],
         month: d.getMonth() + 1,
         year: d.getFullYear(),
+        label: `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}`
       });
     }
 
-    const chartRevenue = [];
-    const chartExpenses = [];
-    const labels = months.map(
-      (m) => `${m.year}-${m.month.toString().padStart(2, "0")}`,
-    );
+    // Start of the 6-month range (first day of the oldest month)
+    const oldestMonth = months[0];
+    const startDate = `${oldestMonth.year}-${oldestMonth.month.toString().padStart(2, "0")}-01`;
 
-    for (const m of months) {
-      const monthStr = m.month.toString().padStart(2, "0");
-      const yearStr = m.year.toString();
+    const [totalRevenue, totalExpenses, chartResults] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }).then(v => v || 0),
+      Payment.sum("amount", { where: { type: "expense" } }).then(v => v || 0),
+      sequelize.query(
+        `SELECT
+          strftime('%Y-%m', payment_date) as monthLabel,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
+          SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
+        FROM payments
+        WHERE payment_date >= ?
+        GROUP BY monthLabel`,
+        { replacements: [startDate] }
+      )
+    ]);
 
-      // We still use raw query for strftime as it's efficient for SQLite month extraction
-      // OR we could use Op.between if we calculate start/end of month
-      const [rev] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="income" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
+    // Map aggregate results back to the ordered months array
+    const chartMap = {};
+    chartResults[0].forEach(row => {
+      chartMap[row.monthLabel] = row;
+    });
 
-      const [exp] = await sequelize.query(
-        `SELECT SUM(amount) as total FROM payments WHERE type="expense" AND strftime('%m', payment_date) = ? AND strftime('%Y', payment_date) = ?`,
-        { replacements: [monthStr, yearStr] },
-      );
-
-      chartRevenue.push(Number(rev[0]?.total) || 0);
-      chartExpenses.push(Number(exp[0]?.total) || 0);
-    }
+    const labels = months.map(m => m.label);
+    const chartRevenue = months.map(m => Number(chartMap[m.label]?.revenue) || 0);
+    const chartExpenses = months.map(m => Number(chartMap[m.label]?.expenses) || 0);
 
     return {
       success: true,
@@ -75,7 +63,7 @@ ipcMain.handle("get-financial-stats", async () => {
         netProfit: totalRevenue - totalExpenses,
         projectedRevenue: totalRevenue * 1.1,
         chartData: {
-          labels: labels,
+          labels,
           revenue: chartRevenue,
           expenses: chartExpenses,
         },
