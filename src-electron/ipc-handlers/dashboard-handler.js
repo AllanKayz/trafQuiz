@@ -15,8 +15,19 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
     const stats = {};
 
     if (role === "admin") {
+      // Calculate date ranges for indexed queries
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      // SQLite formatted date for raw query (local time)
+      const startOfMonthStr = `${startOfMonth.getFullYear()}-${(startOfMonth.getMonth() + 1).toString().padStart(2, '0')}-01 00:00:00`;
+
       // Parallelize all admin metric queries
-      const today = new Date().toISOString().split("T")[0];
       const [
         totalStudents,
         totalInstructors,
@@ -27,15 +38,16 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
         Student.count({ where: { status: "active" } }),
         Instructor.count(),
         Exam.count({
-          where: sequelize.where(
-            sequelize.fn("date", sequelize.col("start_time")),
-            today,
-          ),
+          where: {
+            start_time: {
+              [Op.between]: [startOfDay, endOfDay]
+            }
+          }
         }),
         sequelize.query(`
                 SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `),
+                WHERE type="income" AND payment_date >= ?
+            `, { replacements: [startOfMonthStr] }),
         sequelize.query(`
                 SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
                 FROM student_exams
@@ -55,17 +67,20 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       const instructorId = instructor?.id;
 
       if (instructorId) {
-        const today = new Date().toISOString().split("T")[0];
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
         const { Vehicle } = require("../models/OperationalModels");
 
         const [lessonsToday, assignedStudents, allocatedVehicle, upcomingLessons] = await Promise.all([
           Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [startOfDay, endOfDay]
+              }
             },
           }),
           Lesson.count({
