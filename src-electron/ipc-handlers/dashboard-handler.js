@@ -16,7 +16,14 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
 
     if (role === "admin") {
       // Parallelize all admin metric queries
-      const today = new Date().toISOString().split("T")[0];
+      // Use UTC to ensure consistency with SQLite and avoid timezone issues
+      const now = new Date();
+      const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+      const endOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+
+      const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+      const endOfNextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0));
+
       const [
         totalStudents,
         totalInstructors,
@@ -26,16 +33,21 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       ] = await Promise.all([
         Student.count({ where: { status: "active" } }),
         Instructor.count(),
+        // Optimized: SARGable range query instead of fn('date')
         Exam.count({
-          where: sequelize.where(
-            sequelize.fn("date", sequelize.col("start_time")),
-            today,
-          ),
+          where: {
+            start_time: {
+              [Op.between]: [startOfToday, endOfToday]
+            }
+          },
         }),
+        // Optimized: SARGable range query instead of strftime comparison
         sequelize.query(`
                 SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `),
+                WHERE type="income"
+                AND payment_date >= ? AND payment_date < ?
+                AND status='completed'
+            `, { replacements: [startOfMonth.toISOString(), endOfNextMonth.toISOString()] }),
         sequelize.query(`
                 SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
                 FROM student_exams
@@ -55,17 +67,20 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       const instructorId = instructor?.id;
 
       if (instructorId) {
-        const today = new Date().toISOString().split("T")[0];
+        const now = new Date();
+        const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+        const endOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+
         const { Vehicle } = require("../models/OperationalModels");
 
         const [lessonsToday, assignedStudents, allocatedVehicle, upcomingLessons] = await Promise.all([
+          // Optimized: SARGable range query instead of fn('date')
           Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [startOfToday, endOfToday]
+              }
             },
           }),
           Lesson.count({
