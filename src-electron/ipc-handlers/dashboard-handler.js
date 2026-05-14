@@ -15,8 +15,15 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
     const stats = {};
 
     if (role === "admin") {
-      // Parallelize all admin metric queries
-      const today = new Date().toISOString().split("T")[0];
+      // Use UTC boundaries to ensure consistency with SQLite's internal UTC storage
+      const now = new Date();
+      const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+      const todayEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
+
+      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
+      // Format as YYYY-MM-DD HH:mm:ss for correct string comparison in SQLite
+      const monthStartStr = monthStart.toISOString().replace('T', ' ').split('.')[0];
+
       const [
         totalStudents,
         totalInstructors,
@@ -27,15 +34,17 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
         Student.count({ where: { status: "active" } }),
         Instructor.count(),
         Exam.count({
-          where: sequelize.where(
-            sequelize.fn("date", sequelize.col("start_time")),
-            today,
-          ),
+          where: {
+            start_time: {
+              [Op.between]: [todayStart, todayEnd]
+            }
+          }
         }),
         sequelize.query(`
                 SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `),
+                WHERE type="income"
+                AND payment_date >= ?
+            `, { replacements: [monthStartStr] }),
         sequelize.query(`
                 SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
                 FROM student_exams
@@ -55,17 +64,18 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       const instructorId = instructor?.id;
 
       if (instructorId) {
-        const today = new Date().toISOString().split("T")[0];
+        const now = new Date();
+        const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+        const todayEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
         const { Vehicle } = require("../models/OperationalModels");
 
         const [lessonsToday, assignedStudents, allocatedVehicle, upcomingLessons] = await Promise.all([
           Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: {
+                [Op.between]: [todayStart, todayEnd]
+              }
             },
           }),
           Lesson.count({
