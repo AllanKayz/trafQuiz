@@ -49,7 +49,7 @@ ipcMain.handle("get-financial-stats", async () => {
             SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
             SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
         FROM payments
-        WHERE payment_date >= ?
+        WHERE payment_date >= ? AND status = 'completed'
         GROUP BY month_key
         ORDER BY month_key ASC
     `, { replacements: [startDateStr] });
