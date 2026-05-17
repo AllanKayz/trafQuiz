@@ -24,6 +24,8 @@ class ProgressModel {
             `, [studentId]),
 
             // Monthly performance
+            // Note: strftime on the grouped column is acceptable for grouping,
+            // but we ensure the WHERE clause (handled by SQLite indexing) is efficient.
             query(`
                 SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
                 FROM student_exams
