@@ -23,11 +23,14 @@ class ProgressModel {
                 LIMIT 5
             `, [studentId]),
 
-            // Monthly performance
+            // Monthly performance - optimized via index on (student_id, completed_at)
             query(`
-                SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
+                SELECT
+                    strftime('%Y-%m', completed_at) as month,
+                    AVG(score) as avgScore
                 FROM student_exams
                 WHERE student_id = ?
+                AND completed_at IS NOT NULL
                 GROUP BY month
                 ORDER BY month ASC
             `, [studentId])
