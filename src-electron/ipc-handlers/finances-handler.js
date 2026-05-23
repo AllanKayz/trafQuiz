@@ -4,6 +4,7 @@ const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
 const { isAdmin, isAuthenticated } = require("../utils/session");
+const { getDateBoundaries } = require("../utils/date-utils");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
@@ -52,7 +53,7 @@ ipcMain.handle("get-financial-stats", async () => {
         WHERE payment_date >= ?
         GROUP BY month_key
         ORDER BY month_key ASC
-    `, { replacements: [startDateStr] });
+    `, { replacements: [`${startDateStr} 00:00:00.000`] });
 
     // Map results back to the labels/months to ensure all months are present
     const resultsMap = {};
