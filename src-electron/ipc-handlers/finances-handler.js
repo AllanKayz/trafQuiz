@@ -4,19 +4,11 @@ const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
 const { isAdmin, isAuthenticated } = require("../utils/session");
+const { toSqliteString } = require("../utils/date-utils");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
-
-    // Parallelize initial sums
-    const [totalRevenue, totalExpenses] = await Promise.all([
-      Payment.sum("amount", { where: { type: "income" } }),
-      Payment.sum("amount", { where: { type: "expense" } })
-    ]);
-
-    const revenue = totalRevenue || 0;
-    const expenses = totalExpenses || 0;
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];
@@ -35,15 +27,19 @@ ipcMain.handle("get-financial-stats", async () => {
 
     const labels = months.map((m) => `${m.year}-${m.month.toString().padStart(2, "0")}`);
 
-    // Use a single aggregate query instead of a loop to improve performance
     // Calculating start of range (6 months ago)
     const startDate = new Date();
     startDate.setDate(1);
     startDate.setMonth(startDate.getMonth() - 5);
     startDate.setHours(0, 0, 0, 0);
-    const startDateStr = startDate.toISOString().split('T')[0];
+    const startDateStr = toSqliteString(startDate);
 
-    const [chartResults] = await sequelize.query(`
+    // Parallelize all financial metric queries
+    const [totalRevenue, totalExpenses, [chartResults]] = await Promise.all([
+      Payment.sum("amount", { where: { type: "income" } }),
+      Payment.sum("amount", { where: { type: "expense" } }),
+      sequelize.query(
+        `
         SELECT
             strftime('%Y-%m', payment_date) as month_key,
             SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
@@ -52,7 +48,13 @@ ipcMain.handle("get-financial-stats", async () => {
         WHERE payment_date >= ?
         GROUP BY month_key
         ORDER BY month_key ASC
-    `, { replacements: [startDateStr] });
+    `,
+        { replacements: [startDateStr] },
+      ),
+    ]);
+
+    const revenue = totalRevenue || 0;
+    const expenses = totalExpenses || 0;
 
     // Map results back to the labels/months to ensure all months are present
     const resultsMap = {};
