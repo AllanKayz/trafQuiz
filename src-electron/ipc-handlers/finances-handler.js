@@ -4,6 +4,7 @@ const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
 const { isAdmin, isAuthenticated } = require("../utils/session");
+const { toSqliteString } = require("../utils/date-utils");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
@@ -38,10 +39,10 @@ ipcMain.handle("get-financial-stats", async () => {
     // Use a single aggregate query instead of a loop to improve performance
     // Calculating start of range (6 months ago)
     const startDate = new Date();
-    startDate.setDate(1);
-    startDate.setMonth(startDate.getMonth() - 5);
-    startDate.setHours(0, 0, 0, 0);
-    const startDateStr = startDate.toISOString().split('T')[0];
+    startDate.setUTCDate(1);
+    startDate.setUTCMonth(startDate.getUTCMonth() - 5);
+    startDate.setUTCHours(0, 0, 0, 0);
+    const startDateStr = toSqliteString(startDate);
 
     const [chartResults] = await sequelize.query(`
         SELECT
