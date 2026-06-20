@@ -5,3 +5,7 @@
 ## 2026-04-26 - [IPC Parallelization & Query Aggregation]
 **Learning:** IPC handlers often become bottlenecks when they perform multiple sequential database queries. Parallelizing independent queries with `Promise.all` and refactoring sequential query loops into single aggregate SQL queries (e.g., for monthly financial charts) significantly reduces latency.
 **Action:** Identify IPC handlers with multiple `await` database calls and use `Promise.all` for independent operations. Replace reporting loops with aggregate queries using `GROUP BY` and conditional `SUM`.
+
+## 2026-05-10 - [SARGable Date Queries & Composite Indexes]
+**Learning:** Using SQLite functions like `strftime` or `date()` in `WHERE` clauses prevents the engine from using indexes (non-SARGable). Refactoring these to range queries (`Op.gte`/`Op.lt`) with ISO 8601 strings allows SQLite to utilize B-tree indexes. Additionally, composite indexes that match the filtering pattern (e.g., `instructor_id` + `start_time`) further reduce scan depth.
+**Action:** Avoid date functions in `WHERE` clauses. Use inclusive-start and exclusive-end range queries for date filtering. Implement composite indexes for common filter combinations.
