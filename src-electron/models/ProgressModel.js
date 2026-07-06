@@ -23,9 +23,10 @@ class ProgressModel {
                 LIMIT 5
             `, [studentId]),
 
-            // Monthly performance
+            // Monthly performance - optimized with SUBSTR and SARGable range if possible,
+            // though here we filter by student_id first which is indexed.
             query(`
-                SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
+                SELECT SUBSTR(completed_at, 1, 7) as month, AVG(score) as avgScore
                 FROM student_exams
                 WHERE student_id = ?
                 GROUP BY month
