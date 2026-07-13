@@ -9,14 +9,17 @@ ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
 
-    // Parallelize initial sums
-    const [totalRevenue, totalExpenses] = await Promise.all([
-      Payment.sum("amount", { where: { type: "income" } }),
-      Payment.sum("amount", { where: { type: "expense" } })
-    ]);
+    // Use a single aggregate query to get both revenue and expenses
+    // reducing database round-trips and IPC overhead.
+    const [[summaryResult]] = await sequelize.query(`
+        SELECT
+            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as totalRevenue,
+            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as totalExpenses
+        FROM payments
+    `);
 
-    const revenue = totalRevenue || 0;
-    const expenses = totalExpenses || 0;
+    const revenue = summaryResult?.totalRevenue || 0;
+    const expenses = summaryResult?.totalExpenses || 0;
 
     // Calculate dynamic chart data for the last 6 months
     const months = [];

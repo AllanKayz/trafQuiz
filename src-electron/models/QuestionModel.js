@@ -28,11 +28,36 @@ Exam.hasMany(Question, { foreignKey: 'exam_id' });
 
 class QuestionModel {
     static async findAll() {
-        return await Question.findAll({ raw: true });
+        return await Question.findAll({
+            attributes: [
+                'id',
+                ['question_text', 'question'],
+                'option_a',
+                'option_b',
+                'option_c',
+                'answer',
+                ['img_insert', 'photo'],
+                'exam_id'
+            ],
+            raw: true
+        });
     }
 
     static async findByExam(examId) {
-        return await Question.findAll({ where: { exam_id: examId }, raw: true });
+        return await Question.findAll({
+            where: { exam_id: examId },
+            attributes: [
+                'id',
+                ['question_text', 'question'],
+                'option_a',
+                'option_b',
+                'option_c',
+                'answer',
+                ['img_insert', 'photo'],
+                'exam_id'
+            ],
+            raw: true
+        });
     }
 
     static async create(data) {
