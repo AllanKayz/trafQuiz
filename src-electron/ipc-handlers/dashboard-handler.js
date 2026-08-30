@@ -4,9 +4,11 @@ const { Student } = require("../models/StudentModel");
 const { Instructor } = require("../models/InstructorModel");
 const { Exam } = require("../models/ExamModel");
 const { Lesson } = require("../models/OperationalModels");
+const Payment = require("../models/payment");
 const { sequelize } = require("../database");
 const { Op } = require("sequelize");
 const { isAuthenticated } = require("../utils/session");
+const { getDateBoundaries, getMonthBoundaries } = require("../utils/date-utils");
 
 ipcMain.handle("get-dashboard-stats", async (event, params) => {
   try {
@@ -16,7 +18,9 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
 
     if (role === "admin") {
       // Parallelize all admin metric queries
-      const today = new Date().toISOString().split("T")[0];
+      const { start: dayStart, end: dayEnd } = getDateBoundaries();
+      const { start: monthStart, end: monthEnd } = getMonthBoundaries();
+
       const [
         totalStudents,
         totalInstructors,
@@ -27,15 +31,16 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
         Student.count({ where: { status: "active" } }),
         Instructor.count(),
         Exam.count({
-          where: sequelize.where(
-            sequelize.fn("date", sequelize.col("start_time")),
-            today,
-          ),
+          where: {
+            start_time: { [Op.between]: [dayStart, dayEnd] }
+          },
         }),
-        sequelize.query(`
-                SELECT sum(amount) as total FROM payments
-                WHERE type="income" AND strftime("%Y-%m", payment_date) = strftime("%Y-%m", "now")
-            `),
+        Payment.sum("amount", {
+          where: {
+            type: "income",
+            payment_date: { [Op.between]: [monthStart, monthEnd] }
+          }
+        }),
         sequelize.query(`
                 SELECT (CAST(SUM(CASE WHEN score >= 50 THEN 1 ELSE 0 END) AS FLOAT) / COUNT(*)) * 100 as rate
                 FROM student_exams
@@ -45,7 +50,7 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       stats.total_students = totalStudents;
       stats.total_instructors = totalInstructors;
       stats.exams_today = examsToday;
-      stats.monthly_revenue = revenueResult[0][0]?.total || 0;
+      stats.monthly_revenue = revenueResult || 0;
       stats.pass_rate = Math.round(passRateResult[0][0]?.rate || 0);
       stats.system_alerts = 0;
     } else if (role === "instructor") {
@@ -55,17 +60,14 @@ ipcMain.handle("get-dashboard-stats", async (event, params) => {
       const instructorId = instructor?.id;
 
       if (instructorId) {
-        const today = new Date().toISOString().split("T")[0];
+        const { start: dayStart, end: dayEnd } = getDateBoundaries();
         const { Vehicle } = require("../models/OperationalModels");
 
         const [lessonsToday, assignedStudents, allocatedVehicle, upcomingLessons] = await Promise.all([
           Lesson.count({
             where: {
               instructor_id: instructorId,
-              [Op.and]: sequelize.where(
-                sequelize.fn("date", sequelize.col("start_time")),
-                today,
-              ),
+              start_time: { [Op.between]: [dayStart, dayEnd] }
             },
           }),
           Lesson.count({
