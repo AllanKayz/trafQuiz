@@ -5,3 +5,7 @@
 ## 2026-04-26 - [IPC Parallelization & Query Aggregation]
 **Learning:** IPC handlers often become bottlenecks when they perform multiple sequential database queries. Parallelizing independent queries with `Promise.all` and refactoring sequential query loops into single aggregate SQL queries (e.g., for monthly financial charts) significantly reduces latency.
 **Action:** Identify IPC handlers with multiple `await` database calls and use `Promise.all` for independent operations. Replace reporting loops with aggregate queries using `GROUP BY` and conditional `SUM`.
+
+## 2026-05-13 - [SARGable Queries & O(1) Lookups]
+**Learning:** SQLite cannot use indexes on columns wrapped in functions like `strftime` or `fn('date')` in `WHERE` clauses (non-SARGable). Using `Op.between` with calculated UTC date ranges enables 'SEARCH' instead of 'SCAN'. In the frontend, $O(N \cdot M)$ lookups in computed signals (e.g., nested `find` calls) are common rendering bottlenecks that can be resolved using computed Maps for $O(1)$ access.
+**Action:** Replace functional date filters with range queries. Use `EXPLAIN QUERY PLAN` to verify index application. Implement Maps in `TraffiquizService` for entity lookups in table views.
