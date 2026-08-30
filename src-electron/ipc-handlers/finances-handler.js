@@ -40,8 +40,9 @@ ipcMain.handle("get-financial-stats", async () => {
     const startDate = new Date();
     startDate.setDate(1);
     startDate.setMonth(startDate.getMonth() - 5);
-    startDate.setHours(0, 0, 0, 0);
-    const startDateStr = startDate.toISOString().split('T')[0];
+
+    // Optimization: Use local time formatting for SQLite consistency
+    const startDateStr = `${startDate.getFullYear()}-${(startDate.getMonth() + 1).toString().padStart(2, '0')}-01 00:00:00`;
 
     const [chartResults] = await sequelize.query(`
         SELECT
