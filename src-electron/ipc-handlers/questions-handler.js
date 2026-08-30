@@ -30,15 +30,9 @@ ipcMain.handle('get-question-stats', async () => {
 ipcMain.handle('get-questions', async (event) => {
     try {
         const questions = await QuestionModel.findAll();
+        // data is already in correct format due to QuestionModel attributes mapping
         const data = questions.map(q => ({
-            id: q.id,
-            question: q.question_text,
-            option_a: q.option_a,
-            option_b: q.option_b,
-            option_c: q.option_c,
-            answer: q.answer,
-            photo: q.img_insert,
-            exam_id: q.exam_id,
+            ...q,
             flagged: false 
         }));
         return { success: true, data };
