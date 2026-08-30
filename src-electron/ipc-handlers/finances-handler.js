@@ -43,9 +43,10 @@ ipcMain.handle("get-financial-stats", async () => {
     startDate.setHours(0, 0, 0, 0);
     const startDateStr = startDate.toISOString().split('T')[0];
 
+    // Using SUBSTR for grouping is faster than strftime in SQLite when payment_date is indexed
     const [chartResults] = await sequelize.query(`
         SELECT
-            strftime('%Y-%m', payment_date) as month_key,
+            SUBSTR(payment_date, 1, 7) as month_key,
             SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
             SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
         FROM payments
