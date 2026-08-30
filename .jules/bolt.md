@@ -5,3 +5,7 @@
 ## 2026-04-26 - [IPC Parallelization & Query Aggregation]
 **Learning:** IPC handlers often become bottlenecks when they perform multiple sequential database queries. Parallelizing independent queries with `Promise.all` and refactoring sequential query loops into single aggregate SQL queries (e.g., for monthly financial charts) significantly reduces latency.
 **Action:** Identify IPC handlers with multiple `await` database calls and use `Promise.all` for independent operations. Replace reporting loops with aggregate queries using `GROUP BY` and conditional `SUM`.
+
+## 2026-05-10 - [SARGable Date Queries & SQLite Indexing]
+**Learning:** Using `strftime` or `sequelize.fn('date', ...)` in `WHERE` clauses makes queries non-SARGable, forcing SQLite to perform full table scans even if an index exists on the date column. Replacing these with range queries (`>= start AND < next`) enables index usage. Additionally, `SUBSTR(col, 1, 7)` is more efficient than `strftime('%Y-%m', col)` for monthly grouping when the filtering is already handled by a SARGable range query.
+**Action:** Always refactor date-based filters to use range comparisons. Use `EXPLAIN QUERY PLAN` to verify `SEARCH` (index usage) vs `SCAN` (full table scan).
