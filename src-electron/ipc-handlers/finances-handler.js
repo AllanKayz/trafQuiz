@@ -4,6 +4,7 @@ const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
 const { isAdmin, isAuthenticated } = require("../utils/session");
+const { toSqliteString } = require("../utils/date-utils");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
@@ -41,7 +42,7 @@ ipcMain.handle("get-financial-stats", async () => {
     startDate.setDate(1);
     startDate.setMonth(startDate.getMonth() - 5);
     startDate.setHours(0, 0, 0, 0);
-    const startDateStr = startDate.toISOString().split('T')[0];
+    const startDateStr = toSqliteString(startDate);
 
     const [chartResults] = await sequelize.query(`
         SELECT
