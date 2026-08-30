@@ -1,4 +1,5 @@
 const { query, get } = require('../db');
+const { getRecentMonthsBoundaries } = require('../utils/date-utils');
 
 class ProgressModel {
     static async getProgress(studentId) {
@@ -25,12 +26,12 @@ class ProgressModel {
 
             // Monthly performance
             query(`
-                SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
+                SELECT SUBSTR(completed_at, 1, 7) as month, AVG(score) as avgScore
                 FROM student_exams
-                WHERE student_id = ?
+                WHERE student_id = ? AND completed_at BETWEEN ? AND ?
                 GROUP BY month
                 ORDER BY month ASC
-            `, [studentId])
+            `, [studentId, getRecentMonthsBoundaries(12).start, getRecentMonthsBoundaries(12).end])
         ]);
 
         return {
