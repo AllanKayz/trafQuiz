@@ -4,6 +4,7 @@ const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
 const { Op } = require("sequelize");
 const { isAdmin, isAuthenticated } = require("../utils/session");
+const { toSqliteString } = require("../utils/date-utils");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
@@ -45,14 +46,14 @@ ipcMain.handle("get-financial-stats", async () => {
 
     const [chartResults] = await sequelize.query(`
         SELECT
-            strftime('%Y-%m', payment_date) as month_key,
+            SUBSTR(payment_date, 1, 7) as month_key,
             SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as revenue,
             SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as expenses
         FROM payments
         WHERE payment_date >= ?
         GROUP BY month_key
         ORDER BY month_key ASC
-    `, { replacements: [startDateStr] });
+    `, { replacements: [toSqliteString(startDate)] });
 
     // Map results back to the labels/months to ensure all months are present
     const resultsMap = {};
