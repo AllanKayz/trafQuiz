@@ -1,0 +1,28 @@
+--- Performance Benchmark ---
+Running migrations...
+{ event: 'migrating', name: '20260120000000-initial-schema.js' }
+{
+  event: 'migrated',
+  name: '20260120000000-initial-schema.js',
+  durationSeconds: 0.158
+}
+{
+  event: 'migrating',
+  name: '20260210000000-add-performance-indexes.js'
+}
+{
+  event: 'migrated',
+  name: '20260210000000-add-performance-indexes.js',
+  durationSeconds: 0.066
+}
+Migrations complete.
+Database path: /app/src-electron/trafquiz_test.db
+Initializing Database...
+Database already initialized.
+get-dashboard-stats (Admin): 7.82ms
+get-financial-stats: 5.13ms
+get-question-stats: 4.84ms
+get-dashboard-stats (Instructor): 10.67ms
+get-dashboard-stats (Student): 5.37ms
+get-student-progress: 2.89ms
+--- Benchmark Complete ---

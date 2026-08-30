@@ -24,8 +24,10 @@ class ProgressModel {
             `, [studentId]),
 
             // Monthly performance
+            // Use SUBSTR for grouping to allow potential index usage/optimization in some SQLite versions,
+            // but the main win is the composite index on (student_id, completed_at)
             query(`
-                SELECT strftime('%Y-%m', completed_at) as month, AVG(score) as avgScore
+                SELECT SUBSTR(completed_at, 1, 7) as month, AVG(score) as avgScore
                 FROM student_exams
                 WHERE student_id = ?
                 GROUP BY month
