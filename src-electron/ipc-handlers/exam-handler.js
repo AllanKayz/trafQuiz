@@ -10,8 +10,9 @@ const { broadcastChange } = require("../utils/broadcast");
 const { Question, QuestionModel } = require("../models/QuestionModel");
 const { Student } = require("../models/StudentModel");
 const { sequelize } = require("../database");
+const db = require("../db");
 const { Op } = require("sequelize");
-const { isAuthenticated, isAdmin } = require("../utils/session");
+const { isAuthenticated, isAdmin, getSession } = require("../utils/session");
 
 async function getFairExam(studentId) {
   const allExams = await Exam.findAll({ attributes: ["id"] });
@@ -57,6 +58,7 @@ async function getFairExam(studentId) {
   return candidates[Math.floor(Math.random() * candidates.length)];
 }
 
+// 1. Get Exam Questions
 ipcMain.handle("get-exam-questions", async (event, userId) => {
   try {
     if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
@@ -122,6 +124,117 @@ ipcMain.handle("get-exam-questions", async (event, userId) => {
     };
   } catch (error) {
     console.error("Error fetching exam questions:", error);
+    return { success: false, message: error.message };
+  }
+});
+
+// 2. Exam State Auto-Save for Crash Recovery
+ipcMain.handle("save-exam-progress", async (event, payload) => {
+  try {
+    const session = getSession();
+    if (!session) return { success: false, message: "Unauthorized" };
+    const { attemptId, studentId, questionId, selectedOption, isFlagged } = payload;
+
+    if (!attemptId || !questionId) {
+      return { success: false, message: "Invalid exam attempt payload" };
+    }
+
+    // Persist answer in exam_attempt_answers table for crash recovery
+    await db.run(
+      `INSERT INTO exam_attempt_answers (exam_attempt_id, student_id, question_id, selected_option, is_flagged, saved_at)
+       VALUES (?, ?, ?, ?, ?, DATETIME('now'))`,
+      [attemptId, studentId || session.id, questionId, selectedOption || null, isFlagged ? 1 : 0]
+    );
+
+    return { success: true, message: "Exam progress saved" };
+  } catch (error) {
+    console.error("Save exam progress error:", error);
+    return { success: false, message: error.message };
+  }
+});
+
+// 3. Exam Crash Recovery - Restore Saved Attempt State
+ipcMain.handle("recover-exam-progress", async (event, { attemptId }) => {
+  try {
+    const session = getSession();
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const savedAnswers = await db.all(
+      `SELECT question_id, selected_option, is_flagged, saved_at
+       FROM exam_attempt_answers
+       WHERE exam_attempt_id = ?
+       ORDER BY id ASC`,
+      [attemptId]
+    );
+
+    return {
+      success: true,
+      attemptId,
+      savedAnswers: savedAnswers || []
+    };
+  } catch (error) {
+    console.error("Recover exam progress error:", error);
+    return { success: false, message: error.message };
+  }
+});
+
+// 4. Learning Analytics & Student Readiness Indicators
+ipcMain.handle("get-learning-analytics", async (event, { studentId }) => {
+  try {
+    const session = getSession();
+    if (!session) return { success: false, message: "Unauthorized" };
+
+    const targetStudentId = studentId || session.id;
+
+    const attempts = await StudentExam.findAll({
+      where: { student_id: targetStudentId },
+      order: [['completed_at', 'DESC']],
+      limit: 20,
+      raw: true
+    });
+
+    const totalAttempts = attempts.length;
+    if (totalAttempts === 0) {
+      return {
+        success: true,
+        data: {
+          readinessScore: 0,
+          passRate: 0,
+          averageScore: 0,
+          totalAttempts: 0,
+          recommendation: "Take practice tests to calculate readiness score."
+        }
+      };
+    }
+
+    const passedCount = attempts.filter(a => (a.score || 0) >= 50).length;
+    const avgScore = Math.round(attempts.reduce((sum, a) => sum + (a.score || 0), 0) / totalAttempts);
+    const passRate = Math.round((passedCount / totalAttempts) * 100);
+
+    // Readiness formula: weighted average of pass rate and recent score performance
+    const readinessScore = Math.min(100, Math.round((passRate * 0.6) + (avgScore * 0.4)));
+
+    let recommendation = "Good progress! Keep practicing to maintain readiness.";
+    if (readinessScore < 50) {
+      recommendation = "Revision recommended: Review Road Signs and Vehicle Controls before taking official exam.";
+    } else if (readinessScore < 80) {
+      recommendation = "Moderate readiness: Practice 2 more mock exams to reach target 85%+ score.";
+    } else {
+      recommendation = "High Exam Readiness! You are ready to book your official driving test.";
+    }
+
+    return {
+      success: true,
+      data: {
+        readinessScore,
+        passRate,
+        averageScore: avgScore,
+        totalAttempts,
+        recommendation
+      }
+    };
+  } catch (error) {
+    console.error("Learning analytics error:", error);
     return { success: false, message: error.message };
   }
 });
@@ -239,7 +352,6 @@ ipcMain.handle("auto-allocate-exams", async (event, { date, capacity }) => {
       return { success: false, message: 'Date and capacity are required' };
     }
 
-    // Allocate exams to available students for the given date and capacity
     const allocations = await StudentExam.findAll({
       where: {
         exam_date: date,
@@ -257,7 +369,6 @@ ipcMain.handle("auto-allocate-exams", async (event, { date, capacity }) => {
       };
     }
 
-    // Update the allocated exams status
     await StudentExam.update(
       { status: 'allocated' },
       {

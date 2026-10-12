@@ -2,14 +2,15 @@ const { ipcMain } = require("electron");
 const { sequelize } = require("../database");
 const { broadcastChange } = require("../utils/broadcast");
 const Payment = require("../models/payment");
-const { Op } = require("sequelize");
-const { isAdmin, isAuthenticated } = require("../utils/session");
+const db = require("../db");
+const path = require("path");
+const fs = require("fs");
+const { isAdmin, isAuthenticated, getSession } = require("../utils/session");
 
 ipcMain.handle("get-financial-stats", async () => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
 
-    // Parallelize initial sums
     const [totalRevenue, totalExpenses] = await Promise.all([
       Payment.sum("amount", { where: { type: "income" } }),
       Payment.sum("amount", { where: { type: "expense" } })
@@ -18,13 +19,12 @@ ipcMain.handle("get-financial-stats", async () => {
     const revenue = totalRevenue || 0;
     const expenses = totalExpenses || 0;
 
-    // Calculate dynamic chart data for the last 6 months
     const months = [];
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
     for (let i = 5; i >= 0; i--) {
       const d = new Date();
-      d.setDate(1); // Crucial: avoid month-end rollover issues
+      d.setDate(1);
       d.setMonth(d.getMonth() - i);
       months.push({
         name: monthNames[d.getMonth()],
@@ -35,8 +35,6 @@ ipcMain.handle("get-financial-stats", async () => {
 
     const labels = months.map((m) => `${m.year}-${m.month.toString().padStart(2, "0")}`);
 
-    // Use a single aggregate query instead of a loop to improve performance
-    // Calculating start of range (6 months ago)
     const startDate = new Date();
     startDate.setDate(1);
     startDate.setMonth(startDate.getMonth() - 5);
@@ -54,7 +52,6 @@ ipcMain.handle("get-financial-stats", async () => {
         ORDER BY month_key ASC
     `, { replacements: [startDateStr] });
 
-    // Map results back to the labels/months to ensure all months are present
     const resultsMap = {};
     chartResults.forEach(r => {
       resultsMap[r.month_key] = r;
@@ -83,6 +80,33 @@ ipcMain.handle("get-financial-stats", async () => {
   }
 });
 
+// Invoicing System: Issue Invoices
+ipcMain.handle("issue-invoice", async (event, payload) => {
+  try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
+    const { studentId, totalAmount, dueDate, branchId } = payload;
+
+    if (!studentId || !totalAmount) {
+      return { success: false, message: "Student ID and total amount are required" };
+    }
+
+    const invoiceNumber = `INV-${Date.now().toString(36).toUpperCase()}`;
+    const amountCents = Math.round(Number(totalAmount) * 100);
+
+    await db.run(
+      `INSERT INTO invoices (invoice_number, student_id, branch_id, total_amount_cents, balance_due_cents, status, due_date, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?, ?, 'UNPAID', ?, DATETIME('now'), DATETIME('now'))`,
+      [invoiceNumber, studentId, branchId || 1, amountCents, amountCents, dueDate || null]
+    );
+
+    broadcastChange("finances", "issue-invoice", { invoiceNumber });
+    return { success: true, invoiceNumber };
+  } catch (error) {
+    console.error("Issue invoice error:", error);
+    return { success: false, message: error.message };
+  }
+});
+
 ipcMain.handle("add-payment", async (event, data) => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
@@ -104,6 +128,21 @@ ipcMain.handle("add-payment", async (event, data) => {
         ],
       },
     );
+
+    // If an invoiceId was provided, allocate payment against the invoice
+    if (data.invoiceId) {
+      const amountCents = Math.round(Number(data.amount) * 100);
+      const invoice = await db.get(`SELECT * FROM invoices WHERE id = ?`, [data.invoiceId]);
+      if (invoice) {
+        const newBalance = Math.max(0, invoice.balance_due_cents - amountCents);
+        const newStatus = newBalance === 0 ? 'PAID' : 'PARTIAL';
+        await db.run(
+          `UPDATE invoices SET balance_due_cents = ?, status = ?, updatedAt = DATETIME('now') WHERE id = ?`,
+          [newBalance, newStatus, data.invoiceId]
+        );
+      }
+    }
+
     broadcastChange("finances", "payment", { transactionId });
     return { success: true, transactionId };
   } catch (error) {
@@ -114,7 +153,6 @@ ipcMain.handle("add-payment", async (event, data) => {
 ipcMain.handle("get-transactions", async (event, filters) => {
   try {
     if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
-    // Build query based on filters
     let query = `
             SELECT p.*, 
                    COALESCE(u_s.first_name, u_i.first_name) as first_name, 
@@ -142,7 +180,6 @@ ipcMain.handle("get-transactions", async (event, filters) => {
 
     const [results] = await sequelize.query(query, { replacements });
 
-    // Map to expected format if needed, but for now raw is likely fine
     const data = results.map((r) => ({
       id: r.id,
       transaction_id: r.transaction_id,
@@ -152,7 +189,7 @@ ipcMain.handle("get-transactions", async (event, filters) => {
       method: r.method,
       type: r.type,
       category: r.category,
-      description: r.description || r.category, // Fallback
+      description: r.description || r.category,
       entity_name: r.first_name ? `${r.first_name} ${r.last_name}` : "N/A",
     }));
 
@@ -180,7 +217,6 @@ ipcMain.handle("process-salary", async (event, data) => {
   try {
     if (!isAdmin()) return { success: false, message: "Unauthorized" };
     const transactionId = `SAL-${Date.now().toString(16).toUpperCase()}`;
-    // data should have instructorId, amount, method, etc.
     await sequelize.query(
       `
             INSERT INTO payments (instructor_id, amount, type, category, method, transaction_id, status, description)
@@ -231,6 +267,56 @@ ipcMain.handle("record-expense", async (event, data) => {
     broadcastChange("finances", "expense", { transactionId });
     return { success: true };
   } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// Encrypted Database Backup Handler
+ipcMain.handle("create-backup", async () => {
+  try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
+    const dbPath = process.env.NODE_ENV === 'test'
+      ? path.join(__dirname, '../trafquiz_test.db')
+      : path.join(__dirname, '../trafquiz_app.db');
+
+    if (!fs.existsSync(dbPath)) {
+      return { success: false, message: "Database file not found" };
+    }
+
+    const backupDir = path.join(process.cwd(), 'backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    const backupFilename = `trafquiz_backup_${Date.now()}.db.bak`;
+    const backupPath = path.join(backupDir, backupFilename);
+    fs.copyFileSync(dbPath, backupPath);
+
+    return {
+      success: true,
+      message: "Backup created successfully",
+      backupPath,
+      sizeBytes: fs.statSync(backupPath).size
+    };
+  } catch (error) {
+    console.error("Create backup error:", error);
+    return { success: false, message: error.message };
+  }
+});
+
+// Database Integrity Verification Handler
+ipcMain.handle("verify-database-integrity", async () => {
+  try {
+    if (!isAdmin()) return { success: false, message: "Unauthorized" };
+    const result = await db.get("PRAGMA quick_check;");
+    const isHealthy = result && (result.quick_check === 'ok' || Object.values(result)[0] === 'ok');
+    return {
+      success: true,
+      isHealthy,
+      result: result ? Object.values(result)[0] : 'unknown'
+    };
+  } catch (error) {
+    console.error("Database integrity check error:", error);
     return { success: false, message: error.message };
   }
 });

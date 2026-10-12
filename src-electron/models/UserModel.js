@@ -23,12 +23,12 @@ User.init({
   underscored: true,
   hooks: {
     beforeCreate: async (user) => {
-      if (user.password && !user.password.startsWith('$2y$') && !user.password.startsWith('$2b$')) {
+      if (user.password && !user.password.startsWith('$2y$') && !user.password.startsWith('$2b$') && !user.password.startsWith('scrypt$')) {
         user.password = await bcrypt.hash(user.password, 10);
       }
     },
     beforeUpdate: async (user) => {
-        if (user.changed('password') && !user.password.startsWith('$2y$') && !user.password.startsWith('$2b$')) {
+        if (user.changed('password') && !user.password.startsWith('$2y$') && !user.password.startsWith('$2b$') && !user.password.startsWith('scrypt$')) {
             user.password = await bcrypt.hash(user.password, 10);
         }
     }
@@ -54,7 +54,6 @@ class UserModel {
     }
 
     static async create(data) {
-        // Map camelCase from frontend if needed, but better to keep it consistent
         const user = await User.create({
             username: data.username,
             first_name: data.firstName || data.first_name,
@@ -71,7 +70,6 @@ class UserModel {
         const user = await User.findByPk(id);
         if (!user) throw new Error('User not found');
         
-        // Map fields
         const updateData = {};
         if (data.username) updateData.username = data.username;
         if (data.firstName || data.first_name) updateData.first_name = data.firstName || data.first_name;
@@ -88,7 +86,7 @@ class UserModel {
     static async updatePassword(id, newPassword) {
         const user = await User.findByPk(id);
         if (!user) throw new Error('User not found');
-        user.password = newPassword; // Hook handles hashing
+        user.password = newPassword;
         await user.save();
         return true;
     }

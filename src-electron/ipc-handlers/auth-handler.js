@@ -4,6 +4,7 @@ const { StudentModel } = require('../models/StudentModel');
 const { InstructorModel } = require('../models/InstructorModel');
 const { broadcastChange } = require('../utils/broadcast');
 const { setSession, clearSession, isAdmin, isAuthenticated, getSession } = require('../utils/session');
+const { verifyPasswordModern, hashPasswordModern, logAuditEvent, ROLE_PERMISSIONS } = require('../utils/auth-security');
 
 ipcMain.handle('login', async (event, credentials) => {
     try {
@@ -28,15 +29,30 @@ ipcMain.handle('login', async (event, credentials) => {
         }
 
         if (!user) {
+            await logAuditEvent(null, username || email, 'LOGIN_FAILED', 'User', null, { reason: 'User not found' }, 'FAILURE');
             return { success: false, message: 'Invalid credentials' };
         }
 
-        const isValid = await UserModel.verifyPassword(user, password);
-        if (!isValid) {
+        // Verify password using modern hashing module (handles legacy bcrypt + modern scrypt/argon2)
+        const passwordVerification = await verifyPasswordModern(password, user.password);
+        if (!passwordVerification.isValid) {
+            await logAuditEvent(user.id, user.username, 'LOGIN_FAILED', 'User', user.id, { reason: 'Wrong password' }, 'FAILURE');
             return { success: false, message: 'Invalid credentials' };
+        }
+
+        // Auto-upgrade legacy bcrypt password hashes transparently on login
+        if (passwordVerification.needsRehash) {
+            try {
+                const newHash = await hashPasswordModern(password);
+                await UserModel.updatePassword(user.id, newHash);
+                console.log(`[Security Auto-Upgrade] Transparently upgraded password hash for user ID ${user.id}`);
+            } catch (rehashErr) {
+                console.error('Failed to auto-upgrade password hash:', rehashErr);
+            }
         }
 
         setSession(user);
+        await logAuditEvent(user.id, user.username, 'LOGIN_SUCCESS', 'User', user.id);
 
         let roleData = {};
         try {
@@ -54,6 +70,7 @@ ipcMain.handle('login', async (event, credentials) => {
         return {
             success: true,
             user: userWithoutPassword,
+            permissions: ROLE_PERMISSIONS[user.role] || [],
             roleData,
             token: 'electron-local-token' 
         };
@@ -61,6 +78,29 @@ ipcMain.handle('login', async (event, credentials) => {
         console.error('Login system error:', error);
         return { success: false, message: `Authentication service error: ${error.message}` };
     }
+});
+
+ipcMain.handle('get-current-user', async () => {
+    const session = getSession();
+    if (!session) return { success: false, message: 'Unauthorized' };
+    const user = await UserModel.find(session.id);
+    if (!user) return { success: false, message: 'User not found' };
+    const { password: _, ...userWithoutPassword } = user;
+    return {
+        success: true,
+        user: userWithoutPassword,
+        permissions: ROLE_PERMISSIONS[user.role] || []
+    };
+});
+
+ipcMain.handle('get-user-permissions', async () => {
+    const session = getSession();
+    if (!session) return { success: false, message: 'Unauthorized', permissions: [] };
+    return {
+        success: true,
+        role: session.role,
+        permissions: ROLE_PERMISSIONS[session.role] || []
+    };
 });
 
 ipcMain.handle('get-user-info', async (event, { id }) => {
@@ -81,12 +121,12 @@ ipcMain.handle('update-user', async (event, data) => {
         if (!session) return { success: false, message: 'Unauthorized' };
         const { id, ...payload } = data;
 
-        // Ownership check: users can only update themselves, unless they are an admin
         if (id !== session.id && session.role !== 'admin') {
             return { success: false, message: 'Unauthorized: Cannot update other users' };
         }
 
         const result = await UserModel.update(id, payload);
+        await logAuditEvent(session.id, session.username, 'UPDATE_USER', 'User', id);
         broadcastChange('users', 'update', result);
         return { success: true, data: result };
     } catch (error) {
@@ -99,12 +139,13 @@ ipcMain.handle('update-user-password', async (event, { id, password }) => {
         const session = getSession();
         if (!session) return { success: false, message: 'Unauthorized' };
 
-        // Ownership check
         if (id !== session.id && session.role !== 'admin') {
             return { success: false, message: 'Unauthorized' };
         }
 
-        await UserModel.updatePassword(id, password);
+        const newHash = await hashPasswordModern(password);
+        await UserModel.updatePassword(id, newHash);
+        await logAuditEvent(session.id, session.username, 'CHANGE_PASSWORD', 'User', id);
         return { success: true };
     } catch (error) {
         return { success: false, message: error.message };
@@ -116,7 +157,6 @@ ipcMain.handle('delete-account', async (event, { id, password }) => {
         const session = getSession();
         if (!session) return { success: false, message: 'Unauthorized' };
 
-        // Ownership check
         if (id !== session.id && session.role !== 'admin') {
             return { success: false, message: 'Unauthorized' };
         }
@@ -124,10 +164,11 @@ ipcMain.handle('delete-account', async (event, { id, password }) => {
         const user = await UserModel.find(id);
         if (!user) return { success: false, message: 'User not found' };
         
-        const isValid = await UserModel.verifyPassword(user, password);
-        if (!isValid) return { success: false, message: 'Invalid password' };
+        const verification = await verifyPasswordModern(password, user.password);
+        if (!verification.isValid) return { success: false, message: 'Invalid password' };
 
         await UserModel.delete(id);
+        await logAuditEvent(session.id, session.username, 'DELETE_ACCOUNT', 'User', id);
         broadcastChange('users', 'delete', { id });
         return { success: true };
     } catch (error) {
@@ -136,6 +177,10 @@ ipcMain.handle('delete-account', async (event, { id, password }) => {
 });
 
 ipcMain.handle('logout', async () => {
+    const session = getSession();
+    if (session) {
+        await logAuditEvent(session.id, session.username, 'LOGOUT', 'User', session.id);
+    }
     clearSession();
     return { success: true };
 });
@@ -146,14 +191,12 @@ ipcMain.handle('get-all-users', async () => {
             return { success: false, message: 'Unauthorized: Admin access required' };
         }
         const users = await UserModel.findAll();
-        // Return without passwords
-        // Return mapped users with name and status
         const safeUsers = users.map(u => {
             const { password, ...rest } = u;
             return {
                 ...rest,
                 name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.username,
-                status: u.status || 'Active' // Default to Active if not present
+                status: u.status || 'Active'
             };
         });
         return { success: true, data: safeUsers };
@@ -165,10 +208,14 @@ ipcMain.handle('get-all-users', async () => {
 ipcMain.handle('add-user', async (event, userData) => {
     try {
         if (!isAdmin()) return { success: false, message: 'Unauthorized' };
-        // Basic minimal add-user if not going through student/instructor specific flows
-        // Hash password handled in UserModel.create
+
+        if (userData.password) {
+            userData.password = await hashPasswordModern(userData.password);
+        }
+
         const newUser = await UserModel.create(userData);
         const { password, ...rest } = newUser;
+        await logAuditEvent(getSession()?.id, getSession()?.username, 'ADD_USER', 'User', newUser.id);
         broadcastChange('users', 'create', rest);
         return { success: true, data: rest };
     } catch (error) {
@@ -180,11 +227,12 @@ ipcMain.handle('delete-user', async (event, { id, role }) => {
     try {
         if (!isAdmin()) return { success: false, message: 'Unauthorized' };
         if (role === 'student') {
-            await StudentModel.delete(id); // Should cascade or handle user deletion logic inside
+            await StudentModel.delete(id);
         } else if (role === 'instructor') {
             await InstructorModel.delete(id);
         }
         await UserModel.delete(id);
+        await logAuditEvent(getSession()?.id, getSession()?.username, 'DELETE_USER', 'User', id);
         broadcastChange('users', 'delete', { id });
         return { success: true };
     } catch (error) {
@@ -200,16 +248,11 @@ ipcMain.handle('forgot-password', async (event, { username }) => {
 
         const user = await UserModel.findByUsername(username);
         if (!user) {
-            // Don't reveal if user exists (security best practice)
             return { success: true, message: 'If this account exists, a password reset email will be sent' };
         }
 
-        // In a real application, you would:
-        // 1. Generate a reset token
-        // 2. Save it with an expiration time
-        // 3. Send an email with the reset link
-        // For now, we'll just return success message
         console.log(`Password reset requested for user: ${username}`);
+        await logAuditEvent(user.id, username, 'PASSWORD_RESET_REQUEST', 'User', user.id);
         
         return { 
             success: true, 
@@ -237,13 +280,9 @@ ipcMain.handle('reset-password', async (event, { username, newPassword, resetTok
             return { success: false, message: 'User not found' };
         }
 
-        // In a real application, you would:
-        // 1. Verify the reset token
-        // 2. Check if token is expired
-        // 3. Update the password only if token is valid
-        
-        // For now, allow password reset with just username validation
-        await UserModel.updatePassword(user.id, newPassword);
+        const hashed = await hashPasswordModern(newPassword);
+        await UserModel.updatePassword(user.id, hashed);
+        await logAuditEvent(user.id, username, 'PASSWORD_RESET_COMPLETE', 'User', user.id);
         broadcastChange('users', 'update', { id: user.id });
         
         return { 
