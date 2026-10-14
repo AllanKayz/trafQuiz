@@ -1,7 +1,9 @@
 const { ipcMain } = require("electron");
 const { LessonModel } = require("../models/LessonModel");
+const { Lesson } = require("../models/OperationalModels");
 const { broadcastChange } = require("../utils/broadcast");
 const { isAuthenticated, isAdmin } = require("../utils/session");
+const { Op } = require("sequelize");
 
 ipcMain.handle("get-lessons", async (event, filters) => {
   try {
@@ -24,7 +26,7 @@ ipcMain.handle("get-lessons", async (event, filters) => {
       });
       if (instructor) {
         cleanFilters.instructor_id = instructor.id;
-        delete cleanFilters.instructorId; // Standardize on snake_case for DB query
+        delete cleanFilters.instructorId;
       }
     } else if (filters.instructorId) {
       cleanFilters.instructor_id = filters.instructorId;
@@ -42,6 +44,34 @@ ipcMain.handle("get-lessons", async (event, filters) => {
 ipcMain.handle("add-lesson", async (event, lesson) => {
   try {
     if (!isAuthenticated()) return { success: false, message: "Unauthorized" };
+
+    const instructorId = lesson.instructorId || lesson.instructor_id;
+    const startTimeStr = lesson.startTime || lesson.start_time;
+    const durationMinutes = lesson.durationMinutes || lesson.duration_minutes || 60;
+
+    if (instructorId && startTimeStr) {
+      const startTime = new Date(startTimeStr);
+      const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+
+      const existingLessons = await Lesson.findAll({
+        where: {
+          instructor_id: instructorId,
+          status: { [Op.ne]: 'cancelled' }
+        },
+        raw: true
+      });
+
+      for (const existing of existingLessons) {
+        if (!existing.start_time) continue;
+        const existingStart = new Date(existing.start_time);
+        const existingEnd = new Date(existingStart.getTime() + (existing.duration_minutes || 60) * 60000);
+
+        if (startTime < existingEnd && endTime > existingStart) {
+          return { success: false, message: `Instructor conflict: Already booked between ${existingStart.toLocaleTimeString()} and ${existingEnd.toLocaleTimeString()}` };
+        }
+      }
+    }
+
     const result = await LessonModel.book(lesson);
     broadcastChange("lessons", "book", result);
     return { success: true, data: result };

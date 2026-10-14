@@ -1,8 +1,20 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const { runMigrations } = require('./migration-runner');
 
 app.whenReady().then(async () => {
+    // Set strict Content Security Policy (CSP) headers
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        callback({
+            responseHeaders: {
+                ...details.responseHeaders,
+                'Content-Security-Policy': [
+                    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http://localhost:*;"
+                ]
+            }
+        });
+    });
+
     try {
         await runMigrations();
     } catch (err) {
@@ -15,24 +27,42 @@ let mainWindow;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: 1280,
+    height: 850,
+    minWidth: 1024,
+    minHeight: 720,
     icon: path.join(__dirname, '../public/logo.ico'),
-    frame: false, // Disable default frame
-    titleBarStyle: 'hidden', // Hide default title bar but keep window controls overlay on macOS if needed (optional)
+    frame: false,
+    titleBarStyle: 'hidden',
     webPreferences: {
         preload: path.join(__dirname, 'preload.js'),
         nodeIntegration: false,
-        contextIsolation: true
+        contextIsolation: true,
+        sandbox: false // Sandbox false allows preload script access required for IPC bridge
     }
+  });
+
+  // Secure navigation & external links handling
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.origin !== 'http://localhost:4200' && !url.startsWith('file://')) {
+      event.preventDefault();
+      console.warn(`[Security] Navigation blocked to external URL: ${url}`);
+    }
+  });
+
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    console.warn(`[Security] Prevented opening new window for URL: ${url}`);
+    return { action: 'deny' };
   });
 
   // Window Controls IPC
   ipcMain.handle('window:minimize', () => {
-    mainWindow.minimize();
+    if (mainWindow) mainWindow.minimize();
   });
 
   ipcMain.handle('window:maximize', () => {
+    if (!mainWindow) return;
     if (mainWindow.isMaximized()) {
       mainWindow.restore();
     } else {
@@ -41,7 +71,7 @@ function createWindow() {
   });
 
   ipcMain.handle('window:close', () => {
-    mainWindow.close();
+    if (mainWindow) mainWindow.close();
   });
 
   const isDev = process.env.NODE_ENV === 'development' || process.argv.includes('--dev');

@@ -16,7 +16,6 @@ async function runTests() {
     }
 
     await test('Logout works and clears session', async () => {
-        // Assume we were logged in from previous tests
         await global.invokeIPC('logout');
         const response = await global.invokeIPC('get-all-users');
         assert.strictEqual(response.success, false);
@@ -43,21 +42,30 @@ async function runTests() {
     });
 
     await test('IDOR protection: student cannot update other user', async () => {
-        // Login as student1 (created in core.test.js or migrations)
-        // First we need to know student1's user id.
-        // In core.test.js, we added student1.
-        // Let's login as admin first to get student1's id
-        await global.invokeIPC('login', { username: 'admin', password: '123' }); // Try 123 if 123456 fails in some envs, but let's stick to what works
-        await global.invokeIPC('login', { username: 'admin', password: '123456' });
+        // Login as admin to get admin user details and create test student
+        const adminLogin = await global.invokeIPC('login', { username: 'admin', password: '123456' });
+        assert.strictEqual(adminLogin.success, true);
 
         const allUsers = await global.invokeIPC('get-all-users');
-        const student1 = allUsers.data.find(u => u.username === 'student1');
+        assert.strictEqual(allUsers.success, true);
         const adminUser = allUsers.data.find(u => u.username === 'admin');
 
-        // Login as student1
-        await global.invokeIPC('login', { username: 'student1', password: 'password123' });
+        const studentUsername = 'test_student_idor';
+        const studentPassword = 'password123';
+        await global.invokeIPC('add-user', {
+            username: studentUsername,
+            password: studentPassword,
+            email: 'idor_student@example.com',
+            firstName: 'Test',
+            lastName: 'Student',
+            role: 'student'
+        });
 
-        // Try to update admin's email
+        // Login as student
+        const studentLogin = await global.invokeIPC('login', { username: studentUsername, password: studentPassword });
+        assert.strictEqual(studentLogin.success, true);
+
+        // Try to update admin's email as student
         const response = await global.invokeIPC('update-user', { id: adminUser.id, email: 'hacked@example.com' });
         assert.strictEqual(response.success, false);
         assert.strictEqual(response.message, 'Unauthorized: Cannot update other users');
